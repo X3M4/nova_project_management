@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Feature Not Implemented{% endblock %}
+
+{% block content %}
+<div class="text-center mt-5">
+    <div class="alert alert-warning">
+        <h4 class="alert-heading">Feature Not Implemented</h4>
+        <p>The "{{ feature }}" feature is not implemented yet.</p>
+    </div>
+    <a href="javascript:history.back()" class="btn btn-primary">
+        <i class="fas fa-arrow-left"></i> Go Back
+    </a>
+</div>
+{% endblock %}

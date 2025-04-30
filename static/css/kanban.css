@@ -1,0 +1,241 @@
+/* Reset spacing and make full screen layout */
+body,
+html {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+/* Adjust base.html content container to match menu width */
+.content-container {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+    max-width: 100% !important;
+    /* Ensure it takes full width */
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+/* Make kanban header match the width of base.html navbar */
+.kanban-header {
+    background-color: white;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 10px;
+    width: 100%;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+}
+
+/* Layout for sidebar and main content - match container width */
+.kanban-layout {
+    display: flex;
+    height: calc(100vh - 70px);
+    /* Reduced from 100px to 70px */
+    overflow: hidden;
+    width: 100%;
+    margin: 0 auto;
+    /* Center the content */
+    padding-left: 8px;
+    padding-right: 8px;
+}
+
+/* Sidebar styling */
+.sidebar {
+    width: 250px;
+    min-width: 250px;
+    border-right: 1px solid #e5e7eb;
+    background-color: white;
+    height: 100%;
+    overflow-y: auto;
+}
+
+/* Main content area */
+.main-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 8px;
+    /* Reduced side padding */
+    height: 100%;
+}
+
+/* Make columns narrower */
+.kanban-column {
+    min-height: 300px;
+    max-height: calc(100vh - 200px);
+    /* Adjusted for less space at top */
+    overflow-y: auto;
+    width: 100%;
+    /* Full width of its container */
+}
+
+/* Column container styling - more efficient use of space */
+.project-column {
+    width: 220px;
+    /* Slightly reduced width */
+    min-width: 220px;
+    flex-shrink: 0;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.project-column.drop-hover {
+    transform: scale(1.01);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 10;
+}
+
+.project-column.drop-hover::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(59, 130, 246, 0.1);
+    border: 2px dashed #3b82f6;
+    border-radius: 0.375rem;
+    pointer-events: none; /* Permite que los eventos pasen a través */
+    z-index: 0;
+}
+
+.project-column.potential-drop-area {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.2);
+    }
+    70% {
+        box-shadow: 0 0 0 6px rgba(59, 130, 246, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+    }
+}
+
+/* Make the scrollable container */
+.projects-container {
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: 12px;
+    gap: 12px;
+    /* Reduced from 16px */
+    margin: 0 -8px;
+    /* Reduced negative margin */
+    padding: 0 8px;
+    /* Reduced padding */
+    scroll-padding: 8px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.employee-card {
+    cursor: grab;
+    transition: all 0.2s ease;
+}
+
+.employee-card:active {
+    cursor: grabbing;
+}
+
+.employee-card.dragging {
+    opacity: 0.7;
+    transform: scale(0.95);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    cursor: grabbing;
+    z-index: 999;
+}
+
+.kanban-column.drop-hover {
+    background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* Section title styling - make more compact */
+.section-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    position: sticky;
+    left: 8px;
+    background-color: white;
+    z-index: 10;
+    padding-top: 4px;
+}
+
+.section-title h3 {
+    font-size: 1.125rem;
+    font-weight: 700;
+}
+
+/* Custom scrollbar for modern browsers */
+.projects-container::-webkit-scrollbar,
+.sidebar::-webkit-scrollbar,
+.main-content::-webkit-scrollbar,
+.kanban-column::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+}
+
+.projects-container::-webkit-scrollbar-thumb,
+.sidebar::-webkit-scrollbar-thumb,
+.main-content::-webkit-scrollbar-thumb,
+.kanban-column::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.5);
+    border-radius: 4px;
+}
+
+.projects-container::-webkit-scrollbar-track,
+.sidebar::-webkit-scrollbar-track,
+.main-content::-webkit-scrollbar-track,
+.kanban-column::-webkit-scrollbar-track {
+    background-color: rgba(229, 231, 235, 0.5);
+}
+
+/* Sidebar padding adjustments */
+.sidebar .p-4 {
+    padding: 0.75rem !important;
+    /* Reduced padding */
+}
+
+/* Toggle sidebar button for mobile */
+.toggle-sidebar {
+    display: none;
+}
+
+/* More compact mobile layout */
+@media (max-width: 768px) {
+    .kanban-layout {
+        display: block;
+        height: calc(100vh - 110px);
+    }
+
+    .sidebar {
+        width: 100%;
+        height: auto;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+    }
+
+    .sidebar.open {
+        max-height: 500px;
+    }
+
+    .toggle-sidebar {
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+
+    .kanban-header {
+        padding: 8px;
+    }
+}
+
+/* Clase de transición explícita para asegurar que la animación termina limpiamente */
+.project-column.no-transitions {
+    transition: none !important;
+    animation: none !important;
+}

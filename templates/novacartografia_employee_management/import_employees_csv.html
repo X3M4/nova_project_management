@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Import Employees from CSV{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+        <div class="px-4 py-5 sm:px-6 bg-primary-600">
+            <h3 class="text-lg leading-6 font-medium text-white">Import Employees from CSV</h3>
+        </div>
+        <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="mb-4">
+                    <label for="{{ form.csv_file.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        {{ form.csv_file.label }}
+                    </label>
+                    <div class="mt-1">
+                        {{ form.csv_file }}
+                    </div>
+                    <p class="mt-2 text-sm text-gray-500">{{ form.csv_file.help_text }}</p>
+                </div>
+                
+                <div class="mt-6 flex items-center">
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg flex items-center shadow-lg">
+                        <i class="fas fa-file-import mr-2"></i> Import CSV
+                    </button>
+                    <a href="{% url 'employee_list' %}" class="ml-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded flex items-center">
+                        <i class="fas fa-arrow-left mr-2"></i> Back
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+        <div class="px-4 py-5 sm:px-6 bg-blue-600">
+            <h3 class="text-lg leading-6 font-medium text-white">CSV Format Instructions</h3>
+        </div>
+        <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+            <h6 class="text-base font-medium text-gray-700 mb-2">CSV Format Requirements:</h6>
+            <ul class="list-disc pl-5 space-y-1 mb-4">
+                <li class="text-sm text-gray-600">File must be CSV format (.csv)</li>
+                <li class="text-sm text-gray-600">First row should contain column headers</li>
+                <li class="text-sm text-gray-600">Required columns: name, job</li>
+                <li class="text-sm text-gray-600">Optional column: project_id (can be project ID)</li>
+            </ul>
+            
+            <h6 class="text-base font-medium text-gray-700 mb-2">Example CSV:</h6>
+            <pre class="bg-gray-50 p-3 rounded border border-gray-200 text-sm font-mono">name,job,project_id
+John Doe,Developer,1
+Jane Smith,Designer,2
+Alice Johnson,Manager,</pre>
+
+            <div class="mt-4">
+                <a href="{% url 'export_employees_csv' %}" class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    <i class="fas fa-download mr-2"></i> Download example CSV
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}Kanban Board{% endblock %}
+
+{% block extra_css %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/kanban.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="kanban-header">
+    <div class="flex justify-between items-center">
+        <div>
+            <h2 class="text-xl font-bold text-gray-800">Kanban Board</h2>
+            <p class="text-sm text-gray-600">Drag and drop employees between projects</p>
+        </div>
+        <div>
+            <a href="{% url 'project_list' %}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-1 px-3 rounded flex items-center text-sm">
+                <i class="fas fa-th-list mr-1"></i> Project List
+            </a>
+        </div>
+    </div>
+
+    <!-- Mobile toggle for sidebar -->
+    <button class="toggle-sidebar w-full bg-gray-100 py-1 px-4 text-left mt-2 rounded flex justify-between items-center md:hidden text-sm">
+        <span>Unassigned Employees</span>
+        <i class="fas fa-chevron-down"></i>
+    </button>
+</div>
+
+<!-- Main layout with sidebar -->
+<div class="kanban-layout">
+    <!-- Sidebar with unassigned employees -->
+    <div class="sidebar">
+        <div class="p-4">
+            <h3 class="text-md font-bold text-gray-700 mb-2">Unassigned Employees</h3>
+            <div class="bg-white shadow rounded-lg">
+                <div class="bg-gray-100 px-3 py-1 border-b border-gray-200 rounded-t-lg">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-800">Employees Pool</h3>
+                            <p class="text-xs text-gray-500">Drag to assign</p>
+                        </div>
+                        <span class="bg-gray-200 text-xs font-medium rounded-full px-2 py-1 text-gray-800">
+                            {% with unassigned_count=0 %}
+                                {% for employee in employees %}
+                                    {% if not employee.project_id %}
+                                        {% with unassigned_count=unassigned_count|add:1 %}{% endwith %}
+                                    {% endif %}
+                                {% endfor %}
+                                {{ unassigned_count }}
+                            {% endwith %}
+                        </span>
+                    </div>
+                </div>
+                <div class="p-3 kanban-column" id="unassigned-column" data-project-id="">
+                    {% for employee in employees %}
+                        {% if not employee.project_id and "TOPÓGRAFO" in employee.job %}
+                        <div class="employee-card p-2 bg-green-100 border border-gray-200 rounded-md shadow-sm mb-2" 
+                             data-employee-id="{{ employee.id }}" draggable="true">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
+                                    <p class="text-xs text-gray-500">{{ employee.job }}</p>
+                                </div>
+                                <a href="{% url 'employee_detail' employee.id %}" class="text-gray-400 hover:text-gray-600">
+                                    <i class="fas fa-external-link-alt text-xs"></i>
+                                </a>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if not employee.project_id and "Auxiliar" in employee.job %}
+                        <div class="employee-card p-2 bg-amber-100 border border-gray-200 rounded-md shadow-sm mb-2" 
+                             data-employee-id="{{ employee.id }}" draggable="true">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
+                                    <p class="text-xs text-gray-500">{{ employee.job }}</p>
+                                </div>
+                                <a href="{% url 'employee_detail' employee.id %}" class="text-gray-400 hover:text-gray-600">
+                                    <i class="fas fa-external-link-alt text-xs"></i>
+                                </a>
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% empty %}
+                        <p class="text-xs text-gray-500 italic">No unassigned employees</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main content with project boards -->
+    <div class="main-content">
+        <!-- Obras Projects (Top Row) -->
+        <div class="mb-4"> <!-- Reduced from mb-8 -->
+            <div class="section-title">
+                <h3 class="text-md font-bold text-rose-700">Obras</h3> <!-- Reduced size -->
+            </div>
+            <div class="projects-container">
+                {% for project in projects %}
+                    {% if project.type|lower == 'obra' %}
+                        <div class="project-column bg-violet-100 shadow rounded-lg">
+                            <div class="bg-violet-50 px-3 py-1 border-b border-violet-200 rounded-t-lg"> <!-- Reduced py-2 to py-1 -->
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <h3 class="text-sm font-medium text-rose-800">{{ project.name }}</h3>
+                                    </div>
+                                    <a href="{% url 'project_detail' project.id %}" class="text-amber-500 hover:text-amber-700">
+                                        <i class="fas fa-eye text-xs"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="p-3 kanban-column" id="project-{{ project.id }}-column" data-project-id="{{ project.id }}">
+                                {% for employee in employees %}
+                                {% if employee.project_id == project and "TOPÓGRAFO" in employee.job %}
+                                    <div class="employee-card p-2 bg-green-100 border border-gray-200 rounded-md shadow-sm mb-2" 
+                                         data-employee-id="{{ employee.id }}" draggable="true">
+                                        <div class="flex justify-between items-start">
+                                            <div>
+                                                <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
+                                                <p class="text-xs text-gray-500">{{ employee.job }}</p>
+                                            </div>
+                                            <a href="{% url 'employee_detail' employee.id %}" class="text-gray-400 hover:text-gray-600">
+                                                <i class="fas fa-external-link-alt text-xs"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                {% if employee.project_id == project and "Auxiliar" in employee.job %}
+                                    <div class="employee-card p-2 bg-amber-100 border border-gray-200 rounded-md shadow-sm mb-2" 
+                                         data-employee-id="{{ employee.id }}" draggable="true">
+                                        <div class="flex justify-between items-start">
+                                            <div>
+                                                <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
+                                                <p class="text-xs text-gray-500">{{ employee.job }}</p>
+                                            </div>
+                                            <a href="{% url 'employee_detail' employee.id %}" class="text-gray-400 hover:text-gray-600">
+                                                <i class="fas fa-external-link-alt text-xs"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                {% empty %}
+                                    <p class="text-xs text-gray-500 italic">No employees assigned</p>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Proyectos (Bottom Row) -->
+        <div>
+            <div class="section-title">
+                <h3 class="text-md font-bold text-orange-700">Proyectos</h3> <!-- Reduced size -->
+            </div>
+            <div class="projects-container">
+                {% for project in projects %}
+                    {% if project.type|lower == 'proyecto' %}
+                        <div class="project-column bg-gray-200 shadow rounded-lg">
+                            <div class="bg-amber-100 px-3 py-1 border-b border-amber-200 rounded-t-lg"> <!-- Reduced py-2 to py-1 -->
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <h3 class="text-sm font-medium text-amber-700">{{ project.name }}</h3>
+                                    </div>
+                                    <a href="{% url 'project_detail' project.id %}" class="text-amber-500 hover:text-amber-700">
+                                        <i class="fas fa-eye text-xs"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="p-3 kanban-column" id="project-{{ project.id }}-column" data-project-id="{{ project.id }}">
+                                {% for employee in employees %}
+                                {% if employee.project_id == project and "TOPÓGRAFO" in employee.job %}
+                                <div class="employee-card p-2 bg-green-100 border border-gray-200 rounded-md shadow-sm mb-2" 
+                                     data-employee-id="{{ employee.id }}" draggable="true">
+                                    <div class="flex justify-between items-start">
+                                        <div>
+                                            <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
+                                            <p class="text-xs text-gray-500">{{ employee.job }}</p>
+                                        </div>
+                                        <a href="{% url 'employee_detail' employee.id %}" class="text-gray-400 hover:text-gray-600">
+                                            <i class="fas fa-external-link-alt text-xs"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            {% if employee.project_id == project and "Auxiliar" in employee.job %}
+                                <div class="employee-card p-2 bg-amber-100 border border-gray-200 rounded-md shadow-sm mb-2" 
+                                     data-employee-id="{{ employee.id }}" draggable="true">
+                                    <div class="flex justify-between items-start">
+                                        <div>
+                                            <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
+                                            <p class="text-xs text-gray-500">{{ employee.job }}</p>
+                                        </div>
+                                        <a href="{% url 'employee_detail' employee.id %}" class="text-gray-400 hover:text-gray-600">
+                                            <i class="fas fa-external-link-alt text-xs"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% empty %}
+                                    <p class="text-xs text-gray-500 italic">No employees assigned</p>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading spinner -->
+<div id="loading-indicator" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 hidden">
+    <div class="bg-white p-4 rounded-lg flex flex-col items-center">
+        <svg class="animate-spin h-8 w-8 text-blue-600 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <p class="text-sm">Updating...</p>
+    </div>
+</div>
+
+<!-- Toast notification -->
+<div id="toast-notification" class="fixed bottom-4 right-4 p-3 rounded-md shadow-lg text-white transform translate-y-full opacity-0 transition-all duration-300 z-50 text-sm">
+</div>
+
+<!-- CSRF Token for AJAX -->
+{% csrf_token %}
+{% endblock %}
+
+{% block extra_js %}
+{% load static %}
+<script src="{% static 'js/kanban.js' %}"></script>
+{% endblock %}

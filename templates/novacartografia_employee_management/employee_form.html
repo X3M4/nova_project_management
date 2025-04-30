@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex justify-between items-center">
+    <h2 class="text-2xl font-bold text-gray-800">{{ title }}</h2>
+    <div>
+        {% if not is_new %}
+            <a href="{% url 'employee_detail' employee.id %}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded flex items-center">
+                <i class="fas fa-times mr-2"></i> Cancel
+            </a>
+        {% else %}
+            <a href="{% url 'employee_list' %}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded flex items-center">
+                <i class="fas fa-times mr-2"></i> Cancel
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="bg-white shadow overflow-hidden sm:rounded-lg">
+    <div class="px-4 py-5 sm:px-6 bg-primary-600">
+        <h3 class="text-lg leading-6 font-medium text-white">Employee Information</h3>
+        <p class="mt-1 max-w-2xl text-sm text-primary-100">
+            {% if is_new %}
+                Enter the details for the new employee
+            {% else %}
+                Update employee information
+            {% endif %}
+        </p>
+    </div>
+    
+    <div class="px-4 py-5 sm:p-6">
+        <form method="post">
+            {% csrf_token %}
+            
+            {% for field in form %}
+                <div class="mb-4">
+                    <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        {{ field.label }}
+                    </label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <p class="mt-1 text-xs text-gray-500">{{ field.help_text }}</p>
+                    {% endif %}
+                    {% if field.errors %}
+                        <div class="mt-1 text-sm text-red-600">
+                            {% for error in field.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+            
+            <div class="mt-6">
+                <button type="submit" class="bg-lime-600 hover:bg-lime-700 text-white font-medium py-2 px-4 rounded flex items-center">
+                    <i class="fas fa-save mr-2"></i> {{ button_text }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

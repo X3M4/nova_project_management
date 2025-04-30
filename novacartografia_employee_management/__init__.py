@@ -1,0 +1,1 @@
+default_app_config = 'novacartografia_employee_management.apps.NovacartografiaEmployeeManagementConfig'
