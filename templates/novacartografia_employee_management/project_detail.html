@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.name }} - Project Details{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex justify-between items-center">
+    <h2 class="text-2xl font-bold text-gray-800">Project Details</h2>
+    <div class="flex space-x-2">
+        <a href="{% url 'kanban_board' %}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded flex items-center">
+            <i class="fas fa-arrow-left mr-2"></i> Back to List
+        </a>
+        <a href="{% url 'project_update' project.id %}" class="bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded flex items-center">
+            <i class="fas fa-edit mr-2"></i> Edit
+        </a>
+        <a href="{% url 'project_delete' project.id %}" class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded flex items-center">
+            <i class="fas fa-trash mr-2"></i> Delete
+        </a>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+    <!-- Project Information Card -->
+    <div class="lg:col-span-1">
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            {% if project.type|lower == 'obra' %}
+                <div class="px-4 py-5 sm:px-6 bg-violet-600">
+            {% else %}
+                <div class="px-4 py-5 sm:px-6 bg-lime-600">
+            {% endif %}
+                <h3 class="text-lg leading-6 font-medium text-white">{{ project.name }}</h3>
+                <p class="mt-1 max-w-2xl text-sm text-white opacity-80">Project Information</p>
+            </div>
+            
+            <div class="border-t border-gray-200">
+                <dl>
+                    <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Project name</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ project.name }}</dd>
+                    </div>
+                    <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Type</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            {% if project.type|lower == 'obra' %}
+                                <span class="px-2 py-1 text-xs font-medium bg-violet-100 text-violet-800 rounded-full">{{ project.type }}</span>
+                            {% else %}
+                                <span class="px-2 py-1 text-xs font-medium bg-lime-100 text-lime-800 rounded-full">{{ project.type }}</span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Description</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            {{ project.description|default:"No description available" }}
+                        </dd>
+                    </div>
+                    <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                        <dt class="text-sm font-medium text-gray-500">Created</dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                            {% if project.created %}
+                                {{ project.created|date:"F j, Y" }}
+                            {% else %}
+                                Unknown
+                            {% endif %}
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+    </div>
+    <!-- Assigned Employees Card -->
+    <div class="lg:col-span-2">
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="flex justify-between items-center px-4 py-5 sm:px-6 bg-gray-800">
+                <div>
+                    <h3 class="text-lg leading-6 font-medium text-white">Assigned Employees</h3>
+                    <p class="mt-1 max-w-2xl text-sm text-gray-300">Team members working on this project</p>
+                </div>
+                <a href="{% url 'kanban_board' %}" class="text-xs bg-blue-500 hover:bg-blue-600 text-white font-medium py-1 px-2 rounded">
+                    <i class="fas fa-users-cog mr-1"></i> Manage in Kanban
+                </a>
+            </div>
+            
+            <div class="border-t border-gray-200">
+                {% with assigned_employees=project.employee_set.all %}
+                {% if assigned_employees %}
+                <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <div class="grid grid-cols-10 gap-4">
+                        <div class="col-span-3">Name</div>
+                        <div class="col-span-5">Job Title</div>
+                        <div class="col-span-2">Actions</div>
+                    </div>
+                </div>
+                <ul class="divide-y divide-gray-200">
+                    {% for employee in assigned_employees %}
+                    <li class="px-4 py-3 sm:px-6">
+                        <div class="grid grid-cols-10 gap-4 items-center">
+                        <div class="col-span-3">
+                            <a href="{% url 'employee_detail' employee.id %}" class="text-blue-600 hover:text-blue-800 font-medium">{{ employee.name }}</a>
+                        </div>
+                        <div class="col-span-5">{{ employee.job }}</div>
+                        <!-- Reemplaza el enlace problemático en project_detail.html -->
+                        <div class="col-span-2 flex space-x-2">
+                            <a href="/employees/{{ employee.id }}/" class="text-blue-600 hover:text-blue-800 bg-gray-100 p-1 rounded">
+                                <i class="fas fa-eye"></i> Detail
+                            </a>
+                            <a href="{% url 'employee_update' employee.id %}" class="text-yellow-600 hover:text-yellow-800 bg-gray-100 p-1 rounded mx-1">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="px-4 py-5 sm:px-6">
+                    <p class="text-sm text-gray-500">No employees assigned to this project.</p>
+                </div>
+                {% endif %}
+                {% endwith %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

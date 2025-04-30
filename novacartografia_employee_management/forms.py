@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Employee
+from .models import Employee, Project
 
 class EmployeeCSVImportForm(forms.Form):
     csv_file = forms.FileField(
@@ -48,3 +48,50 @@ class EmployeeForm(forms.ModelForm):
                 'placeholder': field.label,
             })
 
+class ProjectForm(forms.ModelForm):
+    class Meta:
+        model = Project
+        fields = ['name', 'type', 'description']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50'}),
+            'type': forms.Select(attrs={'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50'}),
+            'description': forms.Textarea(attrs={'rows': 3, 'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50'}),
+        }
+        labels = {
+            'name': 'Project Name',
+            'type': 'Project Type',
+            'description': 'Description'
+        }
+        help_texts = {
+            'name': 'Enter a descriptive name for this project',
+            'type': 'Select the type of project',
+            'description': 'Optional: Add details about this project'
+        }
+        error_messages = {
+            'name': {
+                'max_length': "This name is too long.",
+            },
+            'type': {
+                'required': "Please select a project type.",
+            },
+        }
+    
+    # El método clean debería estar aquí, fuera de la clase Meta
+    def clean(self):
+        cleaned_data = super().clean()
+        name = cleaned_data.get('name')
+        type = cleaned_data.get('type')
+        
+        if not name or not type:
+            raise forms.ValidationError("Project name and type are required.")
+        
+        return cleaned_data
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Añade Tailwind clases a los fields
+        for field_name, field in self.fields.items():
+            field.widget.attrs.update({
+                'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50',
+                'placeholder': field.label,
+            })

@@ -5,8 +5,14 @@ from django.dispatch import receiver
 
 # Create your models here.
 class Project(models.Model):
+    PROJECT_TYPES = [
+        ('obra', 'Obra'),
+        ('proyecto', 'Proyecto'),
+        # Otras opciones que necesites...
+    ]
+    
     name = models.CharField(max_length=100)
-    type = models.CharField(max_length=50, default='Internal')
+    type = models.CharField(max_length=50, choices=PROJECT_TYPES, default='proyecto')
     description = models.TextField(blank=True, null=True)
 
     def __str__(self):

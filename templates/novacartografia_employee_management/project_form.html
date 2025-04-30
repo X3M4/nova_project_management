@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex justify-between items-center">
+    <h2 class="text-2xl font-bold text-gray-800">{{ title }}</h2>
+    <a href="{% url 'project_list' %}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded flex items-center">
+        <i class="fas fa-arrow-left mr-2"></i> Back to List
+    </a>
+</div>
+
+<div class="bg-white shadow overflow-hidden sm:rounded-lg">
+    <div class="px-4 py-5 sm:px-6 bg-lime-600">
+        <h3 class="text-lg leading-6 font-medium text-white">Project Information</h3>
+        <p class="mt-1 max-w-2xl text-sm text-lime-100">
+            {% if is_new %}
+                Enter the details for the new project
+            {% else %}
+                Update project information
+            {% endif %}
+        </p>
+    </div>
+    
+    <div class="px-4 py-5 sm:p-6">
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="mb-4">
+                <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                    {{ form.name.label }}
+                </label>
+                {{ form.name }}
+                {% if form.name.help_text %}
+                    <p class="mt-1 text-xs text-gray-500">{{ form.name.help_text }}</p>
+                {% endif %}
+                {% if form.name.errors %}
+                    <div class="mt-1 text-sm text-red-600">
+                        {% for error in form.name.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="mb-4">
+                <label for="{{ form.type.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                    {{ form.type.label }}
+                </label>
+                <select name="{{ form.type.name }}" id="{{ form.type.id_for_label }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50">
+                    {% for value, label in form.fields.type.choices %}
+                        <option value="{{ value }}" {% if form.type.value == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                {% if form.type.help_text %}
+                    <p class="mt-1 text-xs text-gray-500">{{ form.type.help_text }}</p>
+                {% endif %}
+                {% if form.type.errors %}
+                    <div class="mt-1 text-sm text-red-600">
+                        {% for error in form.type.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="mb-4">
+                <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                    {{ form.description.label }}
+                </label>
+                {{ form.description }}
+                {% if form.description.help_text %}
+                    <p class="mt-1 text-xs text-gray-500">{{ form.description.help_text }}</p>
+                {% endif %}
+                {% if form.description.errors %}
+                    <div class="mt-1 text-sm text-red-600">
+                        {% for error in form.description.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="debug-info border border-gray-300 p-3 mb-4 bg-gray-50 rounded">
+                <p class="text-sm font-semibold text-gray-500">Debug Info (Quitar en producción)</p>
+                <p class="text-xs">Opciones de tipo de proyecto:</p>
+                <ul class="text-xs">
+                    {% for value, label in form.fields.type.choices %}
+                        <li>{{ value }}: {{ label }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            
+            <div class="mt-6 flex items-center justify-end space-x-3">
+                <a href="{% if is_new %}{% url 'project_list' %}{% else %}{% url 'project_detail' project.id %}{% endif %}" class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium py-2 px-4 rounded">
+                    Cancel
+                </a>
+                <button type="submit" class="bg-lime-600 hover:bg-lime-700 text-white font-medium py-2 px-4 rounded flex items-center">
+                    <i class="fas fa-save mr-2"></i> {{ button_text }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

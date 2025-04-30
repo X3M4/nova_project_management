@@ -5,7 +5,7 @@ import json
 from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .forms import EmployeeCSVImportForm, EmployeeForm, ProjectCSVImportForm
+from .forms import EmployeeCSVImportForm, EmployeeForm, ProjectCSVImportForm, ProjectForm
 from .models import Employee, Project, ProjectMovementLine
 from django.http import HttpResponse, JsonResponse
 
@@ -287,11 +287,11 @@ def employee_update(request, pk):
         if form.is_valid():
             form.save()
             messages.success(request, f'Employee "{employee.name}" has been updated successfully.')
-            return redirect('employee_detail', pk=employee.id)
+            return redirect('kanban_board')
     else:
         form = EmployeeForm(instance=employee)
     
-    return render(request, 'employee_form.html', {
+    return render(request, 'novacartografia_employee_management/employee_form.html', {
         'form': form,
         'employee': employee,
         'title': 'Update Employee',
@@ -336,16 +336,53 @@ def project_list(request):
 
 @login_required
 def project_create(request):
-    # Implement this or return a placeholder
-    return render(request, 'novacartografia_employee_management/not_implemented.html', {'feature': 'Create Project'})
+    if request.method == 'POST':
+        form = ProjectForm(request.POST)
+        if form.is_valid():
+            project = form.save()
+            messages.success(request, f'Project "{project.name}" has been created successfully.')
+            return redirect('project_list')
+    else:
+        form = ProjectForm()
+    
+    return render(request, 'novacartografia_employee_management/project_form.html', {
+        'form': form,
+        'title': 'Create Project',
+        'button_text': 'Create Project',
+        'is_new': True
+    })
 
 @login_required
 def project_detail(request, pk):
-    return render(request, 'novacartografia_employee_management/not_implemented.html', {'feature': 'Project Detail'})
+    project = get_object_or_404(Project, pk=pk)
+    
+    context = {
+        'project': project,
+        # Los empleados asignados se obtienen en el template con project.employee_set.all
+    }
+    
+    return render(request, 'novacartografia_employee_management/project_detail.html', context)
 
 @login_required
 def project_update(request, pk):
-    return render(request, 'novacartografia_employee_management/not_implemented.html', {'feature': 'Update Project'})
+    project = get_object_or_404(Project, pk=pk)
+    
+    if request.method == 'POST':
+        form = ProjectForm(request.POST, instance=project)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Project "{project.name}" has been updated successfully.')
+            return redirect('project_detail', pk=project.id)
+    else:
+        form = ProjectForm(instance=project)
+    
+    return render(request, 'novacartografia_employee_management/project_form.html', {
+        'form': form,
+        'project': project,
+        'title': 'Update Project',
+        'button_text': 'Save Changes',
+        'is_new': False
+    })
 
 @login_required
 def project_delete(request, pk):
