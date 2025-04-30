@@ -319,4 +319,52 @@ document.addEventListener('DOMContentLoaded', function() {
     
     console.log('Drag and drop initialized with ' + employeeCards.length + ' employees, ' + 
                 columns.length + ' columns, and ' + projectColumns.length + ' project columns');
+    
+    // Arreglar problemas de superposición con el menú desplegable
+    function fixMenuZIndex() {
+        // Seleccionar el menú principal y los elementos desplegables
+        // Ajusta estos selectores según la estructura de tu HTML
+        const navbar = document.querySelector('nav');
+        const dropdowns = document.querySelectorAll('.dropdown-menu, .dropdown-content, .submenu');
+        
+        // Aplicar z-index alto al menú
+        if (navbar) {
+            navbar.style.position = 'relative';
+            navbar.style.zIndex = '1000';
+        }
+        
+        // Aplicar z-index muy alto a todos los menús desplegables
+        dropdowns.forEach(dropdown => {
+            dropdown.style.zIndex = '1001';
+            dropdown.style.position = 'absolute';
+        });
+        
+        // Reducir el z-index del kanban header para que no interfiera
+        const kanbanHeader = document.querySelector('.kanban-header');
+        if (kanbanHeader) {
+            kanbanHeader.style.zIndex = '5';
+            // Si es sticky, cambiarlo a relative para evitar problemas
+            if (window.getComputedStyle(kanbanHeader).position === 'sticky') {
+                kanbanHeader.style.position = 'relative';
+            }
+        }
+    }
+    
+    // Ejecutar al cargar la página
+    fixMenuZIndex();
+    
+    // También ejecutar cuando se haga clic en el posible activador del menú
+    document.querySelectorAll('.dropdown-toggle, .navbar-toggle, .menu-toggle').forEach(toggle => {
+        toggle.addEventListener('click', function(e) {
+            // Pequeño retraso para asegurar que se aplica después de cualquier otro código
+            setTimeout(fixMenuZIndex, 10);
+        });
+    });
+    
+    // Si el menú se muestra al hacer hover, manejar también ese caso
+    document.querySelectorAll('.dropdown, .has-dropdown').forEach(dropdown => {
+        dropdown.addEventListener('mouseenter', function() {
+            setTimeout(fixMenuZIndex, 10);
+        });
+    });
 });

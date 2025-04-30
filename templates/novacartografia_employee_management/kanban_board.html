@@ -5,6 +5,7 @@
 {% block extra_css %}
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/kanban.css' %}">
+
 {% endblock %}
 
 {% block content %}
@@ -56,7 +57,7 @@
                 <div class="p-3 kanban-column" id="unassigned-column" data-project-id="">
                     {% for employee in employees %}
                         {% if not employee.project_id and "TOPÓGRAFO" in employee.job %}
-                        <div class="employee-card p-2 bg-green-100 border border-gray-200 rounded-md shadow-sm mb-2" 
+                        <div class="employee-card p-2 bg-green-200 border border-gray-200 rounded-md shadow-sm mb-2" 
                              data-employee-id="{{ employee.id }}" draggable="true">
                             <div class="flex justify-between items-start">
                                 <div>
@@ -70,7 +71,7 @@
                         </div>
                         {% endif %}
                         {% if not employee.project_id and "Auxiliar" in employee.job %}
-                        <div class="employee-card p-2 bg-amber-100 border border-gray-200 rounded-md shadow-sm mb-2" 
+                        <div class="employee-card p-2 bg-yellow-200 border border-gray-200 rounded-md shadow-sm mb-2" 
                              data-employee-id="{{ employee.id }}" draggable="true">
                             <div class="flex justify-between items-start">
                                 <div>
@@ -96,16 +97,16 @@
         <!-- Obras Projects (Top Row) -->
         <div class="mb-4"> <!-- Reduced from mb-8 -->
             <div class="section-title">
-                <h3 class="text-md font-bold text-rose-700">Obras</h3> <!-- Reduced size -->
+                <h3 class="text-md font-bold text-violet-700">Obras</h3> <!-- Reduced size -->
             </div>
             <div class="projects-container">
                 {% for project in projects %}
                     {% if project.type|lower == 'obra' %}
                         <div class="project-column bg-violet-100 shadow rounded-lg">
-                            <div class="bg-violet-50 px-3 py-1 border-b border-violet-200 rounded-t-lg"> <!-- Reduced py-2 to py-1 -->
+                            <div class="bg-violet-200 px-3 py-1 border-b border-violet-200 rounded-t-lg"> <!-- Reduced py-2 to py-1 -->
                                 <div class="flex justify-between items-center">
                                     <div>
-                                        <h3 class="text-sm font-medium text-rose-800">{{ project.name }}</h3>
+                                        <h3 class="text-sm font-medium text-rose-700">{{ project.name }}</h3>
                                     </div>
                                     <a href="{% url 'project_detail' project.id %}" class="text-amber-500 hover:text-amber-700">
                                         <i class="fas fa-eye text-xs"></i>
@@ -115,7 +116,7 @@
                             <div class="p-3 kanban-column" id="project-{{ project.id }}-column" data-project-id="{{ project.id }}">
                                 {% for employee in employees %}
                                 {% if employee.project_id == project and "TOPÓGRAFO" in employee.job %}
-                                    <div class="employee-card p-2 bg-green-100 border border-gray-200 rounded-md shadow-sm mb-2" 
+                                    <div class="employee-card p-2 bg-green-200 border border-gray-200 rounded-md shadow-sm mb-2" 
                                          data-employee-id="{{ employee.id }}" draggable="true">
                                         <div class="flex justify-between items-start">
                                             <div>
@@ -129,7 +130,7 @@
                                     </div>
                                     {% endif %}
                                 {% if employee.project_id == project and "Auxiliar" in employee.job %}
-                                    <div class="employee-card p-2 bg-amber-100 border border-gray-200 rounded-md shadow-sm mb-2" 
+                                    <div class="employee-card p-2 bg-yellow-200 border border-gray-200 rounded-md shadow-sm mb-2" 
                                          data-employee-id="{{ employee.id }}" draggable="true">
                                         <div class="flex justify-between items-start">
                                             <div>
@@ -160,8 +161,8 @@
             <div class="projects-container">
                 {% for project in projects %}
                     {% if project.type|lower == 'proyecto' %}
-                        <div class="project-column bg-gray-200 shadow rounded-lg">
-                            <div class="bg-amber-100 px-3 py-1 border-b border-amber-200 rounded-t-lg"> <!-- Reduced py-2 to py-1 -->
+                        <div class="project-column bg-lime-100 shadow rounded-lg">
+                            <div class="bg-lime-300 px-3 py-1 border-b border-lime-200 rounded-t-lg"> <!-- Reduced py-2 to py-1 -->
                                 <div class="flex justify-between items-center">
                                     <div>
                                         <h3 class="text-sm font-medium text-amber-700">{{ project.name }}</h3>
@@ -174,7 +175,7 @@
                             <div class="p-3 kanban-column" id="project-{{ project.id }}-column" data-project-id="{{ project.id }}">
                                 {% for employee in employees %}
                                 {% if employee.project_id == project and "TOPÓGRAFO" in employee.job %}
-                                <div class="employee-card p-2 bg-green-100 border border-gray-200 rounded-md shadow-sm mb-2" 
+                                <div class="employee-card p-2 bg-green-200 border border-gray-200 rounded-md shadow-sm mb-2" 
                                      data-employee-id="{{ employee.id }}" draggable="true">
                                     <div class="flex justify-between items-start">
                                         <div>
@@ -188,7 +189,7 @@
                                 </div>
                                 {% endif %}
                             {% if employee.project_id == project and "Auxiliar" in employee.job %}
-                                <div class="employee-card p-2 bg-amber-100 border border-gray-200 rounded-md shadow-sm mb-2" 
+                                <div class="employee-card p-2 bg-yellow-200 border border-gray-200 rounded-md shadow-sm mb-2" 
                                      data-employee-id="{{ employee.id }}" draggable="true">
                                     <div class="flex justify-between items-start">
                                         <div>

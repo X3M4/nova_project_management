@@ -28,7 +28,7 @@
 </head>
 <body class="bg-gray-50 min-h-screen flex flex-col ">
     <!-- Navigation -->
-    <nav class="bg-orange-600 shadow-md">
+    <nav class="navbar-drpdown-container bg-orange-500 shadow-md">
         <div class="content-container">
             <div class="flex justify-between h-16 ml-6">
                 <div class="flex items-center">
@@ -43,10 +43,10 @@
                                 <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </button>
                             <div @click.away="open = false" x-show="open" class="origin-top-left absolute left-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="transform opacity-0 scale-95" x-transition:enter-end="transform opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="transform opacity-100 scale-100" x-transition:leave-end="transform opacity-0 scale-95">
-                                <a href="{% url 'employee_list' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">All Employees</a>
-                                <a href="{% url 'employee_create' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Add Employee</a>
-                                <a href="{% url 'import_employees_csv' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Import CSV</a>
-                                <a href="{% url 'export_employees_csv' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Export CSV</a>
+                                <a href="{% url 'employee_list' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">All Employees</a>
+                                <a href="{% url 'employee_create' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Add Employee</a>
+                                <a href="{% url 'import_employees_csv' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Import CSV</a>
+                                <a href="{% url 'export_employees_csv' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Export CSV</a>
                             </div>
                         </div>
                         
@@ -56,10 +56,10 @@
                                 <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </button>
                             <div @click.away="open = false" x-show="open" class="origin-top-left absolute left-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
-                                <a href="{% url 'project_list' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">All Projects</a>
-                                <a href="{% url 'project_create' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Add Project</a>
-                                <a href="{% url 'import_projects_csv' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Import CSV</a>
-                                <a href="{% url 'export_projects_csv' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Export CSV</a>
+                                <a href="{% url 'project_list' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">All Projects</a>
+                                <a href="{% url 'project_create' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Add Project</a>
+                                <a href="{% url 'import_projects_csv' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Import CSV</a>
+                                <a href="{% url 'export_projects_csv' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Export CSV</a>
                             </div>
                         </div>
                         

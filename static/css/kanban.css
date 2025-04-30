@@ -15,6 +15,8 @@ html {
     /* Ensure it takes full width */
     padding-left: 0 !important;
     padding-right: 0 !important;
+    z-index: auto !important;
+    position: relative !important;
 }
 
 /* Make kanban header match the width of base.html navbar */
@@ -23,9 +25,9 @@ html {
     border-bottom: 1px solid #e5e7eb;
     padding: 10px;
     width: 100%;
-    position: sticky;
-    top: 0;
-    z-index: 20;
+    position: relative !important; /* En lugar de sticky para evitar problemas */
+    z-index: 1 !important; /* Reducir de 20 a un valor más bajo */
+    /* Eliminar position: sticky si está causando problemas */
 }
 
 /* Layout for sidebar and main content - match container width */
@@ -33,12 +35,15 @@ html {
     display: flex;
     height: calc(100vh - 70px);
     /* Reduced from 100px to 70px */
-    overflow: hidden;
+    overflow: visible;
     width: 100%;
     margin: 0 auto;
     /* Center the content */
     padding-left: 8px;
     padding-right: 8px;
+    z-index: 1 !important; /* Valor muy bajo */
+    position: relative !important; /* Ensure it doesn't create an unexpected stacking context */
+    margin-top: 10px;
 }
 
 /* Sidebar styling */
@@ -49,6 +54,8 @@ html {
     background-color: white;
     height: 100%;
     overflow-y: auto;
+    z-index: auto; /* Reset any z-index that might be creating issues */
+    position: relative; /* Ensure it doesn't create an unexpected stacking context */
 }
 
 /* Main content area */
@@ -58,6 +65,8 @@ html {
     padding: 0 8px;
     /* Reduced side padding */
     height: 100%;
+    z-index: auto; /* Reset any z-index that might be creating issues */
+    position: relative; /* Ensure it doesn't create an unexpected stacking context */
 }
 
 /* Make columns narrower */
@@ -83,7 +92,7 @@ html {
 .project-column.drop-hover {
     transform: scale(1.01);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    z-index: 10;
+    z-index: 10; /* Ensure this is not too high */
 }
 
 .project-column.drop-hover::after {
@@ -134,10 +143,12 @@ html {
 .employee-card {
     cursor: grab;
     transition: all 0.2s ease;
+    min-height: 60px;  /* Ensure minimum height for touch */
 }
 
 .employee-card:active {
     cursor: grabbing;
+    transform: scale(0.98);
 }
 
 .employee-card.dragging {
@@ -145,7 +156,7 @@ html {
     transform: scale(0.95);
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     cursor: grabbing;
-    z-index: 999;
+    z-index: 30; /* High enough for dragging, but not higher than dropdown menus */
 }
 
 .kanban-column.drop-hover {
@@ -162,6 +173,7 @@ html {
     left: 8px;
     background-color: white;
     z-index: 10;
+    position: relative;
     padding-top: 4px;
 }
 
@@ -170,28 +182,95 @@ html {
     font-weight: 700;
 }
 
-/* Custom scrollbar for modern browsers */
-.projects-container::-webkit-scrollbar,
-.sidebar::-webkit-scrollbar,
-.main-content::-webkit-scrollbar,
+/* Custom scrollbar for modern browsers - with increased size for touch screens */
+.projects-container::-webkit-scrollbar, 
+.sidebar::-webkit-scrollbar, 
+.main-content::-webkit-scrollbar, 
 .kanban-column::-webkit-scrollbar {
-    height: 8px;
-    width: 8px;
+    height: 16px;  /* Increased from 8px for horizontal scrollbars */
+    width: 16px;   /* Increased from 8px for vertical scrollbars */
 }
 
-.projects-container::-webkit-scrollbar-thumb,
-.sidebar::-webkit-scrollbar-thumb,
-.main-content::-webkit-scrollbar-thumb,
+.projects-container::-webkit-scrollbar-thumb, 
+.sidebar::-webkit-scrollbar-thumb, 
+.main-content::-webkit-scrollbar-thumb, 
 .kanban-column::-webkit-scrollbar-thumb {
-    background-color: rgba(156, 163, 175, 0.5);
-    border-radius: 4px;
+    background-color: rgba(32, 103, 227, 0.6);  /* Slightly darker for better visibility */
+    border-radius: 8px;  /* Increased rounding */
+    border: 3px solid transparent;  /* Create padding effect inside the scrollbar */
+    background-clip: padding-box;
+    min-height: 40px;  /* Minimum size for thumb to improve grabability */
 }
 
-.projects-container::-webkit-scrollbar-track,
-.sidebar::-webkit-scrollbar-track,
-.main-content::-webkit-scrollbar-track,
+.projects-container::-webkit-scrollbar-thumb:hover, 
+.sidebar::-webkit-scrollbar-thumb:hover, 
+.main-content::-webkit-scrollbar-thumb:hover, 
+.kanban-column::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(32, 103, 227, 0.6);  /* Even darker on hover for feedback */
+}
+
+.projects-container::-webkit-scrollbar-track, 
+.sidebar::-webkit-scrollbar-track, 
+.main-content::-webkit-scrollbar-track, 
 .kanban-column::-webkit-scrollbar-track {
-    background-color: rgba(229, 231, 235, 0.5);
+    background-color: rgba(22, 37, 247, 0.856);
+    border-radius: 8px;  /* Match the thumb radius */
+}
+
+/* Add visible buttons at ends of scrollbar for easier touch */
+.projects-container::-webkit-scrollbar-button, 
+.sidebar::-webkit-scrollbar-button, 
+.main-content::-webkit-scrollbar-button, 
+.kanban-column::-webkit-scrollbar-button {
+    width: 0;
+    height: 0;
+    display: none;
+}
+
+/* For Firefox */
+* {
+    scrollbar-width: thick;  /* 'auto', 'thin', or 'thick' */
+    scrollbar-color: rgb(244, 104, 10) rgba(139, 242, 156, 0.1);
+}
+
+/* For touch targets, ensure interactive items have enough size */
+button, a {
+    min-height: 36px;  /* Minimum touch target size for buttons/links */
+    /* Only apply min-height if they're standalone elements, not inside other components */
+}
+
+.employee-card button,
+.employee-card a,
+.project-column button,
+.project-column a {
+    min-height: auto;  /* Reset for buttons inside cards */
+}
+
+/* For improved momentum scrolling on touch devices */
+.projects-container, 
+.sidebar, 
+.main-content, 
+.kanban-column {
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Add touch-specific visual feedback */
+@media (pointer: coarse) {
+    /* Larger drop target highlighting for touch */
+    .project-column.drop-hover::after {
+        border-width: 4px;
+    }
+    
+    /* More pronounced touch feedback */
+    .employee-card:active {
+        transform: scale(0.98);
+    }
+    
+    /* Extra feedback for active touch areas */
+    .kanban-column::-webkit-scrollbar-thumb:active,
+    .projects-container::-webkit-scrollbar-thumb:active {
+        background-color: rgba(107, 114, 128, 0.8);
+    }
 }
 
 /* Sidebar padding adjustments */
@@ -238,4 +317,60 @@ html {
 .project-column.no-transitions {
     transition: none !important;
     animation: none !important;
+}
+
+/* Loading indicator should be very high, but still below dropdowns */
+#loading-indicator {
+    z-index: 1999 !important; /* High but not higher than dropdown menus */
+}
+
+/* Toast notifications can be very high */
+#toast-notification {
+    z-index: 2000 !important;
+}
+
+/* If you have a modal, it should also be high but below dropdowns */
+.modal,
+.dialog {
+    z-index: 40;
+}
+
+/* Asegurarse que no haya overflow visible que pueda causar interferencia */
+.kanban-header, .kanban-layout {
+    overflow: visible;
+}
+
+/* Clase adicional para base.html para asegurar que el menú principal tenga prioridad */
+/* Añade esta clase al elemento dropdown/navbar en base.html */
+.navbar-dropdown-container {
+    position: relative;
+    z-index: 1000 !important; /* Valor muy alto para asegurar que esté por encima de todo */
+}
+
+.dropdown-menu, 
+.dropdown-content, 
+.submenu {
+    z-index: 1001 !important; /* Forzar un z-index muy alto */
+}
+
+/* Ajustes para asegurar que los menús desplegables aparezcan por encima del kanban */
+
+/* Reset el z-index del contenedor principal del kanban */
+body > main,
+#content {
+    z-index: auto !important;
+    position: relative !important;
+}
+
+/* Asegurar que el navbar siempre esté por encima */
+nav.navbar-drpdown-container {
+    position: relative;
+    z-index: 1000 !important; /* Un valor muy alto */
+}
+
+/* Asegurar que cualquier menú desplegable Alpine.js tiene un z-index extremadamente alto */
+div[x-show="open"],
+.origin-top-left,
+.origin-top-right {
+    z-index: 1100 !important; /* Aún más alto que el navbar */
 }
