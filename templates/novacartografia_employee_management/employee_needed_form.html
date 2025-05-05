@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="mb-6 flex justify-between items-center">
+        <h2 class="text-2xl font-bold text-gray-800">{{ title }}</h2>
+        <a href="{% url 'kanban_board' %}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded flex items-center">
+            <i class="fas fa-arrow-left mr-2"></i> Back to Kanban
+        </a>
+    </div>
+
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+        <div class="px-4 py-5 sm:px-6 bg-lime-600">
+            <h3 class="text-lg leading-6 font-medium text-white">Employee Request Information</h3>
+            <p class="mt-1 max-w-2xl text-sm text-lime-100">
+                {% if is_new %}
+                    Enter details for the new employee request
+                {% else %}
+                    Update employee request information
+                {% endif %}
+            </p>
+        </div>
+        
+        <div class="px-4 py-5 sm:p-6">
+            <form method="post">
+                {% csrf_token %}
+                
+                {% for field in form %}
+                    <div class="mb-4">
+                        <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            {{ field.label }}
+                        </label>
+                        {% if field.name == 'start_date' %}
+                            <input type="date" name="{{ field.name }}" id="{{ field.id_for_label }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50" value="{{ field.value|date:'Y-m-d'|default:'' }}">
+                        {% else %}
+                            {{ field }}
+                        {% endif %}
+                        
+                        {% if field.help_text %}
+                            <p class="mt-1 text-xs text-gray-500">{{ field.help_text }}</p>
+                        {% endif %}
+                        {% if field.errors %}
+                            <div class="mt-1 text-sm text-red-600">
+                                {% for error in field.errors %}
+                                    <p>{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                
+                <div class="mt-6 flex items-center justify-end space-x-3">
+                    <a href="{% url 'kanban_board' %}" class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium py-2 px-4 rounded">
+                        Cancel
+                    </a>
+                    <button type="submit" class="bg-lime-600 hover:bg-lime-700 text-white font-medium py-2 px-4 rounded flex items-center">
+                        <i class="fas fa-save mr-2"></i> {{ button_text }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

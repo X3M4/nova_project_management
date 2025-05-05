@@ -18,6 +18,8 @@ class Project(models.Model):
     def __str__(self):
         return self.name
     
+    
+    
 class Employee(models.Model):
     name = models.CharField(max_length=100)
     job = models.CharField(max_length=100)
@@ -25,6 +27,27 @@ class Employee(models.Model):
     
     def __str__(self):
         return self.name
+    
+    
+    
+class EmployeeNeeded(models.Model):
+    POSITION_TYPES = [
+        ('topo', 'Topo'),
+        ('auxiliar', 'Auxiliar'),
+        ('piloto', 'Piloto'),
+    ]
+    
+    project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
+    type = models.CharField(max_length=50, choices=POSITION_TYPES, default='topo')
+    quantity = models.PositiveIntegerField()
+    start_date = models.DateField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    fulfilled = models.BooleanField(default=False)
+    
+    def __str__(self):
+        return f"{self.project_id.name} - {self.type} ({self.quantity})"
+    
+
 
 class ProjectMovementLine(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='movements')

@@ -5,8 +5,8 @@ import json
 from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .forms import EmployeeCSVImportForm, EmployeeForm, ProjectCSVImportForm, ProjectForm
-from .models import Employee, Project, ProjectMovementLine
+from .forms import EmployeeCSVImportForm, EmployeeForm, EmployeeNeededForm, ProjectCSVImportForm, ProjectForm
+from .models import Employee, Project, ProjectMovementLine, EmployeeNeeded
 from django.http import HttpResponse, JsonResponse
 
 @login_required
@@ -407,10 +407,18 @@ def kanban_board(request):
     # Usar employee_set en lugar de employees
     projects = Project.objects.all().prefetch_related('employee_set')
     employees = Employee.objects.all()
+    unassigned_employees = employees.filter(project_id__isnull=True).count()
+    
+    # Cambiar de count() a queryset para poder iterar
+    needs = EmployeeNeeded.objects.filter(fulfilled=False)
+    needs_count = needs.count()  # Si necesitas el conteo separado
     
     return render(request, 'novacartografia_employee_management/kanban_board.html', {
         'projects': projects,
-        'employees': employees
+        'employees': employees,
+        'unassigned_employees': unassigned_employees,
+        'needs': needs,
+        'needs_count': needs_count,  # Añadir el contador como una variable separada
     })
 
 
@@ -447,3 +455,112 @@ def update_employee_project(request):
         return JsonResponse({'success': False, 'error': 'Project not found'})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+
+@login_required
+def employee_needed_list(request):
+    employee_needed = EmployeeNeeded.objects.all()
+    return render(request, 'novacartografia_employee_management/employee_needed_list.html', {'employee_needed': employee_needed})
+
+@login_required
+def employee_needed_create(request):
+    # Verificar si se proporcionó un project_id en la URL
+    project_id = request.GET.get('project_id')
+    project = None
+    initial_data = {}
+    
+    if project_id:
+        try:
+            project = Project.objects.get(pk=project_id)
+            initial_data = {'project_id': project}
+        except Project.DoesNotExist:
+            pass
+    
+    if request.method == 'POST':
+        form = EmployeeNeededForm(request.POST)
+        if form.is_valid():
+            employee_needed = form.save()
+            messages.success(request, f'Request for {employee_needed.quantity} {employee_needed.type} created successfully.')
+            # Cambiar esta línea para redirigir a kanban_board en lugar de employee_needed_list
+            return redirect('kanban_board')
+    else:
+        form = EmployeeNeededForm(initial=initial_data)
+    
+    title = 'Create Employee Request'
+    if project:
+        title = f'Create Employee Request for {project.name}'
+    
+    return render(request, 'novacartografia_employee_management/employee_needed_form.html', {
+        'form': form,
+        'title': title,
+        'button_text': 'Create Request',
+        'is_new': True,
+        'project': project
+    })
+
+@login_required
+def employee_needed_update(request, pk):
+    employee_needed = get_object_or_404(EmployeeNeeded, pk=pk)
+    
+    if request.method == 'POST':
+        form = EmployeeNeededForm(request.POST, instance=employee_needed)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Employee request updated successfully.')
+            # Asegurar que también redirija a kanban_board
+            return redirect('kanban_board')
+    else:
+        form = EmployeeNeededForm(instance=employee_needed)
+    
+    return render(request, 'novacartografia_employee_management/employee_needed_form.html', {
+        'form': form,
+        'employee_needed': employee_needed,
+        'title': 'Update Employee Request',
+        'button_text': 'Save Changes',
+        'is_new': False,
+        'project': employee_needed.project_id  # Pasar el proyecto para consistencia
+    })
+    
+@login_required
+def employee_needed_delete(request, pk):
+    employee_needed = get_object_or_404(EmployeeNeeded, pk=pk)
+    
+    if request.method == 'POST':
+        employee_needed_name = employee_needed
+        employee_needed.delete()
+        messages.success(request, f'Employee needed {employee_needed_name} deleted successfully.')
+        return redirect('kanban_board')
+    return render(request, 'novacartografia_employee_management/employee_needed_confirm_delete.html', {'employee_needed': employee_needed})
+
+@login_required
+def employee_needed_fulfill(request, pk):
+    employee_needed = get_object_or_404(EmployeeNeeded, pk=pk)
+    
+    if request.method == 'POST':
+        employee_needed.fulfilled = True
+        employee_needed.save()
+        messages.success(request, f'Employee needed "{employee_needed}" has been fulfilled successfully.')
+        return redirect('kanban_board')
+    
+    return render(request, 'novacartografia_employee_management/employee_needed_confirm_fulfill.html', {'employee_needed': employee_needed})
+
+@login_required
+def employee_needed_create_from_project(request, project_id):
+    project = get_object_or_404(Project, pk=project_id)
+    
+    if request.method == 'POST':
+        form = EmployeeNeededForm(request.POST)
+        if form.is_valid():
+            employee_needed = form.save()
+            messages.success(request, f'Request for {employee_needed.quantity} {employee_needed.type} created successfully.')
+            return redirect('kanban_board')
+    else:
+        # Inicializar el formulario con el proyecto preseleccionado
+        form = EmployeeNeededForm(initial={'project_id': project})
+    
+    return render(request, 'novacartografia_employee_management/employee_needed_form.html', {
+        'form': form,
+        'title': f'Create Employee Request for {project.name}',
+        'button_text': 'Create Request',
+        'is_new': True,
+        'project': project
+    })

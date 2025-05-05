@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Employee, Project
+from .models import Employee, Project, EmployeeNeeded
 
 class EmployeeCSVImportForm(forms.Form):
     csv_file = forms.FileField(
@@ -86,6 +86,62 @@ class ProjectForm(forms.ModelForm):
             raise forms.ValidationError("Project name and type are required.")
         
         return cleaned_data
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Añade Tailwind clases a los fields
+        for field_name, field in self.fields.items():
+            field.widget.attrs.update({
+                'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50',
+                'placeholder': field.label,
+            })
+
+class EmployeeNeededForm(forms.ModelForm):
+    class Meta:
+        model = EmployeeNeeded
+        fields = ['project_id', 'type', 'quantity', 'start_date']
+        widgets = {
+            'project_id': forms.Select(attrs={'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50'}),
+            'type': forms.Select(attrs={'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50'}),
+            'quantity': forms.NumberInput(attrs={'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50'}),
+            'start_date': forms.DateTimeInput(attrs={'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50'}),
+        }
+        labels = {
+            'project_id': 'Project',
+            'type': 'Position Type',
+            'quantity': 'Number of Employees Needed',
+            'start_date': 'Start Date'
+        }
+        help_texts = {
+            'project_id': 'Select the project for which you need employees',
+            'type': 'Select the type of position needed',
+            'quantity': 'Enter the number of employees needed',
+            'start_date': 'Select the date when you need these employees to start'
+        }
+        error_messages = {
+            'project_id': {
+                'required': "Please select a project.",
+            },
+            'type': {
+                'required': "Please select a position type.",
+            },
+            'quantity': {
+                'required': "Please enter the number of employees needed.",
+            },
+        }
+        
+        # El método clean debería estar aquí, fuera de la clase Meta
+    def clean(self):
+        cleaned_data = super().clean()
+        project_id = cleaned_data.get('project_id')
+        type = cleaned_data.get('type')
+        quantity = cleaned_data.get('quantity')
+        
+        if not project_id or not type or not quantity:
+            raise forms.ValidationError("Project, position type, and quantity are required.")
+        
+        return cleaned_data
+    
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

@@ -62,6 +62,17 @@
                                 <a href="{% url 'export_projects_csv' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Export CSV</a>
                             </div>
                         </div>
+
+                        <div class="relative" x-data="{ open: false }">
+                            <button @click="open = !open" class="text-white hover:text-white border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
+                                <span>Employee Needs</span>
+                                <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </button>
+                            <div @click.away="open = false" x-show="open" class="origin-top-left absolute left-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
+                                <a href="{% url 'employee_needed_list' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">All Requests</a>
+                                <a href="{% url 'employee_needed_create' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Add Request</a>
+                            </div>
+                        </div>
                         
                         <a href="{% url 'movement_list' %}" class="text-white hover:text-white border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
                             Movements

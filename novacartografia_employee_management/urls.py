@@ -23,4 +23,12 @@ urlpatterns = [
     path('movements/', views.movement_list, name='movement_list'),
     path('kanban/', views.kanban_board, name='kanban_board'),
     path('api/update-employee-project/', views.update_employee_project, name='update_employee_project'),
-]
+    
+    # Rutas para empleados necesitados
+    path('employee-needed/', views.employee_needed_list, name='employee_needed_list'),
+    path('employee-needed/create/', views.employee_needed_create, name='employee_needed_create'),
+    path('employee-needed/<int:pk>/update/', views.employee_needed_update, name='employee_needed_update'),
+    path('employee-needed/<int:pk>/delete/', views.employee_needed_delete, name='employee_needed_delete'),
+    path('employee-needed/<int:pk>/fulfill/', views.employee_needed_fulfill, name='employee_needed_fulfill'),
+    path('employee-needed/create/from-project/<int:project_id>/', views.employee_needed_create_from_project, name='employee_needed_create_from_project'),
+    ]

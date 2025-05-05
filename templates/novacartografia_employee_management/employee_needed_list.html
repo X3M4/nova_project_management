@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Employees Needed{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Employees Needed</h1>
+        <div class="space-x-2">
+            <a href="{% url 'employee_needed_create' %}" class="bg-lime-600 hover:bg-lime-700 text-white font-medium py-2 px-4 rounded flex items-center">
+                <i class="fas fa-plus-circle mr-2"></i> Add New Request
+            </a>
+        </div>
+    </div>
+
+    {% if employee_needed %}
+        <div class="bg-white shadow-md rounded-lg overflow-hidden">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Position Type</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for need in employee_needed %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">
+                                <a href="{% url 'project_detail' need.project_id.id %}" class="text-blue-600 hover:text-blue-800">
+                                    {{ need.project_id.name }}
+                                </a>
+                            </div>
+                            <div class="text-xs text-gray-500">{{ need.project_id.type }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                  {% if need.type == 'TOPÓGRAFO' %}bg-blue-100 text-blue-800
+                                  {% elif need.type == 'DELINEANTE' %}bg-green-100 text-green-800
+                                  {% elif need.type == 'TÉCNICO' %}bg-purple-100 text-purple-800
+                                  {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ need.type }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {{ need.quantity }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {{ need.start_date|date:"F j, Y" }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if need.fulfilled %}
+                                <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                    Fulfilled
+                                </span>
+                            {% else %}
+                                <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800">
+                                    Pending
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <div class="flex justify-end space-x-2">
+                                <a href="{% url 'employee_needed_update' need.id %}" class="text-yellow-600 hover:text-yellow-900">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'employee_needed_delete' need.id %}" class="text-red-600 hover:text-red-900">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                                {% if not need.fulfilled %}
+                                    <a href="{% url 'employee_needed_fulfill' need.id %}" class="text-green-600 hover:text-green-900">
+                                        <i class="fas fa-check-circle"></i>
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="bg-white shadow-md rounded-lg p-8 text-center">
+            <img src="{% static 'img/empty-state.svg' %}" alt="No data" class="mx-auto h-40 mb-4 opacity-50">
+            <h2 class="text-xl font-semibold text-gray-700 mb-2">No employee requests yet</h2>
+            <p class="text-gray-500 mb-6">Get started by adding a new employee request for a project.</p>
+            <a href="{% url 'employee_needed_create' %}" class="bg-lime-600 hover:bg-lime-700 text-white font-medium py-2 px-4 rounded inline-flex items-center">
+                <i class="fas fa-plus-circle mr-2"></i> Add First Request
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
