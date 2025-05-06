@@ -64,6 +64,11 @@ def import_employees_csv(request):
                     job = row.get('Job', '')
                     if not job:  # Also try lowercase version
                         job = row.get('job', '')
+                        
+                    # Check if the state field exists in the CSV row
+                    state = row.get('State', '')
+                    if not state:  # Also try lowercase version
+                        state = row.get('state', '')
                     
                     # Skip empty rows
                     if not name:
@@ -89,17 +94,17 @@ def import_employees_csv(request):
                             # Just one match, we can update it
                             existing_employee = existing_employees.first()
                             
-                            # Check if job or project has changed
-                            if existing_employee.job != job or existing_employee.project_id != project:
-                                # Update the employee
-                                existing_employee.job = job
-                                existing_employee.project_id = project
-                                existing_employee.save()
-                                modified_count += 1
-                                print(f'Updated employee: {name}')
-                            else:
-                                # No changes needed
-                                print(f'Employee already exists and is up to date: {name}')
+                            # # Check if job or project has changed
+                            # if existing_employee.job != job or existing_employee.project_id != project:
+                            #     # Update the employee
+                            #     existing_employee.job = job
+                            #     existing_employee.project_id = project
+                            #     existing_employee.save()
+                            #     modified_count += 1
+                            #     print(f'Updated employee: {name}')
+                            # else:
+                            #     # No changes needed
+                            #     print(f'Employee already exists and is up to date: {name}')
                         else:
                             # Multiple matches - we need to handle this carefully
                             # Option 1: Skip this record and log it
@@ -115,6 +120,7 @@ def import_employees_csv(request):
                             name=name,
                             job=job,
                             project_id=project,
+                            state=state,
                         )
                         imported_count += 1
                         print(f'Created employee: {name}')
@@ -240,11 +246,11 @@ def export_employees_csv(request):
     response['Content-Disposition'] = 'attachment; filename="employees.csv"'
     
     writer = csv.writer(response)
-    writer.writerow(['Name', 'Job', 'Project ID'])
+    writer.writerow(['Name', 'Job', 'Project ID', 'State'])
     
     employees = Employee.objects.all()
     for employee in employees:
-        writer.writerow([employee.name, employee.job, employee.project_id.id if employee.project_id else ''])
+        writer.writerow([employee.name, employee.job, employee.project_id.name if employee.project_id else '', employee.state if employee.state else ''])
     return response
 
 

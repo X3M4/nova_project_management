@@ -17,22 +17,25 @@ class ProjectCSVImportForm(forms.Form):
 class EmployeeForm(forms.ModelForm):
     class Meta:
         model = Employee
-        fields = ['name', 'job', 'project_id']
+        fields = ['name', 'job', 'project_id', 'state']
         labels = {
             'name': 'Full Name',
             'job': 'Job Title',
             'project_id': 'Project',
+            'state': 'State'
         }
         widgets = {
             'name': forms.TextInput(attrs={'placeholder': 'Enter employee name'}),
             'job': forms.TextInput(attrs={'placeholder': 'Enter job title'}),
             'project': forms.Select(attrs={'placeholder': 'Select project'}),
+            'state': forms.TextInput(attrs={'placeholder': 'Enter state'}),
         }
     
     def clean(self):
         cleaned_data = super().clean()
         name = cleaned_data.get('name')
         job = cleaned_data.get('job')
+        state = cleaned_data.get('state')
         
         if not name or not job:
             raise forms.ValidationError("Name and job title are required.")

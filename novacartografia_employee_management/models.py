@@ -24,9 +24,63 @@ class Employee(models.Model):
     name = models.CharField(max_length=100)
     job = models.CharField(max_length=100)
     project_id = models.ForeignKey(Project, on_delete=models.SET_NULL, related_name='employee_set', blank=True, null=True)
+    state = models.CharField(max_length=50, default='valencia', 
+            choices=[
+                ('alava', 'Álava'),
+                ('albacete', 'Albacete'),
+                ('alicante', 'Alicante'),
+                ('almeria', 'Almería'),
+                ('asturias', 'Asturias'),
+                ('avila', 'Ávila'),
+                ('badajoz', 'Badajoz'),
+                ('barcelona', 'Barcelona'),
+                ('burgos', 'Burgos'),
+                ('caceres', 'Cáceres'),
+                ('cadiz', 'Cádiz'),
+                ('cantabria', 'Cantabria'),
+                ('castellon', 'Castellón'),
+                ('ceuta', 'Ceuta'),
+                ('ciudad_real', 'Ciudad Real'),
+                ('cordoba', 'Córdoba'),
+                ('cuenca', 'Cuenca'),
+                ('gerona', 'Gerona'),
+                ('granada', 'Granada'),
+                ('guadalajara', 'Guadalajara'),
+                ('guipuzcoa', 'Guipúzcoa'),
+                ('huelva', 'Huelva'),
+                ('huesca', 'Huesca'),
+                ('islas_baleares', 'Islas Baleares'),
+                ('jaen', 'Jaén'),
+                ('la_coruna', 'La Coruña'),
+                ('la_rioja', 'La Rioja'),
+                ('las_palmas', 'Las Palmas'),
+                ('leon', 'León'),
+                ('lerida', 'Lérida'),
+                ('lugo', 'Lugo'),
+                ('madrid', 'Madrid'),
+                ('malaga', 'Málaga'),
+                ('melilla', 'Melilla'),
+                ('murcia', 'Murcia'),
+                ('navarra', 'Navarra'),
+                ('orense', 'Orense'),
+                ('palencia', 'Palencia'),
+                ('pontevedra', 'Pontevedra'),
+                ('salamanca', 'Salamanca'),
+                ('santa_cruz_de_tenerife', 'Santa Cruz de Tenerife'),
+                ('segovia', 'Segovia'),
+                ('sevilla', 'Sevilla'),
+                ('soria', 'Soria'),
+                ('tarragona', 'Tarragona'),
+                ('teruel', 'Teruel'),
+                ('toledo', 'Toledo'),
+                ('valencia', 'Valencia'),
+                ('valladolid', 'Valladolid'),
+                ('vizcaya', 'Vizcaya'),
+                ('zamora', 'Zamora'),
+                ('zaragoza', 'Zaragoza'),])
     
     def __str__(self):
-        return self.name
+        return self.name - self.state
     
     
     
