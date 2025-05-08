@@ -17,25 +17,58 @@ class ProjectCSVImportForm(forms.Form):
 class EmployeeForm(forms.ModelForm):
     class Meta:
         model = Employee
-        fields = ['name', 'job', 'project_id', 'state']
+        fields = [
+            'name', 'job', 'project_id', 'state', 'academic_training',
+            'driver_license', 'twenty_hours', 'sixty_hours', 
+            'confine', 'mining', 'railway_carriage', 'railway_mounting', 
+            'building', 'office_work', 'scanner', 'leveling', 
+            'static', 'drag'
+        ]
         labels = {
             'name': 'Full Name',
             'job': 'Job Title',
             'project_id': 'Project',
-            'state': 'State'
+            'state': 'Province',
+            'academic_training': 'Academic Training',
+            'driver_license': 'Driver License',
+            'twenty_hours': '20h Training',
+            'sixty_hours': '60h Training',
+            'confine': 'Confined Spaces',
+            'mining': 'Mining',
+            'railway_carriage': 'Railway Carriage',
+            'railway_mounting': 'Railway Mounting',
+            'building': 'Building',
+            'office_work': 'Office Work',
+            'scanner': 'Scanner',
+            'leveling': 'Leveling',
+            'static': 'Static',
+            'drag': 'Drag',
         }
         widgets = {
             'name': forms.TextInput(attrs={'placeholder': 'Enter employee name'}),
             'job': forms.TextInput(attrs={'placeholder': 'Enter job title'}),
-            'project': forms.Select(attrs={'placeholder': 'Select project'}),
-            'state': forms.TextInput(attrs={'placeholder': 'Enter state'}),
+            'project_id': forms.Select(attrs={'placeholder': 'Select project'}),
+            'state': forms.Select(attrs={'placeholder': 'Select province'}),
+            'academic_training': forms.TextInput(attrs={'placeholder': 'E.g. Engineering, Technical degree...'}),
+            'driver_license': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
+            'twenty_hours': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
+            'sixty_hours': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
+            'confine': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
+            'mining': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
+            'railway_carriage': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
+            'railway_mounting': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
+            'building': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
+            'office_work': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
+            'scanner': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
+            'leveling': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
+            'static': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
+            'drag': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
         }
     
     def clean(self):
         cleaned_data = super().clean()
         name = cleaned_data.get('name')
         job = cleaned_data.get('job')
-        state = cleaned_data.get('state')
         
         if not name or not job:
             raise forms.ValidationError("Name and job title are required.")
@@ -44,12 +77,67 @@ class EmployeeForm(forms.ModelForm):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        #Añade Tailwind clases a los fields
-        for field_name, field in self.fields.items():
-            field.widget.attrs.update({
-                'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50',
-                'placeholder': field.label,
-            })
+        
+        # Añadir Tailwind classes a los campos de texto, select, etc.
+        text_fields = ['name', 'job', 'project_id', 'state', 'academic_training']
+        for field_name in text_fields:
+            if field_name in self.fields:
+                self.fields[field_name].widget.attrs.update({
+                    'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50',
+                    'placeholder': self.fields[field_name].label,
+                })
+        
+        # Añadir clases específicas para campos booleanos (checkboxes)
+        checkbox_fields = [
+            'driver_license', 'twenty_hours', 'sixty_hours', 
+            'confine', 'mining', 'railway_carriage', 'railway_mounting', 
+            'building', 'office_work', 'scanner', 'leveling', 
+            'static', 'drag'
+        ]
+        for field_name in checkbox_fields:
+            if field_name in self.fields:
+                self.fields[field_name].widget.attrs.update({
+                    'class': 'h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500',
+                })
+        
+        # Reorganizar el orden de los campos para agruparlos lógicamente
+        field_order = [
+            # Información personal
+            'name', 'job', 'project_id', 'state', 'academic_training',
+            
+            # Licencias y formaciones
+            'driver_license', 'twenty_hours', 'sixty_hours', 
+            
+            # Habilidades específicas
+            'confine', 'mining', 'railway_carriage', 'railway_mounting', 
+            'building', 'office_work', 'scanner', 'leveling', 
+            'static', 'drag'
+        ]
+        
+        # Actualizar el orden de los campos
+        self.order_fields(field_order)
+        
+        # Añadir ayuda contextual a los campos booleanos
+        help_texts = {
+            'driver_license': 'Has valid driver\'s license',
+            'twenty_hours': 'Has completed 20h safety training',
+            'sixty_hours': 'Has completed 60h advanced training',
+            'confine': 'Certified for confined spaces work',
+            'mining': 'Experience in mining environments',
+            'railway_carriage': 'Qualified for railway carriage tasks',
+            'railway_mounting': 'Certified for railway mounting operations',
+            'building': 'Experience with building construction',
+            'office_work': 'Can perform office administrative tasks',
+            'scanner': 'Proficient with scanning equipment',
+            'leveling': 'Experienced in terrain leveling',
+            'static': 'Qualified for static measurements',
+            'drag': 'Trained for drag operations'
+        }
+        
+        # Aplicar los textos de ayuda
+        for field, help_text in help_texts.items():
+            if field in self.fields:
+                self.fields[field].help_text = help_text
 
 class ProjectForm(forms.ModelForm):
     class Meta:

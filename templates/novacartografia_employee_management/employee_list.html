@@ -2,68 +2,132 @@
 
 {% block title %}Employees{% endblock %}
 
+{% block extra_css %}
+  <style>
+    /* Estilos específicos para ajustar el ancho de las columnas */
+    .table-auto {
+      table-layout: auto; /* Permite que las columnas se ajusten al contenido */
+    }
+    
+    /* Evita que las columnas se estiren demasiado */
+    .fit-content {
+      width: 1%; /* Truco para que la columna se ajuste al contenido */
+      white-space: nowrap; /* Evita que el texto se rompa en múltiples líneas */
+    }
+    
+    /* Para la columna de acciones, aseguramos un ancho suficiente */
+    .actions-column {
+      min-width: 120px;
+    }
+    
+    /* Estilos para asegurar que la tabla ocupa todo el ancho disponible */
+    .table-container {
+      width: 100%;
+    }
+    
+    /* Permitir que la tabla no ocupe todo el ancho si el contenido es corto */
+    .table-natural-width {
+      width: auto;
+      margin: 0 auto;
+    }
+  </style>
+{% endblock %}
+
 {% block content %}
-<div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-    <h2 class="text-2xl font-bold text-gray-800 mb-4 md:mb-0">Employees</h2>
-    <div class="flex space-x-2">
-        <a href="{% url 'employee_create' %}" class="bg-lime-600 hover:bg-lime-700 text-white font-medium py-2 px-4 rounded flex items-center">
-            <i class="fas fa-plus mr-2"></i> Add Employee
-        </a>
-        <a href="{% url 'import_employees_csv' %}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded flex items-center">
-            <i class="fas fa-file-import mr-2"></i> Import CSV
-        </a>
-        <a href="{% url 'export_employees_csv' %}" class="bg-amber-600 hover:bg-amber-700 text-white font-medium py-2 px-4 rounded flex items-center">
-            <i class="fas fa-download mr-2"></i> Export to CSV
-        </a>
+<!-- Contenedor principal con padding mínimo para no estar pegado a los bordes -->
+<div class="main-content-wrapper">    
+    <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-4">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4 md:mb-0">Employees</h2>
+        <div class="flex flex-wrap gap-2">
+            <a href="{% url 'employee_create' %}" class="bg-lime-600 hover:bg-lime-700 text-white font-medium py-2 px-4 rounded flex items-center">
+                <i class="fas fa-plus mr-2"></i> Add Employee
+            </a>
+            <a href="{% url 'import_employees_csv' %}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded flex items-center">
+                <i class="fas fa-file-import mr-2"></i> Import CSV
+            </a>
+            <a href="{% url 'export_employees_csv' %}" class="bg-amber-600 hover:bg-amber-700 text-white font-medium py-2 px-4 rounded flex items-center">
+                <i class="fas fa-download mr-2"></i> Export to CSV
+            </a>
+        </div>
     </div>
-</div>
 
-<div class="bg-white shadow overflow-hidden rounded-lg">
-    <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Province</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                {% for employee in employees %}
-                <tr class="hover:bg-gray-50">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ employee.name }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ employee.job }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ employee.get_state_display }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {% if employee.project_id %}{{ employee.project_id }}{% else %}-{% endif %}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <a href="{% url 'employee_detail' employee.id %}" class="text-blue-600 hover:text-blue-900 mr-3">
-                            <i class="fas fa-eye"></i>
-                        </a>
-                        <a href="{% url 'employee_update' employee.id %}" class="text-yellow-600 hover:text-yellow-900 mr-3">
-                            <i class="fas fa-edit"></i>
-                        </a>
-                        <a href="{% url 'employee_delete' employee.id %}" class="text-red-600 hover:text-red-900">
-                            <i class="fas fa-trash"></i>
-                        </a>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">No employees found.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <!-- Contenedor de la tabla: eliminar restricciones de ancho y asegurar ocupar todo el espacio -->
+    <div class="bg-white shadow overflow-hidden rounded-lg table-container">
+        <div class="w-full overflow-x-auto flex justify-center">
+            <table class="table-natural-width divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider fit-content">Name</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider fit-content">Job</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider fit-content">Province</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider fit-content">Project</th>
+                        <th scope="col" class="px-10 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider actions-column">Driver License</th>
+                        <th scope="col" class="px-10 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider actions-column">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for employee in employees %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 text-sm font-medium text-gray-900 fit-content">{{ employee.name }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500 fit-content">{{ employee.job }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500 fit-content">{{ employee.get_state_display }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500 fit-content">
+                            {% if employee.project_id %}{{ employee.project_id }}{% else %}-{% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500 fit-content"><div class="ml-5 {% if employee.driver_license %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-8 h-8 flex items-center justify-center">
+                            <i class="fa-solid fa-id-card text-xl"></i>
+                        </div></td>
+                        <td class="px-10 py-4 text-sm font-medium actions-column">
+                            <div class="flex space-x-5">
+                                <a href="{% url 'employee_detail' employee.id %}" class="text-blue-600 hover:text-blue-900">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'employee_update' employee.id %}" class="text-yellow-600 hover:text-yellow-900">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'employee_delete' employee.id %}" class="text-red-600 hover:text-red-900">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">No employees found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
-</div>
 
-<div class="mt-6">
-    <a href="{% url 'export_employees_csv' %}" class="inline-flex items-center px-4 py-2 border border-blue-300 text-sm font-medium rounded-md text-blue-700 bg-white hover:bg-gray-50">
-        <i class="fas fa-download mr-2"></i> Export to CSV
-    </a>
+    {% if is_paginated %}
+    <!-- Paginación aquí -->
+    <div class="mt-4 flex justify-center">
+        <nav class="inline-flex rounded-md shadow">
+            {% if page_obj.has_previous %}
+            <a href="?page=1" class="py-2 px-3 bg-white border border-gray-300 text-sm leading-5 font-medium text-gray-500 hover:text-gray-400 rounded-l-md">
+                <i class="fas fa-angle-double-left"></i>
+            </a>
+            <a href="?page={{ page_obj.previous_page_number }}" class="py-2 px-3 bg-white border border-gray-300 text-sm leading-5 font-medium text-gray-500 hover:text-gray-400">
+                <i class="fas fa-angle-left"></i>
+            </a>
+            {% endif %}
+            
+            <span class="py-2 px-3 bg-white border border-gray-300 text-sm leading-5 font-medium text-gray-700">
+                {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+            </span>
+            
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}" class="py-2 px-3 bg-white border border-gray-300 text-sm leading-5 font-medium text-gray-500 hover:text-gray-400">
+                <i class="fas fa-angle-right"></i>
+            </a>
+            <a href="?page={{ page_obj.paginator.num_pages }}" class="py-2 px-3 bg-white border border-gray-300 text-sm leading-5 font-medium text-gray-500 hover:text-gray-400 rounded-r-md">
+                <i class="fas fa-angle-double-right"></i>
+            </a>
+            {% endif %}
+        </nav>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

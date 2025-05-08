@@ -3,44 +3,26 @@
 {% block title %}{{ employee.name }} - Employee Details{% endblock %}
 
 {% block content %}
-<div class="mb-6 flex justify-between items-center">
-    <h2 class="text-2xl font-bold text-gray-800">Employee Details</h2>
-    <div class="flex space-x-2">
-        <a href="{% url 'kanban_board' %}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded flex items-center">
-            <i class="fas fa-arrow-left mr-2"></i> Back to List
-        </a>
-        <a href="{% url 'employee_update' employee.id %}" class="bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded flex items-center">
-            <i class="fas fa-edit mr-2"></i> Edit
-        </a>
-        <a href="{% url 'employee_delete' employee.id %}" class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded flex items-center">
-            <i class="fas fa-trash mr-2"></i> Delete
-        </a>
-    </div>
-</div>
-
+<!-- filepath: /home/p102/django_projects/nova_workers_management/templates/novacartografia_employee_management/employee_detail.html -->
 <div class="bg-white shadow overflow-hidden sm:rounded-lg">
-    <div class="px-4 py-5 sm:px-6 bg-primary-600">
-        <h3 class="text-lg leading-6 font-medium text-white">{{ employee.name }}</h3>
-        <p class="mt-1 max-w-2xl text-sm text-primary-100">Employee Information</p>
+    <div class="px-4 py-5 sm:px-6 bg-primary-600 {% if 'TOPÓGRAFO' in employee.job  %} bg-green-500 {% elif 'Auxiliar' in employee.job %} bg-yellow-400 {% elif 'Piloto' in employee.job %}bg-indigo-500 {% else %} bg-orange-500 {% endif %}">
+        <h1 class="text-3xl leading-6 font-medium text-gray-700 {% if 'Auxiliar' in employee.job %} {% else %} text-white {% endif %}">{{ employee.name }}</h1>
     </div>
     
     <div class="border-t border-gray-200">
-        <dl>
-            <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                <dt class="text-sm font-medium text-gray-500">Full name</dt>
-                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ employee.name }}</dd>
-            </div>
+        <div class="flex">
+            
             <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                <dt class="text-sm font-medium text-gray-500">Job title</dt>
-                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ employee.job }}</dd>
-            </div>
-            <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                <dt class="text-sm font-medium text-gray-500">State</dt>
-                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ employee.get_state_display }}</dd>
+                <dt class="text-base font-medium text-gray-500">Job title</dt>
+                <dd class="mt-1 text-base text-gray-900 sm:mt-0 sm:col-span-2">{{ employee.job }}</dd>
             </div>
             <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                <dt class="text-sm font-medium text-gray-500">Current project</dt>
-                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                <dt class="text-base font-medium text-gray-500">Province</dt>
+                <dd class="mt-1 text-base text-gray-900 sm:mt-0 sm:col-span-2">{{ employee.get_state_display }}</dd>
+            </div>
+            <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                <dt class="text-base font-medium text-gray-500">Current project</dt>
+                <dd class="mt-1 text-base text-gray-900 sm:mt-0 sm:col-span-2">
                     {% if employee.project_id %}
                         <a href="{% url 'project_detail' employee.project_id.id %}" class="text-primary-600 hover:text-primary-800">
                             {{ employee.project_id.name }}
@@ -50,13 +32,172 @@
                     {% endif %}
                 </dd>
             </div>
-            <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                <dt class="text-sm font-medium text-gray-500">Employee ID</dt>
-                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ employee.id }}</dd>
+            <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                <dt class="text-base font-medium text-gray-500">Academic Training</dt>
+                <dd class="mt-1 text-base text-gray-900 sm:mt-0 sm:col-span-2">
+                    {{ employee.academic_training|default:"Not specified" }}
+                </dd>
             </div>
-        </dl>
+            <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                <dt class="text-base font-medium text-gray-500">Employee ID</dt>
+                <dd class="mt-1 text-base text-gray-900 sm:mt-0 sm:col-span-2">{{ employee.id }}</dd>
+            </div>
+            <!-- Licencia de conducir -->
+            <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                <dt class="text-base font-medium text-gray-500">Driver License</dt>
+                <div class="{% if employee.driver_license %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-8 h-8 flex items-center justify-center">
+                    <i class="fa-solid fa-id-card text-xl"></i>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+
+<!-- Certifications & Qualifications -->
+<div class="mt-8 bg-white shadow overflow-hidden sm:rounded-lg">
+    <div class="px-4 py-5 sm:px-6 bg-primary-600 {% if 'TOPÓGRAFO' in employee.job  %} bg-green-500 {% elif 'Auxiliar' in employee.job %} bg-yellow-400 {% elif 'Piloto' in employee.job %}bg-indigo-500 {% else %} bg-orange-500 {% endif %}">
+        <h3 class="text-lg leading-6 font-medium text-gray-700 {% if 'Auxiliar' in employee.job %} {% else %} text-white {% endif %}">Certifications & Skills</h3>
+        <p class="mt-1 max-w-2xl text-base text-gray-600 {% if 'Auxiliar' in employee.job %} {% else %} text-white {% endif %}">Qualifications and technical skills</p>
+    </div>
+    
+    <div class="border-t border-gray-200 p-4">
+        <!-- Grid para mostrar todas las habilidades y certificaciones con iconos -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            
+            
+            <!-- Formación básica de seguridad (20h) -->
+            <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                    <div class="{% if employee.twenty_hours %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-8 h-8 flex items-center justify-center">
+                        <i class="fa-solid fa-2 text-xl"></i>
+                        <i class="fa-solid fa-0 text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="font-medium text-base text-gray-700">Hours</p>
+                       
+                    </div>
+                    
+                </div>
+            </div>
+            
+            <!-- Formación avanzada (60h) -->
+            <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                    <div class="{% if employee.sixty_hours %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-8 h-8 flex items-center justify-center">
+                        <i class="fa-solid fa-6 text-xl"></i>
+                        <i class="fa-solid fa-0 text-xl"></i>
+                    </div>
+                    <div>
+                        <p class="font-medium text-base text-gray-700">Hours</p>
+                       
+                    </div>
+                    
+                </div>
+            </div>
+            
+            <!-- Espacios confinados -->
+            <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                <div class="{% if employee.confine %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-8 h-8 flex items-center justify-center">
+                    <i class="fa-solid fa-square-person-confined text-xl"></i>
+                </div>
+                <div>
+                    <p class="font-medium text-base text-gray-700">Confined Sapces</p>
+                </div>
+            </div>
+            
+            <!-- Minería -->
+            <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                <div class="{% if employee.mining %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-8 h-8 flex items-center justify-center">
+                    <i class="fa-solid fa-gem text-xl"></i>
+                </div>
+                <div>
+                    <p class="font-medium text-base text-gray-700">Mining</p>
+                </div>
+            </div>
+            
+            <!-- Railway Carriage -->
+            <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                <div class="{% if employee.railway_carriage %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-8 h-8 flex items-center justify-center">
+                    <i class="fa-solid fa-train text-xl"></i>
+                </div>
+                <div>
+                    <p class="font-medium text-base text-gray-700">Railway Carriage</p>
+                </div>
+            </div>
+            
+            <!-- Railway Mounting -->
+            <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                <div class="{% if employee.mining %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-8 h-8 flex items-center justify-center">
+                    <i class="fa-solid fa-train-tram text-xl"></i>
+                </div>
+                <div>
+                    <p class="font-medium text-base text-gray-700">Railway Mounting</p>
+                </div>
+            </div>
+            
+            <!-- Building -->
+            <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                <div class="{% if employee.mining %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-8 h-8 flex items-center justify-center">
+                    <i class="fa-solid fa-hammer text-xl"></i>
+                </div>
+                <div>
+                    <p class="font-medium text-base text-gray-700">Building</p>
+                </div>
+            </div>
+            
+            <!-- Office Work -->
+            <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                <div class="{% if employee.mining %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-8 h-8 flex items-center justify-center">
+                    <i class="fa-solid fa-file-lines text-xl"></i>
+                </div>
+                <div>
+                    <p class="font-medium text-base text-gray-700">Office Work</p>
+                </div>
+            </div>
+            
+            <!-- Scanner -->
+            <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                <div class="{% if employee.mining %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-8 h-8 flex items-center justify-center">
+                    <i class="fa-solid fa-barcode text-xl"></i>
+                </div>
+                <div>
+                    <p class="font-medium text-base text-gray-700">Scanner</p>
+                </div>
+            </div>
+            
+            <!-- Leveling -->
+            <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                <div class="{% if employee.mining %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-8 h-8 flex items-center justify-center">
+                    <i class="fa-solid fa-scale-balanced text-xl"></i>
+                </div>
+                <div>
+                    <p class="font-medium text-base text-gray-700">Leveling</p>
+                </div>
+            </div>
+            
+            <!-- Static -->
+            <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                <div class="{% if employee.mining %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-8 h-8 flex items-center justify-center">
+                    <i class="fa-solid fa-hand text-xl"></i>
+                </div>
+                <div>
+                    <p class="font-medium text-base text-gray-700">Static</p>
+                </div>
+            </div>
+            
+            <!-- Drag -->
+            <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                <div class="{% if employee.drag %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-8 h-8 flex items-center justify-center">
+                    <i class="fa-solid fa-xmarks-lines text-xl"></i>
+                </div>
+                <div>
+                    <p class="font-medium text-base text-gray-700">Trace</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 {% if movements %}
 <div class="mt-8">
@@ -67,7 +208,7 @@
             <li class="px-4 py-4 sm:px-6">
                 <div class="flex items-center">
                     <div class="min-w-0 flex-1">
-                        <p class="text-sm font-medium text-gray-900 truncate">
+                        <p class="text-base font-medium text-gray-900 truncate">
                             {% if movement.previous_project %}
                                 Moved from <span class="font-semibold">{{ movement.previous_project.name }}</span> to 
                                 <span class="font-semibold">{{ movement.project.name }}</span>
@@ -75,7 +216,7 @@
                                 Assigned to <span class="font-semibold">{{ movement.project.name }}</span>
                             {% endif %}
                         </p>
-                        <p class="text-sm text-gray-500">
+                        <p class="text-base text-gray-500">
                             {{ movement.date|date:"F j, Y, g:i a" }}
                         </p>
                     </div>

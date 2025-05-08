@@ -83,7 +83,7 @@
                 </div>
               {% endif %}
 
-              {% if employee.project_id == project and 'Jefe de Proyectos' in employee.job %}
+              {% if employee.project_id == project and 'Proyectos' in employee.job %}
                 <div class="employee-card p-2 bg-orange-300 border border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
                   <div class="flex justify-between items-start">
                     <div>
@@ -135,7 +135,7 @@
                             <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
                             <p class="text-xs text-gray-500">{{ employee.get_state_display }}</p>
                           </div>
-                          <a href="{% url 'employee_update' employee.id %}" class="text-green-500 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
+                          <a href="{% url 'employee_detail' employee.id %}" class="text-green-500 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
                         </div>
                       </div>
                     {% endif %}
@@ -147,7 +147,7 @@
                             <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
                             <p class="text-xs text-gray-500">{{ employee.get_state_display }}</p>
                           </div>
-                          <a href="{% url 'employee_update' employee.id %}" class="text-yellow-500 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
+                          <a href="{% url 'employee_detail' employee.id %}" class="text-yellow-500 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
                         </div>
                       </div>
                     {% endif %}
@@ -159,19 +159,19 @@
                             <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
                             <p class="text-xs text-gray-500">{{ employee.get_state_display }}</p>
                           </div>
-                          <a href="{% url 'employee_update' employee.id %}" class="text-blue-600 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
+                          <a href="{% url 'employee_detail' employee.id %}" class="text-blue-600 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
                         </div>
                       </div>
                     {% endif %}
 
-                    {% if employee.project_id == project and 'Jefe de Proyectos' in employee.job %}
+                    {% if employee.project_id == project and 'Proyectos' in employee.job %}
                       <div class="employee-card p-2 bg-orange-300 border border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
                         <div class="flex justify-between items-start">
                           <div>
                             <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
                             <p class="text-xs text-gray-500">{{ employee.get_state_display }}</p>
                           </div>
-                          <a href="{% url 'employee_update' employee.id %}" class="text-orange-600 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
+                          <a href="{% url 'employee_detail' employee.id %}" class="text-orange-600 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
                         </div>
                       </div>
                     {% endif %}
@@ -237,7 +237,7 @@
                             <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
                             <p class="text-xs text-gray-500">{{ employee.job }}</p>
                           </div>
-                          <a href="{% url 'employee_update' employee.id %}" class="text-green-500 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
+                          <a href="{% url 'employee_detail' employee.id %}" class="text-green-500 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
                         </div>
                       </div>
                     {% endif %}
@@ -249,7 +249,7 @@
                             <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
                             <p class="text-xs text-gray-500">{{ employee.job }}</p>
                           </div>
-                          <a href="{% url 'employee_update' employee.id %}" class="text-yellow-500 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
+                          <a href="{% url 'employee_detail' employee.id %}" class="text-yellow-500 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
                         </div>
                       </div>
                     {% endif %}
@@ -261,19 +261,19 @@
                             <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
                             <p class="text-xs text-gray-500">{{ employee.job }}</p>
                           </div>
-                          <a href="{% url 'employee_update' employee.id %}" class="text-blue-600 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
+                          <a href="{% url 'employee_detail' employee.id %}" class="text-blue-600 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
                         </div>
                       </div>
                     {% endif %}
 
-                    {% if employee.project_id == project and 'Jefe de Proyectos' in employee.job %}
+                    {% if employee.project_id == project and 'Proyectos' in employee.job %}
                       <div class="employee-card p-2 bg-orange-300 border border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
                         <div class="flex justify-between items-start">
                           <div>
                             <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
                             <p class="text-xs text-gray-500">{{ employee.job }}</p>
                           </div>
-                          <a href="{% url 'employee_update' employee.id %}" class="text-orange-600 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
+                          <a href="{% url 'employee_detail' employee.id %}" class="text-orange-600 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
                         </div>
                       </div>
                     {% endif %}

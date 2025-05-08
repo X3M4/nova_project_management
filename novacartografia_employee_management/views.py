@@ -17,9 +17,6 @@ def employee_list(request):
 # Create your views here.
 @login_required
 def import_employees_csv(request):
-    # Create form instance outside the if/else blocks
-    form = EmployeeCSVImportForm()
-    
     if request.method == 'POST':
         form = EmployeeCSVImportForm(request.POST, request.FILES)
         if form.is_valid():
@@ -27,113 +24,164 @@ def import_employees_csv(request):
             
             # Check if file is CSV
             if not csv_file.name.endswith('.csv'):
-                messages.error(request, 'This is not a CSV file')
+                messages.error(request, 'File is not CSV type')
+                return redirect('import_employees_csv')
+                
+            # If file is too large
+            if csv_file.multiple_chunks():
+                messages.error(request, 'Uploaded file is too big (%.2f MB).' % (csv_file.size/(1000*1000),))
                 return redirect('import_employees_csv')
             
-            # Check file size
-            if csv_file.size > 5242880:  # 5MB limit
-                messages.error(request, 'CSV file is too large')
-                return redirect('import_employees_csv')
-                
-            # Process CSV
             try:
-                # Read CSV
-                csv_data = csv_file.read().decode('utf-8')
-                io_string = io.StringIO(csv_data)
-                reader = csv.DictReader(io_string)
+                decoded_file = csv_file.read().decode('utf-8').splitlines()
+                reader = csv.DictReader(decoded_file)
                 
-                # Verify columns
-                imported_count = 0
+                # Track statistics
+                created_count = 0
                 modified_count = 0
+                error_count = 0
+                error_messages = []
+                
+                # Mapeo de nombres de columnas CSV a nombres de campos del modelo
+                csv_to_model_mapping = {
+                    'Name': 'name',
+                    'Job': 'job',
+                    'State': 'state',
+                    'Academic Training': 'academic_training',
+                    'Driver License': 'driver_license',
+                    'Twenty Hours': 'twenty_hours',
+                    'Sixty Hours': 'sixty_hours',
+                    'Confine': 'confine',
+                    'Mining': 'mining',
+                    'Railway Carriage': 'railway_carriage',
+                    'Railway Mounting': 'railway_mounting',
+                    'Building': 'building',
+                    'Office Work': 'office_work',
+                    'Scanner': 'scanner',
+                    'Leveling': 'leveling',
+                    'Static': 'static',
+                    'Drag': 'drag'
+                    # 'Linear Work' no está en tu modelo, así que no lo incluimos
+                }
+                
+                # Lista de campos booleanos para manejarlos especialmente
+                boolean_fields = [
+                    'driver_license', 'twenty_hours', 'sixty_hours', 
+                    'confine', 'mining', 'railway_carriage', 'railway_mounting',
+                    'building', 'office_work', 'scanner', 'leveling', 
+                    'static', 'drag'
+                ]
+                
+                # Verificar que las columnas requeridas estén presentes
+                required_columns = ['Name', 'Job']
+                if reader.fieldnames:
+                    missing_columns = [col for col in required_columns if col not in reader.fieldnames]
+                    if missing_columns:
+                        messages.error(request, f'CSV file is missing required columns: {", ".join(missing_columns)}')
+                        return redirect('import_employees_csv')
+                
+                # Obtener los valores válidos para el campo state directamente de la definición del campo
+                # Obtenemos la definición del campo 'state' y extraemos los valores válidos
+                valid_states = []
+                state_field = Employee._meta.get_field('state')
+                if hasattr(state_field, 'choices') and state_field.choices:
+                    valid_states = [choice[0] for choice in state_field.choices]
                 
                 for row in reader:
-                    # Get project if exists
-                    project = None
-                    if 'project_id' in row and row['project_id']:
-                        try:
-                            project = Project.objects.get(id=row['project_id'])
-                        except Project.DoesNotExist:
-                            pass
-                    
-                    # Check if the name field exists in the CSV row
-                    name = row.get('Name', '')
-                    if not name:  # Also try lowercase version
-                        name = row.get('name', '')
-                    
-                    # Check if the job field exists in the CSV row
-                    job = row.get('Job', '')
-                    if not job:  # Also try lowercase version
-                        job = row.get('job', '')
+                    try:
+                        # Extraer y normalizar campos básicos usando el mapeo
+                        name = row.get('Name', '').strip()
+                        job = row.get('Job', '').strip()
+                        state = row.get('State', '').strip()
+                        academic_training = row.get('Academic Training', '').strip()
                         
-                    # Check if the state field exists in the CSV row
-                    state = row.get('State', '')
-                    if not state:  # Also try lowercase version
-                        state = row.get('state', '')
-                    
-                    # Skip empty rows
-                    if not name:
-                        continue
-                    
-                    # Look for any unique identifier in the CSV
-                    employee_id = row.get('id', '') or row.get('ID', '') or row.get('employee_id', '')
-                    
-                    # Try to find an existing employee
-                    if employee_id:
-                        # If we have an ID, try to find by ID first
-                        existing_employees = Employee.objects.filter(id=employee_id)
-                        if not existing_employees.exists():
-                            # If no match by ID, fall back to name
-                            existing_employees = Employee.objects.filter(name=name)
-                    else:
-                        # Otherwise just search by name
-                        existing_employees = Employee.objects.filter(name=name)
-                    
-                    if existing_employees.exists():
-                        # Employee(s) exist with this name
-                        if existing_employees.count() == 1:
-                            # Just one match, we can update it
-                            existing_employee = existing_employees.first()
+                        # Skip empty rows
+                        if not name and not job:
+                            continue
+                        
+                        # Preparar los datos base del empleado
+                        employee_data = {
+                            'job': job,
+                            'academic_training': academic_training,
+                        }
+                        
+                        # Solo establecer el estado si se proporciona y es válido
+                        if state:
+                            # Normalizar el estado para comparar (convertir a minúsculas y reemplazar espacios)
+                            state_normalized = state.lower().replace(' ', '_')
+                            # Buscar coincidencias aproximadas
+                            matched_state = None
+                            for valid_state in valid_states:
+                                if valid_state == state_normalized or valid_state.replace('_', ' ') == state.lower():
+                                    matched_state = valid_state
+                                    break
                             
-                            # # Check if job or project has changed
-                            # if existing_employee.job != job or existing_employee.project_id != project:
-                            #     # Update the employee
-                            #     existing_employee.job = job
-                            #     existing_employee.project_id = project
-                            #     existing_employee.save()
-                            #     modified_count += 1
-                            #     print(f'Updated employee: {name}')
-                            # else:
-                            #     # No changes needed
-                            #     print(f'Employee already exists and is up to date: {name}')
+                            if matched_state:
+                                employee_data['state'] = matched_state
+                        
+                        # Procesar cada campo booleano
+                        for csv_field, model_field in csv_to_model_mapping.items():
+                            # Solo procesar campos booleanos
+                            if model_field in boolean_fields and csv_field in row:
+                                value = row.get(csv_field, '').strip()
+                                
+                                # Convertir el valor a booleano
+                                if value.lower() in ('true', 't', 'yes', 'y', '1', 'si', 'sí', 'x', '✓', '✔'):
+                                    employee_data[model_field] = True
+                                elif value.lower() in ('false', 'f', 'no', 'n', '0', '', ' '):
+                                    employee_data[model_field] = False
+                        
+                        # Check if employee exists
+                        existing_employee = Employee.objects.filter(name=name).first()
+                        
+                        if existing_employee:
+                            # Actualizar campos del empleado existente (excepto project_id)
+                            is_modified = False
+                            
+                            for field, value in employee_data.items():
+                                # Solo actualizar si el valor es diferente al actual
+                                if getattr(existing_employee, field) != value:
+                                    setattr(existing_employee, field, value)
+                                    is_modified = True
+                            
+                            if is_modified:
+                                existing_employee.save()
+                                modified_count += 1
                         else:
-                            # Multiple matches - we need to handle this carefully
-                            # Option 1: Skip this record and log it
-                            print(f'Multiple employees found with name "{name}" - skipping import')
-                            # Option 2: Create a new employee with a slightly different name
-                            # new_name = f"{name} (Imported {timezone.now().strftime('%Y-%m-%d %H:%M')})"
-                            # Employee.objects.create(name=new_name, job=job, project_id=project)
-                            # imported_count += 1
-                            # print(f'Created employee with modified name: {new_name}')
-                    else:
-                        # Employee doesn't exist, create a new one
-                        Employee.objects.create(
-                            name=name,
-                            job=job,
-                            project_id=project,
-                            state=state,
-                        )
-                        imported_count += 1
-                        print(f'Created employee: {name}')
-
-                messages.success(request, f'Successfully imported {imported_count} employees and updated {modified_count} existing employees.')
+                            # Añadir el nombre para crear el empleado
+                            employee_data['name'] = name
+                            
+                            Employee.objects.create(**employee_data)
+                            created_count += 1
+                    except Exception as e:
+                        error_count += 1
+                        error_detail = f"Error in row with name '{name}': {str(e)}"
+                        error_messages.append(error_detail)
+                        print(error_detail)  # Debug info
+                        continue
+                
+                # Show results
+                messages.success(request, f'CSV Import complete: {created_count} employees created, {modified_count} employees updated, {error_count} errors.')
+                
+                # Si hay errores, mostrar los primeros 5 para debugging
+                if error_messages:
+                    detail_message = "First few errors: " + " | ".join(error_messages[:5])
+                    if len(error_messages) > 5:
+                        detail_message += f" and {len(error_messages) - 5} more."
+                    messages.warning(request, detail_message)
+                
                 return redirect('employee_list')
-
+                
             except Exception as e:
-                messages.error(request, f'Error processing file: {e}')
+                messages.error(request, f'Error processing file: {str(e)}')
+                return redirect('import_employees_csv')
+    else:
+        form = EmployeeCSVImportForm()
+        
+    return render(request, 'novacartografia_employee_management/import_employees_csv.html', {
+        'form': form
+    })
     
-    # For GET requests or if form is invalid, render the form
-    return render(request, 'novacartografia_employee_management/import_employees_csv.html', {'form': form})
-
 @login_required
 def import_projects_csv(request):
     # Create form instance outside the if/else blocks
@@ -246,11 +294,25 @@ def export_employees_csv(request):
     response['Content-Disposition'] = 'attachment; filename="employees.csv"'
     
     writer = csv.writer(response)
-    writer.writerow(['Name', 'Job', 'Project ID', 'State'])
+    writer.writerow(['Name', 'Job', 'Project ID', 'State', 'Academic Training', 'Driver License', 'Twenty Hours', 'Sixty Hours', 'Confine', 'Mining', 'Railway Carriage', 'Railway Mounting', 'Building', 'Office Work', 'Scanner', 'Leveling', 'Static', 'Drag'])
     
     employees = Employee.objects.all()
     for employee in employees:
-        writer.writerow([employee.name, employee.job, employee.project_id.name if employee.project_id else '', employee.state if employee.state else ''])
+        writer.writerow([employee.name, employee.job, employee.project_id.name if employee.project_id else '', employee.state if employee.state else '', 
+                        employee.academic_training if employee.academic_training else '',
+                        employee.driver_license if employee.driver_license else '',
+                        employee.twenty_hours if employee.twenty_hours else '',
+                        employee.sixty_hours if employee.sixty_hours else '',
+                        employee.confine if employee.confine else '',
+                        employee.mining if employee.mining else '',
+                        employee.railway_carriage if employee.railway_carriage else '',
+                        employee.railway_mounting if employee.railway_mounting else '',
+                        employee.building if employee.building else '',
+                        employee.office_work if employee.office_work else '',
+                        employee.scanner if employee.scanner else '',
+                        employee.leveling if employee.leveling else '',
+                        employee.static if employee.static else '',
+                        employee.drag if employee.drag else ''])
     return response
 
 

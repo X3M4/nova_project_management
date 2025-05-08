@@ -1,13 +1,35 @@
 /* Custom styles for Nova Cartografia Employee Management */
 
-body {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: row;
+body,
+html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    overflow-x: hidden;
 }
 
 footer {
     margin-top: auto;
+}
+
+
+/* Si hay un contenedor con padding en base.html, sobreescribirlo */
+.container,
+.container-fluid,
+main,
+.content-wrapper {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+/* Añadimos un pequeño padding solo al contenido principal para que no esté pegado a los bordes */
+.main-content-wrapper {
+    padding: 0.5rem;
+    width: 100%;
 }
 
 .table-hover tbody tr:hover {

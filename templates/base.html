@@ -9,7 +9,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     
     {% load static %}
     <!-- Tailwind Config -->
@@ -19,7 +19,7 @@
     <style type="text/tailwindcss">
         @layer utilities {
             .content-container {
-                @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+                @apply w-full mx-auto px-4 sm:px-6 lg:px-8;
             }
         }
     </style>
@@ -28,17 +28,17 @@
 </head>
 <body class="bg-gray-50 min-h-screen flex flex-col ">
     <!-- Navigation -->
-    <nav class="navbar-drpdown-container bg-orange-500 shadow-md">
+    <nav class="navbar-drpdown-container bg-gray-100 shadow-md">
         <div class="content-container">
             <div class="flex justify-between h-16 ml-6">
                 <div class="flex items-center">
                     <div class="flex-shrink-0 flex items-center">
-                        <a href="{% url 'home' %}" class="text-white font-bold text-xl">Nova Cartografia</a>
+                        <a href="{% url 'home' %}" class="text-orange-500 font-bold text-xl">Nova Cartografia</a>
                     </div>
                     <div class="hidden sm:ml-6 sm:flex sm:space-x-4">
                         <!-- Main Navigation -->
                         <div class="relative" x-data="{ open: false }">
-                            <button @click="open = !open" class="text-white hover:text-white border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
+                            <button @click="open = !open" class="text-orange-500 hover:text-white border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
                                 <span>Employees</span>
                                 <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </button>
@@ -51,7 +51,7 @@
                         </div>
                         
                         <div class="relative" x-data="{ open: false }">
-                            <button @click="open = !open" class="text-white hover:text-white border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
+                            <button @click="open = !open" class="text-orange-500 hover:text-white border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
                                 <span>Projects</span>
                                 <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </button>
@@ -64,7 +64,7 @@
                         </div>
 
                         <div class="relative" x-data="{ open: false }">
-                            <button @click="open = !open" class="text-white hover:text-white border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
+                            <button @click="open = !open" class="text-orange-500 hover:text-white border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
                                 <span>Employee Needs</span>
                                 <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </button>
@@ -74,11 +74,11 @@
                             </div>
                         </div>
                         
-                        <a href="{% url 'movement_list' %}" class="text-white hover:text-white border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
+                        <a href="{% url 'movement_list' %}" class="text-orange-500 hover:text-white border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
                             Movements
                         </a>
                         
-                        <a href="{% url 'kanban_board' %}" class="text-white hover:text-white border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
+                        <a href="{% url 'kanban_board' %}" class="text-orange-500 hover:text-white border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
                             Kanban Board
                         </a>
                     </div>
