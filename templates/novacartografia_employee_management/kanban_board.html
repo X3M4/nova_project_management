@@ -239,6 +239,9 @@
                           </div>
                           <a href="{% url 'employee_detail' employee.id %}" class="text-green-500 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
                         </div>
+                        <div class="{% if employee.driver_license == False %}text-red-500{% endif %} mr-3 flex-shrink-0 w-8 h-8 flex items-center justify-center">
+                          {% if employee.driver_license == False %}<i class="fa-solid fa-id-card text-base"></i> {% endif %}
+                        </div>
                       </div>
                     {% endif %}
 
