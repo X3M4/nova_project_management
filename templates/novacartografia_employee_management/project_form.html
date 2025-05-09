@@ -44,6 +44,23 @@
             </div>
 
             <div class="mb-4">
+                <label for="{{ form.manager.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                    Responsable del Proyecto
+                </label>
+                {{ form.manager }}
+                {% if form.manager.help_text %}
+                    <p class="mt-1 text-xs text-gray-500">{{ form.manager.help_text }}</p>
+                {% endif %}
+                {% if form.manager.errors %}
+                    <div class="mt-1 text-sm text-red-600">
+                        {% for error in form.manager.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="mb-4">
                 <label for="{{ form.type.id_for_label }}" class="block text-sm font-medium text-gray-700">
                     {{ form.type.label }}
                 </label>

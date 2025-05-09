@@ -9,6 +9,7 @@ from django.contrib.auth.decorators import login_required
 from .forms import EmployeeCSVImportForm, EmployeeForm, EmployeeNeededForm, ProjectCSVImportForm, ProjectForm
 from .models import Employee, Project, ProjectMovementLine, EmployeeNeeded
 from django.http import HttpResponse, JsonResponse
+from django.db.models import Case, When, Value, CharField
 
 @login_required
 def employee_list(request):
@@ -400,7 +401,15 @@ def export_projects_csv(request):
 
 @login_required
 def project_list(request):
-    projects = Project.objects.all()
+    # Ordenamiento más sofisticado que coloca los proyectos sin manager al final
+    projects = Project.objects.annotate(
+        manager_order=Case(
+            When(manager__isnull=True, then=Value('ZZZZZZ')),  # Un valor que será ordenado al final
+            default='manager',
+            output_field=CharField(),
+        )
+    ).order_by('manager_order', 'name')
+    
     return render(request, 'novacartografia_employee_management/project_list.html', {'projects': projects})
 
 @login_required
@@ -473,21 +482,22 @@ def movement_list(request):
 
 @login_required
 def kanban_board(request):
-    # Usar employee_set en lugar de employees
-    projects = Project.objects.all().prefetch_related('employee_set')
-    employees = Employee.objects.all()
-    unassigned_employees = employees.filter(project_id__isnull=True).count()
+    # Lo mismo para la vista de Kanban
+    projects = Project.objects.annotate(
+        manager_order=Case(
+            When(manager__isnull=True, then=Value('ZZZZZZ')),  # Un valor que será ordenado al final
+            default='manager',
+            output_field=CharField(),
+        )
+    ).order_by('manager_order')
     
-    # Cambiar de count() a queryset para poder iterar
+    employees = Employee.objects.all()
     needs = EmployeeNeeded.objects.filter(fulfilled=False)
-    needs_count = needs.count()  # Si necesitas el conteo separado
     
     return render(request, 'novacartografia_employee_management/kanban_board.html', {
         'projects': projects,
         'employees': employees,
-        'unassigned_employees': unassigned_employees,
         'needs': needs,
-        'needs_count': needs_count,  # Añadir el contador como una variable separada
     })
 
 

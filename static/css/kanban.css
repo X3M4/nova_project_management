@@ -271,6 +271,70 @@ button, a {
     .projects-container::-webkit-scrollbar-thumb:active {
         background-color: rgba(107, 114, 128, 0.8);
     }
+
+    /* Contenedor principal de proyectos - para scroll horizontal táctil */
+    .projects-container {
+        -webkit-overflow-scrolling: touch; /* Para scroll con inercia en iOS */
+        touch-action: pan-x;  /* Permitir desplazamiento horizontal nativo pero no zoom */
+        position: relative;
+    }
+    
+    /* Hacer los elementos interactivos más grandes para facilitar su uso en pantallas táctiles */
+    .employee-card {
+        min-height: 70px;
+    }
+    
+    /* Hacer los botones y enlaces más fáciles de pulsar */
+    a, button {
+        padding: 8px !important;
+        min-height: 44px;
+        min-width: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .employee-card a, 
+    .employee-card button,
+    .project-column a:not(.btn),
+    .project-column button:not(.btn) {
+        min-height: unset; /* Excepción para elementos pequeños dentro de tarjetas */
+        padding: 4px !important;
+    }
+    
+    /* Aumentar el espacio entre elementos para evitar toques accidentales */
+    .project-column {
+        margin-right: 16px;
+    }
+    
+    /* Ocultar scrollbar en dispositivos móviles pero mantener la funcionalidad */
+    .projects-container::-webkit-scrollbar {
+        width: 0;
+        height: 0;
+        display: none;
+    }
+    
+    /* Agregar sombras a los lados para indicar que hay más contenido */
+    .kanban-layout::before,
+    .kanban-layout::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 15px;
+        pointer-events: none;
+        z-index: 10;
+    }
+    
+    .kanban-layout::before {
+        left: 0;
+        background: linear-gradient(to right, rgba(255,255,255,0.8), rgba(255,255,255,0));
+    }
+    
+    .kanban-layout::after {
+        right: 0;
+        background: linear-gradient(to left, rgba(255,255,255,0.8), rgba(255,255,255,0));
+    }
 }
 
 /* Sidebar padding adjustments */

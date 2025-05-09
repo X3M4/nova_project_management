@@ -142,21 +142,24 @@ class EmployeeForm(forms.ModelForm):
 class ProjectForm(forms.ModelForm):
     class Meta:
         model = Project
-        fields = ['name', 'type', 'description']
+        fields = ['name', 'type', 'description', 'manager']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50'}),
             'type': forms.Select(attrs={'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50'}),
             'description': forms.Textarea(attrs={'rows': 3, 'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50'}),
+            'manager': forms.Select(attrs={'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50'}),
         }
         labels = {
             'name': 'Project Name',
             'type': 'Project Type',
-            'description': 'Description'
+            'description': 'Description',
+            'manager': 'Project Manager'
         }
         help_texts = {
             'name': 'Enter a descriptive name for this project',
             'type': 'Select the type of project',
-            'description': 'Optional: Add details about this project'
+            'description': 'Optional: Add details about this project',
+            'manager': 'Select the manager responsible for this project',
         }
         error_messages = {
             'name': {

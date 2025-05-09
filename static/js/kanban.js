@@ -367,4 +367,144 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(fixMenuZIndex, 10);
         });
     });
+
+    // Añadir esta función para habilitar el scroll horizontal mediante arrastre
+    function enableDragToScroll() {
+        // El contenedor que tiene scroll horizontal (ajusta el selector según tu estructura)
+        const scrollContainer = document.querySelector('.projects-container');
+        
+        if (!scrollContainer) {
+            console.warn('No se encontró el contenedor de proyectos para habilitar el scroll por arrastre');
+            return;
+        }
+        
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+        let isTouchScrolling = false;
+        
+        // Para eventos de ratón
+        scrollContainer.addEventListener('mousedown', (e) => {
+            // Ignorar si el objetivo es una tarjeta de empleado
+            if (e.target.closest('.employee-card')) return;
+            
+            isDown = true;
+            scrollContainer.style.cursor = 'grabbing';
+            startX = e.pageX - scrollContainer.offsetLeft;
+            scrollLeft = scrollContainer.scrollLeft;
+            e.preventDefault();
+        });
+        
+        scrollContainer.addEventListener('mouseleave', () => {
+            isDown = false;
+            scrollContainer.style.cursor = 'grab';
+        });
+        
+        scrollContainer.addEventListener('mouseup', () => {
+            isDown = false;
+            scrollContainer.style.cursor = 'grab';
+        });
+        
+        scrollContainer.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            
+            // Ignorar si estamos arrastrando una tarjeta
+            if (document.querySelector('.employee-card.dragging')) {
+                return;
+            }
+            
+            const x = e.pageX - scrollContainer.offsetLeft;
+            const walk = (x - startX) * 2; // Velocidad de desplazamiento
+            scrollContainer.scrollLeft = scrollLeft - walk;
+        });
+        
+        // Para eventos táctiles
+        scrollContainer.addEventListener('touchstart', (e) => {
+            // No interceptar eventos si el objetivo es una tarjeta de empleado o botones
+            if (e.target.closest('.employee-card') || 
+                e.target.closest('a') || 
+                e.target.closest('button')) {
+                return;
+            }
+            
+            isDown = true;
+            isTouchScrolling = false;
+            startX = e.touches[0].pageX - scrollContainer.offsetLeft;
+            scrollLeft = scrollContainer.scrollLeft;
+        }, { passive: false });
+        
+        scrollContainer.addEventListener('touchend', () => {
+            isDown = false;
+            isTouchScrolling = false;
+        });
+        
+        scrollContainer.addEventListener('touchmove', (e) => {
+            if (!isDown) return;
+            
+            // No interceptar eventos si estamos arrastrando una tarjeta
+            if (document.querySelector('.employee-card.dragging')) {
+                return;
+            }
+            
+            const x = e.touches[0].pageX - scrollContainer.offsetLeft;
+            const walk = (x - startX) * 2;
+            
+            if (Math.abs(walk) > 10) {
+                isTouchScrolling = true;
+            }
+            
+            if (isTouchScrolling) {
+                scrollContainer.scrollLeft = scrollLeft - walk;
+                
+                // Prevenir comportamiento predeterminado solo cuando estamos desplazando horizontalmente
+                // para permitir el scroll vertical normal en la página
+                e.preventDefault();
+            }
+        }, { passive: false });
+        
+        // Añadir indicador visual para pantallas táctiles
+        if (('ontouchstart' in window) || navigator.maxTouchPoints > 0) {
+            const scrollIndicator = document.createElement('div');
+            scrollIndicator.className = 'scroll-indicator';
+            scrollIndicator.innerHTML = '← Desliza para ver más →';
+            scrollIndicator.style.cssText = `
+                position: absolute;
+                bottom: 10px;
+                left: 50%;
+                transform: translateX(-50%);
+                background-color: rgba(0,0,0,0.6);
+                color: white;
+                padding: 8px 16px;
+                border-radius: 20px;
+                font-size: 14px;
+                opacity: 0.8;
+                transition: opacity 0.5s ease;
+                z-index: 100;
+                pointer-events: none;
+            `;
+            
+            document.querySelector('.kanban-layout')?.appendChild(scrollIndicator);
+            
+            // Ocultar el indicador después de un tiempo
+            setTimeout(() => {
+                scrollIndicator.style.opacity = '0';
+            }, 3000);
+            
+            // Mostrar/ocultar cuando se interactúe con el contenedor
+            scrollContainer.addEventListener('touchstart', () => {
+                scrollIndicator.style.opacity = '0.8';
+                setTimeout(() => {
+                    scrollIndicator.style.opacity = '0';
+                }, 1500);
+            });
+        }
+        
+        // Añadir indicación visual de que el contenedor es arrastrable
+        scrollContainer.style.cursor = 'grab';
+        
+        console.log('Drag-to-scroll habilitado para pantallas táctiles');
+    }
+    
+    // Ejecutar la función para habilitar el scroll por arrastre
+    enableDragToScroll();
 });

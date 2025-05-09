@@ -11,9 +11,19 @@ class Project(models.Model):
         # Otras opciones que necesites...
     ]
     
+    MANAGER_TYPES = [
+        ('cuesta', 'Cuesta'),
+        ('javi', 'Javi'),
+        ('guillermo', 'Guillermo'),
+        ('miguelangel', 'Miguel Ángel'),
+        ('oscar', 'Óscar'),
+        # Otras opciones que necesites...
+    ]
+    
     name = models.CharField(max_length=100)
     type = models.CharField(max_length=50, choices=PROJECT_TYPES, default='proyecto')
     description = models.TextField(blank=True, null=True)
+    manager = models.CharField(max_length=50, choices=MANAGER_TYPES, null=True, blank=True)
 
     def __str__(self):
         return self.name
