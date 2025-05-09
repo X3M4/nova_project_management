@@ -162,8 +162,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            // Show loading indicator
-            loadingIndicator.classList.remove('hidden');
+            // ELIMINAR EL MOSTRAR EL INDICADOR DE CARGA
+            // loadingIndicator.classList.remove('hidden'); -- Comentar o eliminar esta línea
+            
+            // Mostrar un mensaje de que se está procesando sin spinner
+            showToast('<i class="fas fa-sync-alt mr-2"></i> Actualizando empleado...', 'info');
             
             // Update via AJAX
             fetch('/api/update-employee-project/', {
@@ -184,30 +187,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 return response.json();
             })
             .then(data => {
-                loadingIndicator.classList.add('hidden');
+                // ELIMINAR OCULTAR EL INDICADOR DE CARGA
+                // loadingIndicator.classList.add('hidden'); -- Comentar o eliminar esta línea
                 console.log('Server response:', data);
                 
                 if (data.success) {
-                    // Move card to the actual kanban column
-                    kanbanColumn.appendChild(card);
+                    // Mostrar mensaje de éxito
+                    showToast('<i class="fas fa-check-circle mr-2"></i> Empleado asignado correctamente', 'success');
                     
-                    // Remove any existing "no employees" message
-                    const emptyMessage = kanbanColumn.querySelector('.text-xs.text-gray-500.italic');
-                    if (emptyMessage) {
-                        emptyMessage.remove();
-                    }
-                    
-                    // Show success toast
-                    showToast('<i class="fas fa-check-circle mr-2"></i> Employee moved successfully!', 'success');
+                    // Recargar la página después de un breve retraso
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
                 } else {
                     // Show error toast
-                    showToast(`<i class="fas fa-exclamation-triangle mr-2"></i> ${data.error || 'An error occurred'}`, 'error');
+                    showToast(`<i class="fas fa-exclamation-triangle mr-2"></i> ${data.error || 'Ocurrió un error'}`, 'error');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                loadingIndicator.classList.add('hidden');
-                showToast('<i class="fas fa-exclamation-triangle mr-2"></i> Network error occurred', 'error');
+                // loadingIndicator.classList.add('hidden'); -- Comentar o eliminar esta línea
+                showToast('<i class="fas fa-exclamation-triangle mr-2"></i> Error de conexión', 'error');
                 // Asegurar que las visuales se limpien después de un error
                 clearAllDragVisuals();
             });
@@ -258,8 +258,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            // Show loading indicator
-            loadingIndicator.classList.remove('hidden');
+            // ELIMINAR EL MOSTRAR EL INDICADOR DE CARGA
+            // loadingIndicator.classList.remove('hidden'); -- Comentar o eliminar esta línea
+            
+            // Mostrar un mensaje de que se está procesando sin spinner
+            showToast('<i class="fas fa-sync-alt mr-2"></i> Actualizando empleado...', 'info');
             
             // Update via AJAX
             fetch('/api/update-employee-project/', {
@@ -280,30 +283,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 return response.json();
             })
             .then(data => {
-                loadingIndicator.classList.add('hidden');
+                // ELIMINAR OCULTAR EL INDICADOR DE CARGA
+                // loadingIndicator.classList.add('hidden'); -- Comentar o eliminar esta línea
                 console.log('Server response:', data);
                 
                 if (data.success) {
-                    // Move card to the column
-                    column.appendChild(card);
+                    // Mostrar mensaje de éxito
+                    showToast('<i class="fas fa-check-circle mr-2"></i> Empleado asignado correctamente', 'success');
                     
-                    // Remove any existing "no employees" message
-                    const emptyMessage = column.querySelector('.text-xs.text-gray-500.italic');
-                    if (emptyMessage) {
-                        emptyMessage.remove();
-                    }
-                    
-                    // Show success toast
-                    showToast('<i class="fas fa-check-circle mr-2"></i> Employee moved successfully!', 'success');
+                    // Recargar la página después de un breve retraso
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
                 } else {
                     // Show error toast
-                    showToast(`<i class="fas fa-exclamation-triangle mr-2"></i> ${data.error || 'An error occurred'}`, 'error');
+                    showToast(`<i class="fas fa-exclamation-triangle mr-2"></i> ${data.error || 'Ocurrió un error'}`, 'error');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                loadingIndicator.classList.add('hidden');
-                showToast('<i class="fas fa-exclamation-triangle mr-2"></i> Network error occurred', 'error');
+                // loadingIndicator.classList.add('hidden'); -- Comentar o eliminar esta línea
+                showToast('<i class="fas fa-exclamation-triangle mr-2"></i> Error de conexión', 'error');
                 // Asegurar que las visuales se limpien después de un error
                 clearAllDragVisuals();
             });
