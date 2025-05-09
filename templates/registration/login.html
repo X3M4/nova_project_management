@@ -1,13 +1,15 @@
 <!-- filepath: /home/p102/django_projects/nova_workers_management/templates/registration/login.html -->
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Login | Nova Project Management{% endblock %}
 
 {% block content %}
 <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
     <div class="max-w-md w-full space-y-8">
-        <div>
-            <!-- Si tienes un logo, puedes añadirlo aquí -->
+        <div class="text-center">
+            <!-- Añadir la imagen 952.png -->
+            <img class="mx-auto h-32 w-auto" src="{% static 'images/952.png' %}" alt="Nova Workers Management Logo">
             <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
                 Nova Workers Management
             </h2>
