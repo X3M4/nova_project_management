@@ -1,4 +1,5 @@
 import csv
+from django.urls import path
 from django.utils import timezone
 import io
 import json
@@ -632,3 +633,13 @@ def employee_needed_create_from_project(request, project_id):
         'is_new': True,
         'project': project
     })
+
+@login_required
+def home_redirect(request):
+    return redirect('kanban_board')
+
+urlpatterns = [
+    # Otras URLs...
+    path("", home_redirect, name='home'),
+    # Resto de URLs...
+]

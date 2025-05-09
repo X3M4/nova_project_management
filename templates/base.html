@@ -38,7 +38,7 @@
                     <div class="hidden sm:ml-6 sm:flex sm:space-x-4">
                         <!-- Main Navigation -->
                         <div class="relative" x-data="{ open: false }">
-                            <button @click="open = !open" class="text-orange-500 hover:text-white border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
+                            <button @click="open = !open" class="text-orange-500 hover:text-orange-700 border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
                                 <span>Employees</span>
                                 <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </button>
@@ -51,7 +51,7 @@
                         </div>
                         
                         <div class="relative" x-data="{ open: false }">
-                            <button @click="open = !open" class="text-orange-500 hover:text-white border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
+                            <button @click="open = !open" class="text-orange-500 hover:text-orange-700 border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
                                 <span>Projects</span>
                                 <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </button>
@@ -64,7 +64,7 @@
                         </div>
 
                         <div class="relative" x-data="{ open: false }">
-                            <button @click="open = !open" class="text-orange-500 hover:text-white border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
+                            <button @click="open = !open" class="text-orange-500 hover:text-orange-700 border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
                                 <span>Employee Needs</span>
                                 <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </button>
@@ -74,11 +74,11 @@
                             </div>
                         </div>
                         
-                        <a href="{% url 'movement_list' %}" class="text-orange-500 hover:text-white border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
+                        <a href="{% url 'movement_list' %}" class="text-orange-500 hover:text-orange-700 border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
                             Movements
                         </a>
                         
-                        <a href="{% url 'kanban_board' %}" class="text-orange-500 hover:text-white border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
+                        <a href="{% url 'kanban_board' %}" class="text-orange-500 hover:text-orange-700 border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
                             Kanban Board
                         </a>
                     </div>
@@ -87,16 +87,16 @@
                     {% if user.is_authenticated %}
                         <div class="ml-3 relative" x-data="{ open: false }">
                             <div>
-                                <button @click="open = !open" type="button" class="bg-primary-700 flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-primary-800 focus:ring-white">
+                                <button @click="open = !open" type="button" class="bg-orange-600 flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-primary-800 focus:ring-white">
                                     <span class="sr-only">Open user menu</span>
-                                    <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-primary-500">
+                                    <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-orange-500">
                                         <span class="text-xs font-medium leading-none text-white">{{ user.username|slice:":1" }}</span>
                                     </span>
                                 </button>
                             </div>
                             <div @click.away="open = false" x-show="open" class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
                                 <a href="{% url 'admin:index' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Admin</a>
-                                <a href="{% url 'logout' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Logout</a>
+                                <a href="{% url 'login' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Logout</a>
                             </div>
                         </div>
                     {% else %}

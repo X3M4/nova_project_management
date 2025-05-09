@@ -56,7 +56,9 @@ ROOT_URLCONF = "nova_workers_management.urls"
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],  # Add this line to include the templates directory
+        'DIRS': [
+            os.path.join(BASE_DIR, 'templates'),
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -81,8 +83,8 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Authentication URLs
-LOGIN_REDIRECT_URL = 'home'  # or any other URL you want to redirect after login
-LOGOUT_REDIRECT_URL = 'home'
+LOGIN_REDIRECT_URL = 'kanban_board'  # or any other URL you want to redirect after login
+LOGOUT_REDIRECT_URL = 'login'
 LOGIN_URL = 'login'
 
 WSGI_APPLICATION = "nova_workers_management.wsgi.application"
