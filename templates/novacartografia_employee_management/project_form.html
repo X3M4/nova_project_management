@@ -97,6 +97,122 @@
                     </div>
                 {% endif %}
             </div>
+
+            <div class="mb-4">
+                <label for="{{ form.academic_training.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                    {{ form.academic_training.label }}
+                </label>
+                {{ form.academic_training }}
+                {% if form.academic_training.help_text %}
+                    <p class="mt-1 text-xs text-gray-500">{{ form.academic_training.help_text }}</p>
+                {% endif %}
+                {% if form.academic_training.errors %}
+                    <div class="mt-1 text-sm text-red-600">
+                        {% for error in form.academic_trining.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="flex flex-col sm:flex-row sm:space-x-24 w-auto">
+    
+                <div class="mb-4 flex flex-col">
+                    <label for="{{ form.twenty_hours.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        {{ form.twenty_hours.label }}
+                    </label>
+                    {{ form.twenty_hours }}
+                    
+                </div>
+    
+                <div class="mb-4 flex flex-col">
+                    <label for="{{ form.sixty_hours.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        {{ form.sixty_hours.label }}
+                    </label>
+                    {{ form.sixty_hours }}
+                    
+                </div>
+    
+                <div class="mb-4 flex flex-col">
+                    <label for="{{ form.confine.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        {{ form.confine.label }}
+                    </label>
+                    {{ form.confine }}
+                    
+                </div>
+    
+                <div class="mb-4 flex flex-col">
+                    <label for="{{ form.mining.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        {{ form.mining.label }}
+                    </label>
+                    {{ form.mining }}
+                    
+                </div>
+    
+                <div class="mb-4 flex flex-col">
+                    <label for="{{ form.railway_carriage.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        {{ form.railway_carriage.label }}
+                    </label>
+                    {{ form.railway_carriage }}
+                    
+                </div>
+    
+                <div class="mb-4 flex flex-col">
+                    <label for="{{ form.railway_mounting.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        {{ form.railway_mounting.label }}
+                    </label>
+                    {{ form.railway_mounting }}
+                    
+                </div>
+    
+                <div class="mb-4 flex flex-col">
+                    <label for="{{ form.building.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        {{ form.building.label }}
+                    </label>
+                    {{ form.building }}
+                    
+                </div>
+    
+                <div class="mb-4 flex flex-col">
+                    <label for="{{ form.office_work.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        {{ form.office_work.label }}
+                    </label>
+                    {{ form.office_work }}
+                    
+                </div>
+    
+                <div class="mb-4 flex flex-col">
+                    <label for="{{ form.scanner.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        {{ form.scanner.label }}
+                    </label>
+                    {{ form.scanner }}
+                    
+                </div>
+    
+                <div class="mb-4 flex flex-col">
+                    <label for="{{ form.leveling.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        {{ form.leveling.label }}
+                    </label>
+                    {{ form.leveling }}
+                    
+                </div>
+    
+                <div class="mb-4 flex flex-col">
+                    <label for="{{ form.static.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        {{ form.static.label }}
+                    </label>
+                    {{ form.static }}
+                    
+                </div>
+    
+                <div class="mb-4 flex flex-col">
+                    <label for="{{ form.drag.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        {{ form.drag.label }}
+                    </label>
+                    {{ form.drag }}
+                    
+                </div>
+            </div>
             
             <div class="debug-info border border-gray-300 p-3 mb-4 bg-gray-50 rounded">
                 <p class="text-sm font-semibold text-gray-500">Debug Info (Quitar en producción)</p>

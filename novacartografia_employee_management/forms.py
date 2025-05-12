@@ -142,24 +142,66 @@ class EmployeeForm(forms.ModelForm):
 class ProjectForm(forms.ModelForm):
     class Meta:
         model = Project
-        fields = ['name', 'type', 'description', 'manager']
+        fields = ['name', 'type', 'description', 'manager', 'academic_training',
+                  'twenty_hours', 'sixty_hours', 'confine', 'mining', 'railway_carriage',
+                  'railway_mounting', 'building', 'office_work', 'scanner', 'leveling',
+                  'static', 'drag',  ]
         widgets = {
             'name': forms.TextInput(attrs={'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50'}),
             'type': forms.Select(attrs={'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50'}),
             'description': forms.Textarea(attrs={'rows': 3, 'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50'}),
             'manager': forms.Select(attrs={'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50'}),
+            'academic_training': forms.TextInput(attrs={'placeholder': 'E.g. Engineering, Technical degree...'}),
+            'twenty_hours': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
+            'sixty_hours': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
+            'confine': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
+            'mining': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
+            'railway_carriage': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
+            'railway_mounting': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
+            'building': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
+            'office_work': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
+            'scanner': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
+            'leveling': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
+            'static': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
+            'drag': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
         }
         labels = {
             'name': 'Project Name',
             'type': 'Project Type',
             'description': 'Description',
-            'manager': 'Project Manager'
+            'manager': 'Project Manager',
+            'academic_training': 'Academic Training',
+            'twenty_hours': '20h Training',
+            'sixty_hours': '60h Training',
+            'confine': 'Confined Spaces',
+            'mining': 'Mining',
+            'railway_carriage': 'Railway Carriage',
+            'railway_mounting': 'Railway Mounting',
+            'building': 'Building',
+            'office_work': 'Office Work',
+            'scanner': 'Scanner',
+            'leveling': 'Leveling',
+            'static': 'Static',
+            'drag': 'Trace',
         }
         help_texts = {
             'name': 'Enter a descriptive name for this project',
             'type': 'Select the type of project',
             'description': 'Optional: Add details about this project',
             'manager': 'Select the manager responsible for this project',
+            'academic_training': 'E.g. Engineering, Technical degree...',
+            'twenty_hours': 'Has completed 20h safety training',
+            'sixty_hours': 'Has completed 60h advanced training',
+            'confine': 'Certified for confined spaces work',
+            'mining': 'Experience in mining environments',
+            'railway_carriage': 'Qualified for railway carriage tasks',
+            'railway_mounting': 'Certified for railway mounting operations',
+            'building': 'Experience with building construction',
+            'office_work': 'Can perform office administrative tasks',
+            'scanner': 'Proficient with scanning equipment',
+            'leveling': 'Experienced in terrain leveling',
+            'static': 'Qualified for static measurements',
+            'drag': 'Trained for trace operations'
         }
         error_messages = {
             'name': {

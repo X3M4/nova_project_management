@@ -24,6 +24,20 @@ class Project(models.Model):
     type = models.CharField(max_length=50, choices=PROJECT_TYPES, default='proyecto')
     description = models.TextField(blank=True, null=True)
     manager = models.CharField(max_length=50, choices=MANAGER_TYPES, null=True, blank=True)
+    
+    academic_training = models.CharField(max_length=100, blank=True, null=True)
+    twenty_hours = models.BooleanField(default=False)
+    sixty_hours = models.BooleanField(default=False)
+    confine = models.BooleanField(default=False)
+    mining = models.BooleanField(default=False)
+    railway_carriage = models.BooleanField(default=False)
+    railway_mounting = models.BooleanField(default=False)
+    building = models.BooleanField(default=False)
+    office_work = models.BooleanField(default=False)
+    scanner = models.BooleanField(default=False)
+    leveling = models.BooleanField(default=False)
+    static = models.BooleanField(default=False)
+    drag = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name
