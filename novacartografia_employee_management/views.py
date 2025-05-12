@@ -9,7 +9,10 @@ from django.contrib.auth.decorators import login_required
 from .forms import EmployeeCSVImportForm, EmployeeForm, EmployeeNeededForm, ProjectCSVImportForm, ProjectForm
 from .models import Employee, Project, ProjectMovementLine, EmployeeNeeded
 from django.http import HttpResponse, JsonResponse
-from django.db.models import Case, When, Value, CharField
+from django.db.models import Case, When, Value, CharField, Q, IntegerField, Count, Q, BooleanField, FloatField, F
+from django.db.models.functions import Cast
+from functools import reduce
+import operator
 
 @login_required
 def employee_list(request):
@@ -430,13 +433,55 @@ def project_create(request):
         'is_new': True
     })
 
+
+
 @login_required
 def project_detail(request, pk):
     project = get_object_or_404(Project, pk=pk)
     
+    # Contar las habilidades requeridas por el proyecto
+    required_skill_fields = [skill for skill in [
+        'twenty_hours', 'sixty_hours', 'confine', 'mining', 
+        'railway_carriage', 'railway_mounting', 'building', 
+        'office_work', 'scanner', 'leveling', 'static', 'drag'
+    ] if getattr(project, skill, False)]
+    
+    required_skills_count = len(required_skill_fields)
+    
+    # Si hay habilidades requeridas, buscar empleados que coincidan
+    if required_skills_count > 0:
+        # Obtener empleados que tienen al menos una habilidad coincidente
+        # Usamos Q dinámicamente para cada habilidad requerida
+        skill_filter = reduce(operator.or_, [Q(**{skill: True}) for skill in required_skill_fields])
+        employees = Employee.objects.filter(skill_filter)
+        
+        # Ahora hacemos la consulta directa en Python para calcular coincidencias
+        matching_employees = []
+        
+        for emp in employees:
+            # Contar cuántas de las habilidades requeridas tiene este empleado
+            matches = sum(1 for skill in required_skill_fields if getattr(emp, skill, False))
+            percentage = (matches / required_skills_count) * 100
+            
+            # Añadir atributos calculados para usar en la plantilla
+            emp.match_count = matches
+            emp.required_count = required_skills_count
+            emp.match_percentage = percentage
+            emp.is_available = emp.project_id is None
+            
+            matching_employees.append(emp)
+        
+        # Ordenar la lista en Python
+        matching_employees.sort(key=lambda e: (-e.match_percentage, e.name))
+        
+        # Limitar a 50 candidatos
+        employees_with_matching_skills = matching_employees[:30]
+    else:
+        employees_with_matching_skills = []
+    
     context = {
         'project': project,
-        # Los empleados asignados se obtienen en el template con project.employee_set.all
+        'employees_with_matching_skills': employees_with_matching_skills,
     }
     
     return render(request, 'novacartografia_employee_management/project_detail.html', context)
@@ -653,3 +698,33 @@ urlpatterns = [
     path("", home_redirect, name='home'),
     # Resto de URLs...
 ]
+
+@login_required
+def assign_employee_to_project(request, employee_id, project_id):
+    if request.method == 'POST':
+        employee = get_object_or_404(Employee, pk=employee_id)
+        project = get_object_or_404(Project, pk=project_id)
+        
+        # Guardar proyecto anterior para el mensaje
+        old_project = employee.project_id
+        
+        # Asignar el empleado al proyecto
+        employee.project_id = project
+        employee.save()
+        
+        # Crear mensaje apropiado
+        if old_project:
+            messages.success(
+                request, 
+                f'{employee.name} has been reassigned from {old_project.name} to {project.name}.'
+            )
+        else:
+            messages.success(
+                request, 
+                f'{employee.name} has been assigned to {project.name}.'
+            )
+        
+        return redirect('project_detail', pk=project_id)
+    
+    # Si no es POST, redirigir a la página de detalle del proyecto
+    return redirect('project_detail', pk=project_id)

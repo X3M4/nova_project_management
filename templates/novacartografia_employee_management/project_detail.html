@@ -19,7 +19,7 @@
 </div>
 
 <!-- Nueva estructura con dos columnas lado a lado -->
-<div class="flex flex-col md:flex-row gap-6">
+<div class="flex flex-col md:flex-row gap-6 mb-6">
     <!-- Columna izquierda: Información del proyecto (50%) -->
     <div class="w-full md:w-1/2">
         <div class="bg-white shadow overflow-hidden sm:rounded-lg h-full">
@@ -56,6 +56,13 @@
                                 <dt class="text-sm font-medium text-gray-500">Manager</dt>
                                 <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                                     {{ project.manager|default:"No manager available" }}
+                                </dd>
+                            </div>
+
+                            <div class="bg-gray-50 px-4 py-3 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                                <dt class="text-sm font-medium text-gray-500">State</dt>
+                                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                                    {{ project.get_state_display|default:"No state available" }}
                                 </dd>
                             </div>
                             
@@ -275,6 +282,174 @@
                 {% endwith %}
             </div>
         </div>
+        
+    </div>
+
+    <!-- Nueva sección de recomendaciones de empleados -->
+    <!-- Sección de recomendaciones de empleados (ancho completo) -->
+<div class="bg-white shadow overflow-hidden sm:rounded-lg w-full">
+    <div class="px-4 py-5 sm:px-6 bg-green-600">
+        <h3 class="text-lg leading-6 font-medium text-white">Recommended Employees</h3>
+        <p class="mt-1 max-w-2xl text-sm text-white opacity-80">Employees with matching skills for this project</p>
+    </div>
+    
+    <div class="border-t border-gray-200">
+        {% with recommended_employees=employees_with_matching_skills %}
+        {% if recommended_employees %}
+        <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <div class="grid grid-cols-12 gap-4">
+                <div class="col-span-3">Name</div>
+                <div class="col-span-3">Current Project</div>
+                <div class="col-span-3">Matching Skills</div>
+                <div class="col-span-1">Match %</div>
+                <div class="col-span-2">Actions</div>
+            </div>
+        </div>
+        <ul class="divide-y divide-gray-200 max-h-[calc(100vh-450px)] overflow-y-auto">
+            {% for employee in recommended_employees %}
+            <li class="px-4 py-3 {% if employee.is_available %}bg-green-50{% endif %}">
+                <div class="grid grid-cols-12 gap-4">
+                    <div class="col-span-3">
+                        <div class="flex items-center">
+                            <div>
+                                <div class="text-sm font-medium text-gray-900">{{ employee.name }}</div>
+                                <div class="text-xs text-gray-500">{{ employee.job|default:"Not specified" }}</div>
+                                <div class="text-xs {% if project.state == employee.state %} text-lime-600 {% else %} text-rose-500 {% endif %}">{{ employee.get_state_display|default:"Not specified" }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-span-3">
+                        <div class="text-sm">
+                            {% if employee.project_id %}
+                                <a href="{% url 'project_detail' employee.project_id.id %}" class="text-indigo-600 hover:underline">
+                                    {{ employee.project_id.name }}
+                                </a>
+                            {% else %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-green-100 text-green-800">
+                                    Available
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Habilidades coincidentes -->
+                    <div class="col-span-3">
+                        <div class="flex flex-wrap gap-1">
+                            {% if project.twenty_hours and employee.twenty_hours %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                    20h
+                                </span>
+                            {% endif %}
+                            
+                            {% if project.sixty_hours and employee.sixty_hours %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                    60h
+                                </span>
+                            {% endif %}
+                            
+                            {% if project.confine and employee.confine %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                                    Confine
+                                </span>
+                            {% endif %}
+                            
+                            {% if project.mining and employee.mining %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">
+                                    Mining
+                                </span>
+                            {% endif %}
+                            
+                            {% if project.railway_carriage and employee.railway_carriage %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">
+                                    Rail Car
+                                </span>
+                            {% endif %}
+                            
+                            {% if project.railway_mounting and employee.railway_mounting %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                                    Rail Mount
+                                </span>
+                            {% endif %}
+                            
+                            {% if project.building and employee.building %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                    Building
+                                </span>
+                            {% endif %}
+                            
+                            {% if project.office_work and employee.office_work %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-pink-100 text-pink-800">
+                                    Office
+                                </span>
+                            {% endif %}
+                            
+                            {% if project.scanner and employee.scanner %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                                    Scanner
+                                </span>
+                            {% endif %}
+                            
+                            {% if project.leveling and employee.leveling %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-teal-100 text-teal-800">
+                                    Leveling
+                                </span>
+                            {% endif %}
+                            
+                            {% if project.static and employee.static %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-cyan-100 text-cyan-800">
+                                    Static
+                                </span>
+                            {% endif %}
+                            
+                            {% if project.drag and employee.drag %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-lime-100 text-lime-800">
+                                    Drag
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Porcentaje de coincidencia -->
+                    <div class="col-span-1">
+                        <div class="text-sm font-medium">
+                            {% if employee.match_count and employee.required_count %}
+                                {{ employee.match_percentage|floatformat:0 }}%
+                            {% else %}
+                                -
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-span-2 flex justify-end">
+                        <a href="{% url 'employee_detail' employee.id %}" class="text-indigo-600 hover:text-indigo-900 mr-2">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        {% if not employee.project_id %}
+                        <form method="post" action="{% url 'assign_employee_to_project' employee.id project.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="text-green-600 hover:text-green-900">
+                                <i class="fas fa-user-plus"></i> Asignar
+                            </button>
+                        </form>
+                        {% else %}
+                        <form method="post" action="{% url 'assign_employee_to_project' employee.id project.id %}" class="ml-2">
+                            {% csrf_token %}
+                            <button type="submit" class="text-orange-600 hover:text-orange-900">
+                                <i class="fas fa-exchange-alt"></i> Reasignar
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <div class="px-4 py-5 sm:px-6">
+            <p class="text-sm text-gray-500 italic">No recommended employees found with matching skills.</p>
+        </div>
+        {% endif %}
+        {% endwith %}
     </div>
 </div>
 {% endblock %}
