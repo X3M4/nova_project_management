@@ -72,7 +72,12 @@ class Project(models.Model):
                 ('soria', 'Soria'),
                 ('tarragona', 'Tarragona'),
                 ('teruel', 'Teruel'),
-                ('toledo', 'Toledo'), 
+                ('toledo', 'Toledo'),
+                ('valencia', 'Valencia'),
+                ('valladolid', 'Valladolid'),
+                ('vizcaya', 'Vizcaya'),
+                ('zamora', 'Zamora'),
+                ('zaragoza', 'Zaragoza')
             ])
     
     academic_training = models.CharField(max_length=100, blank=True, null=True)
