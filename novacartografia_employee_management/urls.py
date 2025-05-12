@@ -11,6 +11,7 @@ urlpatterns = [
     path('employees/import/', views.import_employees_csv, name='import_employees_csv'),
     path('employees/export/', views.export_employees_csv, name='export_employees_csv'),
     path('employee/<int:employee_id>/assign/<int:project_id>/', views.assign_employee_to_project, name='assign_employee_to_project'),
+    path('employee/<int:employee_id>/unassign/', views.unassign_employee_from_project, name='unassign_employee_from_project'),
     
     
     # Project views (you'll need to implement these)

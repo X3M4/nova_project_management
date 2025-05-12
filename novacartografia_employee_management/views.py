@@ -728,3 +728,27 @@ def assign_employee_to_project(request, employee_id, project_id):
     
     # Si no es POST, redirigir a la página de detalle del proyecto
     return redirect('project_detail', pk=project_id)
+
+
+@login_required
+def unassign_employee_from_project(request, employee_id):
+    if request.method == 'POST':
+        employee = get_object_or_404(Employee, pk=employee_id)
+        
+        # Guardar proyecto anterior para el mensaje
+        old_project = employee.project_id
+        
+        # Desasignar el empleado del proyecto
+        employee.project_id = None
+        employee.save()
+        
+        # Crear mensaje apropiado
+        messages.success(
+            request, 
+            f'{employee.name} has been unassigned from {old_project.name}.'
+        )
+        
+        return redirect('project_detail', pk=old_project.id)
+    
+    # Si no es POST, redirigir a la página de detalle del empleado
+    return redirect('employee_detail', pk=employee_id)
