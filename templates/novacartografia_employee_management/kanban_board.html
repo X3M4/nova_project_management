@@ -1,3 +1,4 @@
+<!-- filepath: /home/p102/django_projects/nova_workers_management/templates/novacartografia_employee_management/kanban_board.html -->
 {% extends 'base.html' %}
 {% load custom_tags %}
 
@@ -711,78 +712,46 @@
   <!-- CSRF Token for AJAX -->
   <!-- CSRF Token for AJAX -->
 {% csrf_token %}
+
+
+<!-- CSRF Token for AJAX -->
+{% csrf_token %}
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    // Aplicar estilos de scroll a todas las columnas del kanban
-    const applyScrollStyles = function() {
-      document.querySelectorAll('.kanban-column').forEach(function(column) {
-        // Asegurar que la columna tenga los estilos correctos
-        column.style.maxHeight = 'calc(100vh - 240px)';
-        column.style.overflowY = 'auto';
-        column.style.overflowX = 'hidden';
-        column.style.paddingBottom = '30px'; // Espacio extra al final
-        
-        // Habilitar scroll con inercia
-        column.style.webkitOverflowScrolling = 'touch';
-        column.style.overscrollBehavior = 'contain';
-        column.style.touchAction = 'pan-y';
-        
-        // Añadir espaciador al final si no existe
-        if (!column.querySelector('.column-spacer')) {
-          const spacer = document.createElement('div');
-          spacer.className = 'column-spacer';
-          spacer.style.height = '20px';
-          spacer.style.width = '100%';
-          column.appendChild(spacer);
-        }
-        
-        // Comprobar si la columna requiere scroll
-        if (column.scrollHeight > column.clientHeight) {
-          console.log('Columna con scroll activado:', column.id, 'Altura contenido:', column.scrollHeight, 'Altura visible:', column.clientHeight);
-        }
-      });
-    };
+    // Corregir específicamente el problema de las barras de desplazamiento duplicadas
+    const sidebar = document.querySelector('.sidebar');
+    const sidebarContent = sidebar.querySelector('.p-4');
+    const employeesPool = sidebar.querySelector('.bg-white.shadow.rounded-lg');
     
-    // Aplicar estilos inmediatamente
-    applyScrollStyles();
-    
-    // Y también después de un breve retraso para asegurar que todos los elementos estén cargados
-    setTimeout(applyScrollStyles, 500);
-    setTimeout(applyScrollStyles, 1500);
-    
-    // Habilitar scroll táctil básico
-    document.querySelectorAll('.kanban-column').forEach(function(column) {
-      let touchStartY = 0;
-      let touchStartScrollTop = 0;
+    if (sidebar && sidebarContent && employeesPool) {
+      // Forzar que el sidebar principal NO tenga scroll
+      sidebar.style.overflow = 'hidden';
       
-      column.addEventListener('touchstart', function(e) {
-        if (e.target.closest('.employee-card') || e.target.closest('a') || e.target.closest('button')) {
-          return; // No interferir con elementos interactivos
+      // Forzar que el contenedor intermedio tampoco tenga scroll
+      sidebarContent.style.overflow = 'hidden';
+      sidebarContent.style.height = '100%';
+      
+      // Solo permitir scroll en el contenedor de empleados
+      employeesPool.style.maxHeight = 'calc(100vh - 220px)';
+      employeesPool.style.overflowY = 'auto';
+      employeesPool.style.overflowX = 'hidden';
+      
+      // Esto es importante para que la barra sea más estrecha
+      const styleElement = document.createElement('style');
+      styleElement.textContent = `
+        .sidebar .bg-white.shadow.rounded-lg::-webkit-scrollbar {
+          width: 4px !important;
+          height: 4px !important;
         }
-        
-        touchStartY = e.touches[0].clientY;
-        touchStartScrollTop = column.scrollTop;
-        column.classList.add('scrolling');
-      });
-      
-      column.addEventListener('touchmove', function(e) {
-        if (!column.classList.contains('scrolling')) return;
-        
-        const touchY = e.touches[0].clientY;
-        const diff = touchStartY - touchY;
-        
-        column.scrollTop = touchStartScrollTop + diff;
-        
-        // Prevenir scroll de página si estamos scrolleando significativamente
-        if (Math.abs(diff) > 10) {
-          e.preventDefault();
+        .sidebar .bg-white.shadow.rounded-lg::-webkit-scrollbar-thumb {
+          background-color: rgba(156, 163, 175, 0.5) !important;
+          border-radius: 4px !important;
         }
-      }, {passive: false});
+      `;
+      document.head.appendChild(styleElement);
       
-      column.addEventListener('touchend', function() {
-        column.classList.remove('scrolling');
-      });
-    });
+      console.log('Barras de desplazamiento corregidas en la sidebar');
+    }
   });
 </script>
 {% endblock %}

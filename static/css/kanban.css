@@ -53,9 +53,55 @@ html {
     border-right: 1px solid #e5e7eb;
     background-color: white;
     height: 100%;
-    overflow-y: auto;
-    z-index: auto; /* Reset any z-index that might be creating issues */
-    position: relative; /* Ensure it doesn't create an unexpected stacking context */
+    overflow: hidden !important; /* Forzar hidden para la sidebar externa */
+    position: relative;
+    z-index: 10;
+}
+
+/* Hacer que solo el contenido interno sea scrolleable, no toda la sidebar */
+.sidebar > div {
+    height: 100%;
+    overflow-y: hidden !important;
+    overflow-x: hidden !important;
+    padding-right: 4px; /* Espacio para la barra de desplazamiento */
+}
+
+/* Asegurarnos que no haya padding doble */
+.sidebar .p-4 {
+    padding: 0.75rem !important;
+    padding-right: calc(0.75rem - 4px) !important; /* Compensar el padding-right del div padre */
+    height: 100%;
+    overflow: hidden !important; /* Eliminar cualquier scroll aquí también */
+    padding-right: 8px; /* Dejar espacio para la barra de desplazamiento del contenedor interno */
+}
+
+/* Corregir el contenedor de empleados no asignados */
+.sidebar .bg-white.shadow.rounded-lg {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    max-height: calc(100vh - 220px);
+}
+
+/* Hacer que la barra de desplazamiento sea más estética */
+.sidebar .bg-white.shadow.rounded-lg::-webkit-scrollbar {
+    width: 4px !important;  /* Reducido de 8px/16px a 4px */
+    height: 4px !important; /* Para scroll horizontal también */
+}
+
+.sidebar .bg-white.shadow.rounded-lg::-webkit-scrollbar-track {
+    background: transparent !important;
+    border-radius: 4px !important;
+}
+
+.sidebar .bg-white.shadow.rounded-lg::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.5) !important;
+    border-radius: 4px !important;
+    border: none !important;
+    background-clip: padding-box;
+}
+
+.sidebar .bg-white.shadow.rounded-lg::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(107, 114, 128, 0.7) !important;
 }
 
 /* Main content area */
@@ -167,6 +213,8 @@ html {
     /* Reduced padding */
     scroll-padding: 8px;
     -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+    position: relative;
 }
 
 .employee-card {
@@ -216,17 +264,17 @@ html {
 .sidebar::-webkit-scrollbar, 
 .main-content::-webkit-scrollbar, 
 .kanban-column::-webkit-scrollbar {
-    height: 16px;  /* Increased from 8px for horizontal scrollbars */
-    width: 16px;   /* Increased from 8px for vertical scrollbars */
+    height: 4px !important;  /* Reducido de 8px/16px a 4px */
+    width: 4px !important;   /* Para scroll horizontal también */
 }
 
 .projects-container::-webkit-scrollbar-thumb, 
 .sidebar::-webkit-scrollbar-thumb, 
 .main-content::-webkit-scrollbar-thumb, 
 .kanban-column::-webkit-scrollbar-thumb {
-    background-color: rgba(32, 103, 227, 0.6);  /* Slightly darker for better visibility */
-    border-radius: 8px;  /* Increased rounding */
-    border: 3px solid transparent;  /* Create padding effect inside the scrollbar */
+    background-color: rgba(156, 163, 175, 0.5) !important;
+    border-radius: 4px !important;
+    border: none !important;
     background-clip: padding-box;
     min-height: 40px;  /* Minimum size for thumb to improve grabability */
 }
@@ -235,15 +283,15 @@ html {
 .sidebar::-webkit-scrollbar-thumb:hover, 
 .main-content::-webkit-scrollbar-thumb:hover, 
 .kanban-column::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(32, 103, 227, 0.6);  /* Even darker on hover for feedback */
+    background-color: rgba(107, 114, 128, 0.7) !important;
 }
 
 .projects-container::-webkit-scrollbar-track, 
 .sidebar::-webkit-scrollbar-track, 
 .main-content::-webkit-scrollbar-track, 
 .kanban-column::-webkit-scrollbar-track {
-    background-color: rgba(22, 37, 247, 0.856);
-    border-radius: 8px;  /* Match the thumb radius */
+    background: transparent !important;
+    border-radius: 4px !important;
 }
 
 /* Add visible buttons at ends of scrollbar for easier touch */
@@ -258,8 +306,8 @@ html {
 
 /* For Firefox */
 * {
-    scrollbar-width: thick;  /* 'auto', 'thin', or 'thick' */
-    scrollbar-color: rgb(244, 104, 10) rgba(139, 242, 156, 0.1);
+    scrollbar-width: thin !important;
+    scrollbar-color: rgba(156, 163, 175, 0.5) transparent !important;
 }
 
 /* For touch targets, ensure interactive items have enough size */
@@ -479,20 +527,22 @@ div[x-show="open"],
 }
 
 .kanban-column::-webkit-scrollbar {
-  width: 8px;
+  width: 4px !important;  /* Reducido de 8px/16px a 4px */
+  height: 4px !important; /* Para scroll horizontal también */
 }
 
 .kanban-column::-webkit-scrollbar-track {
-  background: transparent;
+  background: transparent !important;
+  border-radius: 4px !important;
 }
 
 .kanban-column::-webkit-scrollbar-thumb {
-  background-color: rgba(156, 163, 175, 0.7);
-  border-radius: 10px;
-  border: 2px solid transparent;
-  background-clip: content-box;
+  background-color: rgba(156, 163, 175, 0.5) !important;
+  border-radius: 4px !important;
+  border: none !important;
+  background-clip: padding-box;
 }
 
 .kanban-column::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(107, 114, 128, 0.8);
+  background-color: rgba(107, 114, 128, 0.7) !important;
 }
