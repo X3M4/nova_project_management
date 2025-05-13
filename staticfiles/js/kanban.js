@@ -367,4 +367,247 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(fixMenuZIndex, 10);
         });
     });
+
+    // Añadir esta función para habilitar el scroll horizontal mediante arrastre
+    function enableDragToScroll(scrollContainer) {
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+        let isTouchScrolling = false;
+    
+        // Ratón
+        scrollContainer.addEventListener('mousedown', (e) => {
+            if (e.target.closest('.employee-card')) return;
+    
+            isDown = true;
+            scrollContainer.style.cursor = 'grabbing';
+            startX = e.pageX - scrollContainer.offsetLeft;
+            scrollLeft = scrollContainer.scrollLeft;
+            e.preventDefault();
+        });
+    
+        scrollContainer.addEventListener('mouseleave', () => {
+            isDown = false;
+            scrollContainer.style.cursor = 'grab';
+        });
+    
+        scrollContainer.addEventListener('mouseup', () => {
+            isDown = false;
+            scrollContainer.style.cursor = 'grab';
+        });
+    
+        scrollContainer.addEventListener('mousemove', (e) => {
+            if (!isDown || document.querySelector('.employee-card.dragging')) return;
+    
+            const x = e.pageX - scrollContainer.offsetLeft;
+            const walk = (x - startX) * 2;
+            scrollContainer.scrollLeft = scrollLeft - walk;
+        });
+    
+        // Pantalla táctil
+        scrollContainer.addEventListener('touchstart', (e) => {
+            if (e.target.closest('.employee-card') || e.target.closest('a') || e.target.closest('button')) return;
+    
+            isDown = true;
+            isTouchScrolling = false;
+            startX = e.touches[0].pageX - scrollContainer.offsetLeft;
+            scrollLeft = scrollContainer.scrollLeft;
+        }, { passive: false });
+    
+        scrollContainer.addEventListener('touchend', () => {
+            isDown = false;
+            isTouchScrolling = false;
+        });
+    
+        scrollContainer.addEventListener('touchmove', (e) => {
+            if (!isDown || document.querySelector('.employee-card.dragging')) return;
+    
+            const x = e.touches[0].pageX - scrollContainer.offsetLeft;
+            const walk = (x - startX) * 2;
+    
+            if (Math.abs(walk) > 10) isTouchScrolling = true;
+    
+            if (isTouchScrolling) {
+                scrollContainer.scrollLeft = scrollLeft - walk;
+                e.preventDefault();
+            }
+        }, { passive: false });
+    
+        // Indicador táctil
+        if (('ontouchstart' in window) || navigator.maxTouchPoints > 0) {
+            const scrollIndicator = document.createElement('div');
+            scrollIndicator.className = 'scroll-indicator';
+            scrollIndicator.innerHTML = '← Desliza para ver más →';
+            scrollIndicator.style.cssText = `
+                position: absolute;
+                bottom: 10px;
+                left: 50%;
+                transform: translateX(-50%);
+                background-color: rgba(0,0,0,0.6);
+                color: white;
+                padding: 8px 16px;
+                border-radius: 20px;
+                font-size: 14px;
+                opacity: 0.8;
+                transition: opacity 0.5s ease;
+                z-index: 100;
+                pointer-events: none;
+            `;
+            scrollContainer.appendChild(scrollIndicator);
+    
+            setTimeout(() => { scrollIndicator.style.opacity = '0'; }, 3000);
+    
+            scrollContainer.addEventListener('touchstart', () => {
+                scrollIndicator.style.opacity = '0.8';
+                setTimeout(() => {
+                    scrollIndicator.style.opacity = '0';
+                }, 1500);
+            });
+        }
+    
+        scrollContainer.style.cursor = 'grab';
+        console.log('Drag-to-scroll habilitado en:', scrollContainer);
+    }
+
+    function enableTouchScrolling() {
+        const columns = document.querySelectorAll('.kanban-column');
+        
+        columns.forEach(column => {
+            // Prevenir el comportamiento de arrastrar por defecto para evitar conflictos con drag & drop
+            column.addEventListener('touchstart', function(e) {
+                // No interferir si estamos interactuando con una tarjeta o un elemento interactivo
+                if (e.target.closest('.employee-card') || 
+                    e.target.closest('a') || 
+                    e.target.closest('button') || 
+                    e.target.closest('input')) {
+                    return;
+                }
+                
+                // Obtener la posición inicial
+                const startY = e.touches[0].clientY;
+                const startScrollTop = column.scrollTop;
+                let lastY = startY;
+                let momentum = 0;
+                let lastTimestamp = Date.now();
+                
+                function handleTouchMove(e) {
+                    // Calcular la diferencia de posición
+                    const y = e.touches[0].clientY;
+                    const deltaY = lastY - y;
+                    
+                    // Calcular el momentum (velocidad)
+                    const now = Date.now();
+                    const dt = now - lastTimestamp;
+                    if (dt > 0) {
+                        momentum = deltaY / dt;
+                    }
+                    
+                    // Ajustar el scroll
+                    column.scrollTop += deltaY;
+                    
+                    // Actualizar las últimas posiciones
+                    lastY = y;
+                    lastTimestamp = now;
+                    
+                    // Evitar el scroll de página
+                    if (Math.abs(deltaY) > 5) {
+                        e.preventDefault();
+                    }
+                }
+                
+                function handleTouchEnd(e) {
+                    // Quitar los event listeners
+                    document.removeEventListener('touchmove', handleTouchMove, {passive: false});
+                    document.removeEventListener('touchend', handleTouchEnd);
+                    
+                    // Aplicar momentum scroll para una experiencia más fluida
+                    if (Math.abs(momentum) > 0.1) {
+                        const momentumScroll = function() {
+                            if (Math.abs(momentum) <= 0.1) return;
+                            
+                            column.scrollTop += momentum * 10;
+                            momentum *= 0.95; // Reducir el momentum gradualmente
+                            
+                            requestAnimationFrame(momentumScroll);
+                        };
+                        
+                        requestAnimationFrame(momentumScroll);
+                    }
+                }
+                
+                // Añadir los event listeners para el movimiento y fin del toque
+                document.addEventListener('touchmove', handleTouchMove, {passive: false});
+                document.addEventListener('touchend', handleTouchEnd);
+            }, {passive: true});
+            
+            // Añadir indicador visual de scroll
+            const addScrollIndicator = function() {
+                // Verificar si el contenido necesita scroll
+                if (column.scrollHeight <= column.clientHeight) return;
+                
+                // Crear el indicador solo si no existe
+                if (!column.querySelector('.scroll-indicator')) {
+                    const indicator = document.createElement('div');
+                    indicator.className = 'scroll-indicator';
+                    indicator.innerHTML = '<i class="fas fa-arrows-alt-v"></i>';
+                    indicator.style.cssText = `
+                        position: absolute;
+                        top: 10px;
+                        right: 10px;
+                        background-color: rgba(0,0,0,0.5);
+                        color: white;
+                        padding: 6px;
+                        border-radius: 50%;
+                        width: 28px;
+                        height: 28px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        opacity: 0.7;
+                        transition: opacity 0.5s;
+                        z-index: 10;
+                        pointer-events: none;
+                    `;
+                    
+                    // Posicionar relativamente la columna si es necesario
+                    if (getComputedStyle(column).position === 'static') {
+                        column.style.position = 'relative';
+                    }
+                    
+                    column.appendChild(indicator);
+                    
+                    // Ocultar después de un tiempo
+                    setTimeout(function() {
+                        indicator.style.opacity = '0';
+                    }, 3000);
+                    
+                    // Mostrar cuando se interactúa con la columna
+                    column.addEventListener('touchstart', function() {
+                        indicator.style.opacity = '0.7';
+                        setTimeout(function() {
+                            indicator.style.opacity = '0';
+                        }, 1500);
+                    });
+                }
+            };
+            
+            // Añadir el indicador de scroll
+            addScrollIndicator();
+            
+            // Observar cambios en el contenido para actualizar el indicador
+            const observer = new MutationObserver(addScrollIndicator);
+            observer.observe(column, { childList: true, subtree: true });
+        });
+        
+        console.log('Scroll táctil habilitado en las columnas kanban');
+    }
+    
+    // Habilitar scroll táctil
+    enableTouchScrolling();
+    
+    
+    // Ejecutar la función para habilitar el scroll por arrastre
+    // Activar scroll horizontal en todos los contenedores de proyectos
+    document.querySelectorAll('.projects-container').forEach(enableDragToScroll);
+
 });

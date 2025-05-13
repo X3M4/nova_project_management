@@ -3,7 +3,7 @@
 {% block title %}{{ employee.name }} - Employee Details{% endblock %}
 
 {% block content %}
-<!-- filepath: /home/p102/django_projects/nova_workers_management/templates/novacartografia_employee_management/employee_detail.html -->
+
 <div class="bg-white shadow overflow-hidden sm:rounded-lg">
     <div class="px-4 py-5 sm:px-6 bg-primary-600 {% if 'TOPÓGRAFO' in employee.job  %} bg-green-500 {% elif 'Auxiliar' in employee.job %} bg-yellow-400 {% elif 'Piloto' in employee.job %}bg-indigo-500 {% else %} bg-orange-500 {% endif %}">
         <h1 class="text-3xl leading-6 font-medium text-gray-700 {% if 'Auxiliar' in employee.job %} {% else %} text-white {% endif %}">

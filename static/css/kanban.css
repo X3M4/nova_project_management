@@ -33,9 +33,9 @@ html {
 /* Layout for sidebar and main content - match container width */
 .kanban-layout {
     display: flex;
-    height: calc(100vh - 70px);
+    height: calc(100vh - 150px);
     /* Reduced from 100px to 70px */
-    overflow: visible;
+    overflow: hidden;
     width: 100%;
     margin: 0 auto;
     /* Center the content */
@@ -74,9 +74,35 @@ html {
     min-height: 300px;
     max-height: calc(100vh - 200px);
     /* Adjusted for less space at top */
-    overflow-y: auto;
+    overflow-y: auto !important;
+    overflow-x: hidden;
+    padding-right: 4px;
     width: 100%;
     /* Full width of its container */
+    -webkit-overflow-scrolling: touch; /* Habilitar scroll con inercia en iOS */
+    touch-action: pan-y; /* Permitir solo scroll vertical */
+    overscroll-behavior: contain; /* Prevenir scroll de rebote */
+    position: relative;
+    padding-bottom: 30px !important; /* Asegurar espacio al final */
+}
+
+.kanban-column > *:last-child {
+    margin-bottom: 20px;
+}
+
+.scroll-indicator {
+    opacity: 0.7;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.kanban-column.scrolling {
+    user-select: none;
 }
 
 /* Column container styling - more efficient use of space */
@@ -87,6 +113,9 @@ html {
     flex-shrink: 0;
     position: relative;
     transition: all 0.2s ease;
+    max-height: calc(100vh - 220px);
+    display: flex;
+    flex-direction: column;
 }
 
 .project-column.drop-hover {
@@ -129,8 +158,8 @@ html {
 .projects-container {
     display: flex;
     overflow-x: auto;
-    padding-bottom: 12px;
-    gap: 12px;
+    padding-bottom: 1rem;
+    gap: 1rem;
     /* Reduced from 16px */
     margin: 0 -8px;
     /* Reduced negative margin */
@@ -335,6 +364,16 @@ button, a {
         right: 0;
         background: linear-gradient(to left, rgba(255,255,255,0.8), rgba(255,255,255,0));
     }
+
+    .kanban-column::-webkit-scrollbar-thumb {
+        background-color: rgba(59, 130, 246, 0.7); /* Azul más visible */
+        border: none;
+        border-radius: 4px;
+    }
+    
+    .kanban-column::-webkit-scrollbar {
+        width: 12px; /* Más ancho para pantallas táctiles */
+    }
 }
 
 /* Sidebar padding adjustments */
@@ -437,4 +476,23 @@ div[x-show="open"],
 .origin-top-left,
 .origin-top-right {
     z-index: 1100 !important; /* Aún más alto que el navbar */
+}
+
+.kanban-column::-webkit-scrollbar {
+  width: 8px;
+}
+
+.kanban-column::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.kanban-column::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.7);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.kanban-column::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(107, 114, 128, 0.8);
 }
