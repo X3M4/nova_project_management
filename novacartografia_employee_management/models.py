@@ -173,8 +173,10 @@ class Employee(models.Model):
     static = models.BooleanField(default=False)
     drag = models.BooleanField(default=False)
     
+    locked = models.BooleanField(default=False, help_text="Indicates if the employee is locked for a future project")
+    
     def __str__(self):
-        return self.name - self.state
+        return f"{self.name} - {self.state}"
     
     
     
@@ -246,5 +248,66 @@ def track_project_change(sender, instance, **kwargs):
             )
     except sender.DoesNotExist:
         # Employee is new, no previous project
+        pass
+
+class GetEmployeeLocked(models.Model):
+    """
+    Model to represent an employee that is locked for a future project assignment
+    """
+    next_project = models.ForeignKey(Project, on_delete=models.CASCADE, 
+                                     related_name='future_employee_assignments',
+                                     help_text="The project the employee will be assigned to")
+    employee = models.OneToOneField(Employee, on_delete=models.CASCADE,
+                                   related_name='future_assignment',
+                                   help_text="The employee to be assigned to the project")
+    start_date = models.DateField(help_text="When the employee should start in the new project")
+    created_at = models.DateTimeField(auto_now_add=True)
+    fulfilled = models.BooleanField(default=False, 
+                                   help_text="When marked as fulfilled, the employee will be assigned to the new project")
+    
+    class Meta:
+        verbose_name = "Future Employee Assignment"
+        verbose_name_plural = "Future Employee Assignments"
+    
+    def save(self, *args, **kwargs):
+        # If this is a new instance (not saved yet), lock the employee
+        if not self.pk:
+            self.employee.locked = True
+            self.employee.save()
+            
+        # If we're marking this as fulfilled, update the employee's project
+        if self.fulfilled:
+            self.employee.locked = False
+            self.employee.project = self.next_project
+            self.employee.save()
+            
+        # Continue with the normal save process
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        # Corregido para evitar operaciones entre strings
+        return f"{self.employee.name} → {self.next_project.name} (Start: {self.start_date})"
+
+
+@receiver(pre_save, sender='novacartografia_employee_management.GetEmployeeLocked')
+def update_employee_assignment(sender, instance, **kwargs):
+    """Signal to update the employee's project and locked status when marked as fulfilled"""
+    # Skip processing if this is a new instance
+    if not instance.pk:
+        return
+        
+    # Get the previous state to check if fulfilled status changed
+    try:
+        previous_state = sender.objects.get(pk=instance.pk)
+        
+        # If fulfilled status changed from False to True
+        if not previous_state.fulfilled and instance.fulfilled:
+            # Update employee's status
+            instance.employee.locked = False
+            instance.employee.project_id = instance.next_project
+            instance.employee.save()
+            
+    except sender.DoesNotExist:
+        # This shouldn't happen since we already checked if instance.pk exists
         pass
 

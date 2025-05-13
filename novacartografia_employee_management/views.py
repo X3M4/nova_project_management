@@ -6,8 +6,8 @@ import json
 from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .forms import EmployeeCSVImportForm, EmployeeForm, EmployeeNeededForm, ProjectCSVImportForm, ProjectForm
-from .models import Employee, Project, ProjectMovementLine, EmployeeNeeded
+from .forms import EmployeeCSVImportForm, EmployeeForm, EmployeeNeededForm, GetEmployeeLockedForm, ProjectCSVImportForm, ProjectForm
+from .models import Employee, GetEmployeeLocked, Project, ProjectMovementLine, EmployeeNeeded
 from django.http import HttpResponse, JsonResponse
 from django.db.models import Case, When, Value, CharField, Q, IntegerField, Count, Q, BooleanField, FloatField, F
 from django.db.models.functions import Cast
@@ -384,6 +384,16 @@ def employee_delete(request, pk):
         return redirect('employee_list')
     return render(request, 'novacartografia_employee_management/employee_confirm_delete.html', {'employee': employee})
 
+@login_required
+def lock_employee(request, pk):
+    employee = get_object_or_404(Employee, pk=pk)
+    
+    if request.method == 'POST':
+        employee.locked = True
+        employee.save()
+        messages.success(request, f'Employee {employee.name} has been locked successfully.')
+        return redirect('kanban_board')
+
 
 @login_required
 def export_projects_csv(request):
@@ -538,11 +548,13 @@ def kanban_board(request):
     
     employees = Employee.objects.all()
     needs = EmployeeNeeded.objects.filter(fulfilled=False)
+    locks = GetEmployeeLocked.objects.filter(fulfilled=False)
     
     return render(request, 'novacartografia_employee_management/kanban_board.html', {
         'projects': projects,
         'employees': employees,
         'needs': needs,
+        'locks': locks,
     })
 
 
@@ -752,3 +764,68 @@ def unassign_employee_from_project(request, employee_id):
     
     # Si no es POST, redirigir a la página de detalle del empleado
     return redirect('employee_detail', pk=employee_id)
+
+@login_required
+def get_employee_locked_create(request, project_id=None):
+    # Si se proporciona un ID de proyecto, pre-seleccionamos ese proyecto
+    initial_data = {}
+    if project_id:
+        project = get_object_or_404(Project, pk=project_id)
+        initial_data = {'next_project': project}
+    
+    if request.method == 'POST':
+        form = GetEmployeeLockedForm(request.POST)
+        if form.is_valid():
+            future_assignment = form.save()
+            messages.success(request, f'Future assignment created for {future_assignment.employee.name}. The employee is now locked.')
+            return redirect('project_detail', pk=future_assignment.next_project.id)
+    else:
+        form = GetEmployeeLockedForm(initial=initial_data)
+    
+    return render(request, 'novacartografia_employee_management/future_assignment_form.html', {
+        'form': form,
+        'title': 'Create Future Assignment',
+    })
+
+@login_required
+def get_employee_locked_update(request, pk):
+    future_assignment = get_object_or_404(GetEmployeeLocked, pk=pk)
+    
+    if request.method == 'POST':
+        form = GetEmployeeLockedForm(request.POST, instance=future_assignment)
+        if form.is_valid():
+            updated_assignment = form.save()
+            messages.success(request, f'Future assignment updated for {updated_assignment.employee.name}.')
+            return redirect('employee_detail', pk=updated_assignment.employee.id)
+    else:
+        form = GetEmployeeLockedForm(instance=future_assignment)
+    
+    return render(request, 'novacartografia_employee_management/future_assignment_form.html', {
+        'form': form,
+        'title': 'Update Future Assignment',
+    })
+
+@login_required
+def get_employee_locked_fulfill(request, pk):
+    future_assignment = get_object_or_404(GetEmployeeLocked, pk=pk)
+    
+    if request.method == 'POST':
+        future_assignment.fulfilled = True
+        future_assignment.save()
+        messages.success(
+            request, 
+            f'{future_assignment.employee.name} has been assigned to {future_assignment.next_project.name}.'
+        )
+        return redirect('project_detail', pk=future_assignment.next_project.id)
+    
+    return render(request, 'novacartografia_employee_management/future_assignment_fulfill.html', {
+        'future_assignment': future_assignment,
+    })
+
+@login_required
+def get_employee_locked_list(request):
+    future_assignments = GetEmployeeLocked.objects.filter(fulfilled=False)
+    
+    return render(request, 'novacartografia_employee_management/future_assignment_list.html', {
+        'future_assignments': future_assignments,
+    })

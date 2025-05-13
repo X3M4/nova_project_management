@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}
+  Fulfill Future Assignment
+{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto bg-white p-6 rounded-lg shadow-md">
+  <h1 class="text-2xl font-bold mb-6">Confirm Assignment</h1>
+  
+  <div class="mb-6">
+    <p class="text-gray-700">
+      Are you sure you want to assign <span class="font-bold">{{ future_assignment.employee.name }}</span> 
+      to the project <span class="font-bold">{{ future_assignment.next_project.name }}</span>?
+    </p>
+    <p class="mt-2 text-gray-600 text-sm">
+      This will unlock the employee and change their current project assignment.
+    </p>
+  </div>
+  
+  <div class="bg-gray-100 p-4 rounded-lg mb-6">
+    <h3 class="font-medium text-gray-800 mb-2">Assignment Details</h3>
+    <p><span class="text-gray-600">Employee:</span> {{ future_assignment.employee.name }}</p>
+    <p><span class="text-gray-600">Future Project:</span> {{ future_assignment.next_project.name }}</p>
+    <p><span class="text-gray-600">Planned Start Date:</span> {{ future_assignment.start_date }}</p>
+    <p><span class="text-gray-600">Assignment Created:</span> {{ future_assignment.created_at|date:"M d, Y" }}</p>
+  </div>
+  
+  <form method="post" class="flex space-x-4">
+    {% csrf_token %}
+    <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">
+      Confirm Assignment
+    </button>
+    <a href="javascript:history.back()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded">
+      Cancel
+    </a>
+  </form>
+</div>
+{% endblock %}

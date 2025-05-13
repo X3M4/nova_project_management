@@ -34,4 +34,11 @@ urlpatterns = [
     path('employee-needed/<int:pk>/delete/', views.employee_needed_delete, name='employee_needed_delete'),
     path('employee-needed/<int:pk>/fulfill/', views.employee_needed_fulfill, name='employee_needed_fulfill'),
     path('employee-needed/create/from-project/<int:project_id>/', views.employee_needed_create_from_project, name='employee_needed_create_from_project'),
-    ]
+    
+    # Añadir estas rutas
+    path('future-assignments/', views.get_employee_locked_list, name='get_employee_locked_list'),
+    path('future-assignments/create/', views.get_employee_locked_create, name='get_employee_locked_create'),
+    path('future-assignments/create/<int:project_id>/', views.get_employee_locked_create, name='get_employee_locked_create_from_project'),
+    path('future-assignments/<int:pk>/update/', views.get_employee_locked_update, name='get_employee_locked_update'),
+    path('future-assignments/<int:pk>/fulfill/', views.get_employee_locked_fulfill, name='get_employee_locked_fulfill'),
+]

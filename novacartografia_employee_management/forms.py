@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Employee, Project, EmployeeNeeded
+from .models import Employee, GetEmployeeLocked, Project, EmployeeNeeded
 
 class EmployeeCSVImportForm(forms.Form):
     csv_file = forms.FileField(
@@ -22,7 +22,7 @@ class EmployeeForm(forms.ModelForm):
             'driver_license', 'twenty_hours', 'sixty_hours', 
             'confine', 'mining', 'railway_carriage', 'railway_mounting', 
             'building', 'office_work', 'scanner', 'leveling', 
-            'static', 'drag'
+            'static', 'drag', 'locked',
         ]
         labels = {
             'name': 'Full Name',
@@ -43,6 +43,7 @@ class EmployeeForm(forms.ModelForm):
             'leveling': 'Leveling',
             'static': 'Static',
             'drag': 'Drag',
+            'locked': 'Locked',
         }
         widgets = {
             'name': forms.TextInput(attrs={'placeholder': 'Enter employee name'}),
@@ -63,6 +64,7 @@ class EmployeeForm(forms.ModelForm):
             'leveling': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
             'static': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
             'drag': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
+            'locked': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
         }
     
     def clean(self):
@@ -288,3 +290,23 @@ class EmployeeNeededForm(forms.ModelForm):
                 'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50',
                 'placeholder': field.label,
             })
+
+class GetEmployeeLockedForm(forms.ModelForm):
+    class Meta:
+        model = GetEmployeeLocked
+        fields = ['next_project', 'employee', 'start_date', 'fulfilled']
+        widgets = {
+            'start_date': forms.DateInput(attrs={'type': 'date'}),
+        }
+        labels = {
+            'next_project': 'Future Project',
+            'employee': 'Employee',
+            'start_date': 'Start Date',
+            'fulfilled': 'Mark as Fulfilled',
+        }
+        help_texts = {
+            'next_project': 'Select the future project for this employee',
+            'employee': 'Select the employee to lock for future assignment',
+            'start_date': 'When should the employee start in the new project',
+            'fulfilled': 'If checked, the employee will be immediately assigned to the new project',
+        }

@@ -245,13 +245,14 @@
               <div class="project-column bg-violet-100 shadow rounded-lg">
                 <div class="bg-violet-200 px-3 py-1 border-b border-violet-200 rounded-t-lg">
                   <!-- Reduced py-2 to py-1 -->
-                  <div class="flex justify-between items-center">
+                  <div class="justify-between items-center">
                     <div>
                       <h3 class="text-sm font-medium text-rose-700">{{ project.name }}</h3>
                     </div>
                     <div class="flex space-x-3">
                       <a href="{% url 'project_detail' project.id %}" class="text-rose-500 hover:text-rose-700"><i class="fas fa-eye text-base"></i></a>
                       <a href="{% url 'employee_needed_create_from_project' project.id %}" class="text-rose-500 hover:text-rose-700"><i class="fas fa-triangle-exclamation text-base"></i></a>
+                      <a href="{% url 'get_employee_locked_create_from_project' project.id %}" class="text-rose-500 hover:text-rose-700" title="Lock employee for future assignment"><i class="fas fa-user-lock text-base"></i></a>
                     </div>
                   </div>
                 </div>
@@ -457,6 +458,28 @@
                       </div>
                     {% endif %}
                   {% endfor %}
+                  
+                  {% for lock in locks %}
+                    {% if lock.next_project == project %}
+                      <div class="lock-card p-2 bg-indigo-500 border border-gray-300 rounded-md shadow-sm mb-2">
+                        <div class="justify-between items-start">
+                          <div>
+                            <h4 class="text-sm font-medium text-gray-50">{{ lock.employee }}</h4>
+                          </div>
+                          <div>
+                            <p class="text-sm text-gray-100">{{ lock.start_date }}</p>
+                            {% if lock.id %}
+                              <div class="flex space-x-1">
+                                <a href="{% url 'get_employee_locked_update' lock.id %}" class="text-white hover:text-gray-600" title="Edit request"><i class="fas fa-edit text-base"></i></a>
+                                <a href="{% url 'get_employee_locked_fulfill' lock.id %}" class="text-green-200 hover:text-green-800" title="Mark as fulfilled"><i class="fas fa-check-circle text-base"></i></a>
+                              </div>
+                            {% endif %}
+                          </div>
+                        </div>
+                      </div>
+                    {% endif %}
+                  {% endfor %}
+                  
                 </div>
               </div>
             {% endif %}
