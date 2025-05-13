@@ -69,12 +69,10 @@ html {
 /* Asegurarnos que no haya padding doble */
 .sidebar .p-4 {
     padding: 0.75rem !important;
-    padding-right: calc(0.75rem - 4px) !important; /* Compensar el padding-right del div padre */
     height: 100%;
-    overflow: hidden !important; /* Eliminar cualquier scroll aquí también */
-    padding-right: 8px; /* Dejar espacio para la barra de desplazamiento del contenedor interno */
+    overflow: visible !important; /* Corregido para evitar doble scroll */
+    padding-right: 8px; /* Espacio para barra de scroll */
 }
-
 /* Corregir el contenedor de empleados no asignados */
 .sidebar .bg-white.shadow.rounded-lg {
     overflow-y: auto !important;
@@ -545,4 +543,13 @@ div[x-show="open"],
 
 .kanban-column::-webkit-scrollbar-thumb:hover {
   background-color: rgba(107, 114, 128, 0.7) !important;
+}
+
+/* Optimización de rendimiento en dispositivos lentos como pizarras Smart */
+.employee-card {
+    will-change: transform; /* Mejora el rendimiento de drag & drop */
+}
+
+.employee-card.dragging {
+    box-shadow: none !important; /* Eliminar sombra durante el drag para evitar lag */
 }

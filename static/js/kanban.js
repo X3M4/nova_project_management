@@ -91,13 +91,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 col.classList.add('potential-drop-area');
             });
             
-            console.log('Drag started for employee:', card.getAttribute('data-employee-id'));
+            // console.log('Drag started for employee:', card.getAttribute('data-employee-id'));
         });
         
         card.addEventListener('dragend', function() {
             // Asegurar que todas las clases visuales se limpien al final
             setTimeout(clearAllDragVisuals, 100);
-            console.log('Drag ended, visuals cleared');
+            // console.log('Drag ended, visuals cleared');
         });
     });
     
@@ -145,7 +145,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const employeeId = e.dataTransfer.getData('text/plain');
             
-            console.log('Drop detected - Employee ID:', employeeId, 'Project ID:', projectId);
+            // console.log('Drop detected - Employee ID:', employeeId, 'Project ID:', projectId);
             
             if (!employeeId) {
                 console.error('No employee ID found in drop data');
@@ -185,7 +185,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(data => {
                 loadingIndicator.classList.add('hidden');
-                console.log('Server response:', data);
+                // console.log('Server response:', data);
                 
                 if (data.success) {
                     // Move card to the actual kanban column
@@ -241,7 +241,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const employeeId = e.dataTransfer.getData('text/plain');
             const projectId = column.getAttribute('data-project-id');
             
-            console.log('Drop detected - Employee ID:', employeeId, 'Project ID:', projectId);
+            // console.log('Drop detected - Employee ID:', employeeId, 'Project ID:', projectId);
             
             if (!employeeId) {
                 console.error('No employee ID found in drop data');
@@ -281,7 +281,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(data => {
                 loadingIndicator.classList.add('hidden');
-                console.log('Server response:', data);
+                // console.log('Server response:', data);
                 
                 if (data.success) {
                     // Move card to the column
@@ -317,8 +317,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    console.log('Drag and drop initialized with ' + employeeCards.length + ' employees, ' + 
-                columns.length + ' columns, and ' + projectColumns.length + ' project columns');
+    // console.log('Drag and drop initialized with ' + employeeCards.length + ' employees, ' + 
+    //             columns.length + ' columns, and ' + projectColumns.length + ' project columns');
     
     // Arreglar problemas de superposición con el menú desplegable
     function fixMenuZIndex() {
@@ -466,7 +466,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     
         scrollContainer.style.cursor = 'grab';
-        console.log('Drag-to-scroll habilitado en:', scrollContainer);
+        // console.log('Drag-to-scroll habilitado en:', scrollContainer);
     }
 
     function enableTouchScrolling() {
@@ -599,7 +599,7 @@ document.addEventListener('DOMContentLoaded', function() {
             observer.observe(column, { childList: true, subtree: true });
         });
         
-        console.log('Scroll táctil habilitado en las columnas kanban');
+        // console.log('Scroll táctil habilitado en las columnas kanban');
     }
     
     // Habilitar scroll táctil
