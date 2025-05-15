@@ -294,19 +294,34 @@ class EmployeeNeededForm(forms.ModelForm):
 class GetEmployeeLockedForm(forms.ModelForm):
     class Meta:
         model = GetEmployeeLocked
-        fields = ['next_project', 'employee', 'start_date', 'fulfilled']
+        fields = ['next_project', 'employee', 'start_date', 'end_date' ,'fulfilled']
         widgets = {
             'start_date': forms.DateInput(attrs={'type': 'date'}),
+            'end_date': forms.DateInput(attrs={'type': 'date'}),
         }
         labels = {
             'next_project': 'Future Project',
             'employee': 'Employee',
             'start_date': 'Start Date',
+            'end_date': 'End Date',
             'fulfilled': 'Mark as Fulfilled',
         }
         help_texts = {
             'next_project': 'Select the future project for this employee',
             'employee': 'Select the employee to lock for future assignment',
             'start_date': 'When should the employee start in the new project',
+            'end_date': 'When should the employee end in the current project',
             'fulfilled': 'If checked, the employee will be immediately assigned to the new project',
         }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Filtrar empleados para mostrar solo los que tienen "TOPÓGRAFO" en el campo job
+        self.fields['employee'].queryset = Employee.objects.filter(job__icontains='TOPÓGRAFO').exclude(locked=True)
+        
+        # Añadir clases de Tailwind a los campos
+        for field_name, field in self.fields.items():
+            field.widget.attrs.update({
+                'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50',
+            })

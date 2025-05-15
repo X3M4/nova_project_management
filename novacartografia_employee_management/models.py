@@ -6,17 +6,17 @@ from django.dispatch import receiver
 # Create your models here.
 class Project(models.Model):
     PROJECT_TYPES = [
-        ('obra', 'Obra'),
-        ('proyecto', 'Proyecto'),
+        ('external', 'Obra'),
+        ('project', 'Proyecto'),
         # Otras opciones que necesites...
     ]
     
     MANAGER_TYPES = [
-        ('cuesta', 'Cuesta'),
-        ('javi', 'Javi'),
-        ('guillermo', 'Guillermo'),
-        ('miguelangel', 'Miguel Ángel'),
-        ('oscar', 'Óscar'),
+        ('Jose Cuesta Mejías', 'Cuesta'),
+        ('Javier Marín Gimeno', 'Javi'),
+        ('Guillermo Boscá Gómez', 'Guillermo'),
+        ('Miguel Ángel Martínez García', 'Miguel Ángel'),
+        ('Óscar López Valverde', 'Óscar'),
         # Otras opciones que necesites...
     ]
     
@@ -255,12 +255,15 @@ class GetEmployeeLocked(models.Model):
     Model to represent an employee that is locked for a future project assignment
     """
     next_project = models.ForeignKey(Project, on_delete=models.CASCADE, 
-                                     related_name='future_employee_assignments',
-                                     help_text="The project the employee will be assigned to")
-    employee = models.OneToOneField(Employee, on_delete=models.CASCADE,
-                                   related_name='future_assignment',
-                                   help_text="The employee to be assigned to the project")
+                                    related_name='future_employee_assignments',
+                                    help_text="The project the employee will be assigned to")
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE,  # Cambiado de ManyToManyField a ForeignKey
+                               related_name='future_assignment',
+                               null=True,  # Añadido para la migración
+                               blank=True,  # Añadido para la migración
+                               help_text="The employee to be assigned to the project")
     start_date = models.DateField(help_text="When the employee should start in the new project")
+    end_date = models.DateField(help_text="When the employee should end in the new project", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     fulfilled = models.BooleanField(default=False, 
                                    help_text="When marked as fulfilled, the employee will be assigned to the new project")
@@ -270,44 +273,26 @@ class GetEmployeeLocked(models.Model):
         verbose_name_plural = "Future Employee Assignments"
     
     def save(self, *args, **kwargs):
-        # If this is a new instance (not saved yet), lock the employee
-        if not self.pk:
-            self.employee.locked = True
-            self.employee.save()
-            
-        # If we're marking this as fulfilled, update the employee's project
-        if self.fulfilled:
-            self.employee.locked = False
-            self.employee.project = self.next_project
-            self.employee.save()
-            
-        # Continue with the normal save process
+        # Guarda primero para obtener un ID si es un objeto nuevo
+        is_new = not self.pk
         super().save(*args, **kwargs)
+        
+        # Ahora podemos actualizar el empleado de manera segura
+        if is_new and self.employee:  # Verificar que hay un empleado
+            # Si es una nueva asignación, bloquear al empleado
+            if not self.employee.locked:
+                self.employee.locked = True
+                self.employee.save()
+        elif self.fulfilled and self.employee:  # Verificar que hay un empleado
+            # Si estamos marcando como cumplido, asignar y desbloquear
+            self.employee.project_id = self.next_project
+            self.employee.locked = False
+            self.employee.save()
     
     def __str__(self):
-        # Corregido para evitar operaciones entre strings
-        return f"{self.employee.name} → {self.next_project.name} (Start: {self.start_date})"
-
-
-@receiver(pre_save, sender='novacartografia_employee_management.GetEmployeeLocked')
-def update_employee_assignment(sender, instance, **kwargs):
-    """Signal to update the employee's project and locked status when marked as fulfilled"""
-    # Skip processing if this is a new instance
-    if not instance.pk:
-        return
-        
-    # Get the previous state to check if fulfilled status changed
-    try:
-        previous_state = sender.objects.get(pk=instance.pk)
-        
-        # If fulfilled status changed from False to True
-        if not previous_state.fulfilled and instance.fulfilled:
-            # Update employee's status
-            instance.employee.locked = False
-            instance.employee.project_id = instance.next_project
-            instance.employee.save()
-            
-    except sender.DoesNotExist:
-        # This shouldn't happen since we already checked if instance.pk exists
-        pass
-
+        try:
+            employee_name = self.employee.name if self.employee else "No employee"
+            project_name = self.next_project.name if self.next_project else "No project"
+            return f"{employee_name} → {project_name} (Start: {self.start_date})"
+        except Exception:
+            return f"Future Assignment {self.pk}"

@@ -231,6 +231,8 @@ def import_projects_csv(request):
                     # Get description
                     description = row.get('Description', '') or row.get('description', '')
                     
+                    manager = row.get('Manager', '') or row.get('manager', '')
+                    
                     # Skip empty rows
                     if not name:
                         continue
@@ -265,6 +267,10 @@ def import_projects_csv(request):
                             if existing_project.description != description:
                                 existing_project.description = description
                                 updated = True
+                            
+                            if existing_project.manager != manager:
+                                existing_project.manager = manager
+                                updated = True
                                 
                             if updated:
                                 existing_project.save()
@@ -280,7 +286,8 @@ def import_projects_csv(request):
                         Project.objects.create(
                             name=name,
                             type=project_type,
-                            description=description
+                            description=description,
+                            manager=manager
                         )
                         imported_count += 1
                         print(f'Created project: {name}')
@@ -769,9 +776,14 @@ def unassign_employee_from_project(request, employee_id):
 def get_employee_locked_create(request, project_id=None):
     # Si se proporciona un ID de proyecto, pre-seleccionamos ese proyecto
     initial_data = {}
+    
     if project_id:
-        project = get_object_or_404(Project, pk=project_id)
-        initial_data = {'next_project': project}
+        try:
+            project = Project.objects.get(pk=project_id)
+            initial_data = {'next_project': project}
+        except Project.DoesNotExist:
+            # Si el proyecto no existe, simplemente no lo preseleccionamos
+            messages.warning(request, f'Project with ID {project_id} not found. Please select a project.')
     
     if request.method == 'POST':
         form = GetEmployeeLockedForm(request.POST)
