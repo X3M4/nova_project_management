@@ -97,6 +97,28 @@ def import_employees_csv(request):
                         # Extraer y normalizar campos básicos usando el mapeo
                         name = row.get('Name', '').strip()
                         job = row.get('Job', '').strip()
+                        # Get street and clean it by removing "C/", numbers, and commas
+                        street = row.get('Street', '').strip()
+                        if street:
+                            # Remove "º" symbol
+                            street = street.replace("º", "")
+                            # Remove all numbers
+                            street = ''.join(char for char in street if not char.isdigit())
+                        if street:
+                            # Remove "C/" prefix
+                            street = street.replace("C/", "").strip()
+                            street = street.replace("piso", "").strip()
+                            street = street.replace("Piso", "").strip()
+                            street = street.replace("planta", "").strip()
+                            # Remove all numbers
+                            street = ''.join(char for char in street if not char.isdigit())
+                            # Remove commas
+                            street = street.replace(",", "").strip()
+                            street = street.replace("-", "")
+                            street = street.replace(" B ", "").strip()
+                            street = street.replace(" B ", "").strip()
+                            
+                        city = row.get('City', '').strip()
                         state = row.get('State', '').strip()
                         academic_training = row.get('Academic Training', '').strip()
                         
@@ -108,7 +130,11 @@ def import_employees_csv(request):
                         employee_data = {
                             'job': job,
                             'academic_training': academic_training,
+                            'city': city,
+                            'street': street,
                         }
+                        
+
                         
                         # Solo establecer el estado si se proporciona y es válido
                         if state:
@@ -117,7 +143,7 @@ def import_employees_csv(request):
                             # Buscar coincidencias aproximadas
                             matched_state = None
                             for valid_state in valid_states:
-                                if valid_state == state_normalized or valid_state.replace('_', ' ') == state.lower():
+                                if valid_state == state_normalized or valid_state.replace('_', ' ') == state:
                                     matched_state = valid_state
                                     break
                             
@@ -841,3 +867,4 @@ def get_employee_locked_list(request):
     return render(request, 'novacartografia_employee_management/future_assignment_list.html', {
         'future_assignments': future_assignments,
     })
+    

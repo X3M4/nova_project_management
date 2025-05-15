@@ -1,0 +1,161 @@
+<!-- filepath: /home/p102/django_projects/nova_workers_management/templates/project_maps/employee_locations_list.html -->
+{% extends 'base.html' %}
+
+{% block title %}Ubicaciones de Empleados{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-orange-600">Ubicaciones de Empleados</h1>
+        <div class="flex space-x-2">
+            <a href="{% url 'project_map' %}" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded inline-flex items-center">
+                <i class="fas fa-map mr-2"></i> Ver Mapa
+            </a>
+            <a href="{% url 'employee_list' %}" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded inline-flex items-center">
+                <i class="fas fa-users mr-2"></i> Lista de Empleados
+            </a>
+        </div>
+    </div>
+    
+    <!-- Mensaje de advertencia sobre funcionalidad -->
+    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6" role="alert">
+        <p class="font-bold">Importante</p>
+        <p>La gestión de ubicaciones requiere que el modelo Employee tenga los campos "latitude" y "longitude". Si estos campos no existen, debes añadirlos primero.</p>
+    </div>
+    
+    <!-- Resumen de estadísticas -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div class="bg-white shadow-md rounded-lg p-6 border-l-4 border-blue-500">
+            <p class="text-sm text-gray-600">Total de Empleados</p>
+            <p class="text-3xl font-bold text-gray-800">{{ total_employees }}</p>
+        </div>
+        <div class="bg-white shadow-md rounded-lg p-6 border-l-4 border-green-500">
+            <p class="text-sm text-gray-600">Con Ubicación</p>
+            <p class="text-3xl font-bold text-gray-800">{{ employees_with_coords }}</p>
+        </div>
+        <div class="bg-white shadow-md rounded-lg p-6 border-l-4 border-orange-500">
+            <p class="text-sm text-gray-600">Sin Ubicación</p>
+            <p class="text-3xl font-bold text-gray-800">{{ employees_without_coords }}</p>
+        </div>
+    </div>
+    
+    <!-- Tabla de empleados -->
+    <div class="bg-white shadow-md rounded-lg overflow-hidden">
+        <div class="p-4 border-b bg-gray-50">
+            <h2 class="text-lg font-semibold text-gray-700">Gestión de Ubicaciones</h2>
+            <p class="text-sm text-gray-600">Añada o modifique las ubicaciones de los empleados.</p>
+        </div>
+        
+        <!-- Barra de búsqueda -->
+        <div class="p-4 border-b">
+            <div class="relative">
+                <input type="text" id="searchInput" placeholder="Buscar empleado..." 
+                       class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <i class="fas fa-search absolute right-3 top-3 text-gray-400"></i>
+            </div>
+        </div>
+        
+        <!-- Tabla -->
+        <div class="overflow-x-auto">
+            <table class="min-w-full bg-white" id="employeesTable">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="py-3 px-4 border-b text-left">Nombre</th>
+                        <th class="py-3 px-4 border-b text-left">Puesto</th>
+                        <th class="py-3 px-4 border-b text-left">Ubicación</th>
+                        <th class="py-3 px-4 border-b text-left">Dirección</th>
+                        <th class="py-3 px-4 border-b text-center">Estado</th>
+                        <th class="py-3 px-4 border-b text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for employee in employees %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="py-2 px-4 border-b">
+                            <div class="font-medium">{{ employee.name }}</div>
+                        </td>
+                        <td class="py-2 px-4 border-b">
+                            {{ employee.job }}
+                        </td>
+                        <td class="py-2 px-4 border-b">
+                            {% if employee.latitude and employee.longitude %}
+                                <span class="text-xs font-medium text-gray-500">Lat: {{ employee.latitude|floatformat:4 }}</span><br>
+                                <span class="text-xs font-medium text-gray-500">Lng: {{ employee.longitude|floatformat:4 }}</span>
+                            {% else %}
+                                <span class="text-xs text-gray-500">No definida</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-2 px-4 border-b">
+                            <div class="text-sm">
+                                {% if employee.street or employee.city or employee.state %}
+                                    {{ employee.street|default:"" }}
+                                    {% if employee.street and employee.city %}, {% endif %}
+                                    {{ employee.city|default:"" }}
+                                    {% if employee.city and employee.state %}, {% endif %}
+                                    {{ employee.get_state_display|default:"" }}
+                                {% else %}
+                                    <span class="text-gray-500">No definida</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="py-2 px-4 border-b text-center">
+                            {% if employee.latitude and employee.longitude %}
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                    <i class="fas fa-check-circle mr-1"></i> Con Ubicación
+                                </span>
+                            {% else %}
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                    <i class="fas fa-times-circle mr-1"></i> Sin Ubicación
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="py-2 px-4 border-b text-center">
+                            <a href="{% url 'edit_employee_location' employee.id %}" 
+                               class="inline-block px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold rounded">
+                                {% if employee.latitude and employee.longitude %}
+                                    <i class="fas fa-edit mr-1"></i> Editar
+                                {% else %}
+                                    <i class="fas fa-map-marker-alt mr-1"></i> Añadir
+                                {% endif %}
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="py-4 text-center text-gray-500">No hay empleados registrados.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Filtro de búsqueda
+    document.getElementById('searchInput').addEventListener('keyup', function() {
+        const input = this.value.toLowerCase();
+        const table = document.getElementById('employeesTable');
+        const rows = table.getElementsByTagName('tr');
+        
+        for (let i = 1; i < rows.length; i++) {  // Empezar desde 1 para saltarse la cabecera
+            const name = rows[i].getElementsByTagName('td')[0];
+            const position = rows[i].getElementsByTagName('td')[1];
+            
+            if (name && position) {
+                const nameText = name.textContent || name.innerText;
+                const positionText = position.textContent || position.innerText;
+                
+                if (nameText.toLowerCase().indexOf(input) > -1 || 
+                    positionText.toLowerCase().indexOf(input) > -1) {
+                    rows[i].style.display = "";
+                } else {
+                    rows[i].style.display = "none";
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

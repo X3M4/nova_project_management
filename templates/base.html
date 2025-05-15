@@ -48,6 +48,7 @@
                             <div @click.away="open = false" x-show="open" class="origin-top-left absolute left-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="transform opacity-0 scale-95" x-transition:enter-end="transform opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="transform opacity-100 scale-100" x-transition:leave-end="transform opacity-0 scale-95">
                                 <a href="{% url 'employee_list' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">All Employees</a>
                                 <a href="{% url 'employee_create' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Add Employee</a>
+                                <a href="{% url 'employee_locations_list' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Manage Employee Locations</a>
                                 <a href="{% url 'get_employee_locked_list' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Employee Locked List</a>
                                 <a href="{% url 'import_employees_csv' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Import CSV</a>
                                 <a href="{% url 'export_employees_csv' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Export CSV</a>

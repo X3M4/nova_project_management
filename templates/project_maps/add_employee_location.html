@@ -1,0 +1,229 @@
+<!-- filepath: /home/p102/django_projects/nova_workers_management/templates/project_maps/add_employee_location.html -->
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+<style>
+    #map {
+        height: 500px;
+        width: 100%;
+    }
+    .info-panel {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background-color: white;
+        padding: 10px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        z-index: 1000;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-orange-600">{{ title }}</h1>
+        <a href="{% url 'project_map' %}" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded inline-flex items-center">
+            <i class="fas fa-arrow-left mr-2"></i> Volver al Mapa
+        </a>
+    </div>
+    
+    <div class="bg-white shadow-md rounded-lg p-6 mb-6">
+        <h2 class="text-xl font-semibold mb-4">{{ employee.name }}</h2>
+        <p><strong>Puesto:</strong> {{ employee.job }}</p>
+        <p><strong>Dirección:</strong> {{ location.address }}, {{ location.locality }}, {{ location.province }}</p>
+    </div>
+    
+    <div class="bg-white shadow-md rounded-lg p-6 mb-6">
+        <h2 class="text-xl font-semibold mb-4">Seleccionar Ubicación</h2>
+        <p class="mb-4 text-gray-600">Haz clic en el mapa para seleccionar la ubicación del empleado.</p>
+        
+        <div id="map" class="mb-6"></div>
+        
+        <form method="post" id="locationForm">
+            {% csrf_token %}
+            
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div>
+                    <label for="latitude" class="block text-gray-700 font-bold mb-2">Latitud</label>
+                    <input type="text" name="latitude" id="latitude" class="form-input w-full" value="{{ location.latitude|default_if_none:'' }}" readonly>
+                </div>
+                <div>
+                    <label for="longitude" class="block text-gray-700 font-bold mb-2">Longitud</label>
+                    <input type="text" name="longitude" id="longitude" class="form-input w-full" value="{{ location.longitude|default_if_none:'' }}" readonly>
+                </div>
+            </div>
+            
+            <div class="flex justify-between">
+                <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-6 rounded">
+                    Guardar Ubicación
+                </button>
+                <a href="{% url 'project_map' %}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded">
+                    Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+    
+    <div class="info-panel" id="infoPanel">
+        <p>Haz clic en el mapa para seleccionar la ubicación</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script>
+    // Inicializar el mapa centrado en España
+    var map = L.map('map').setView([40.4168, -3.7038], 6);
+    
+    // Añadir capa de OpenStreetMap
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+    
+    // Variable para el marcador
+    var marker;
+    
+    // Si ya tenemos coordenadas, mostrar el marcador
+    var latInput = document.getElementById('latitude');
+    var lngInput = document.getElementById('longitude');
+    
+    if (latInput.value && lngInput.value) {
+        var lat = parseFloat(latInput.value);
+        var lng = parseFloat(lngInput.value);
+        marker = L.marker([lat, lng]).addTo(map);
+        map.setView([lat, lng], 15);
+    }
+    
+    // Manejar clic en el mapa
+    map.on('click', function(e) {
+        // Actualizar inputs
+        latInput.value = e.latlng.lat;
+        lngInput.value = e.latlng.lng;
+        
+        // Actualizar o crear marcador
+        if (marker) {
+            marker.setLatLng(e.latlng);
+        } else {
+            marker = L.marker(e.latlng).addTo(map);
+        }
+        
+        // Mensaje de información
+        document.getElementById('infoPanel').innerHTML = '<p>Ubicación seleccionada: ' + 
+            e.latlng.lat.toFixed(6) + ', ' + e.latlng.lng.toFixed(6) + '</p>';
+    });
+    
+    // Función para geocodificar la dirección del empleado
+    function geocodeEmployeeAddress() {
+        // Construye la dirección completa del empleado desde los datos disponibles
+        const street = "{{ employee.street|default:'' }}";
+        const city = "{{ employee.city|default:'' }}";
+        const state = "{{ employee.get_state_display|default:'' }}";
+        
+        // Solo proceder si al menos tenemos algún dato de dirección
+        if (!street && !city && !state) {
+            document.getElementById('infoPanel').innerHTML = 
+                '<p class="text-red-500">No hay dirección disponible para geocodificar</p>';
+            return;
+        }
+        
+        // Construir dirección completa para la búsqueda
+        let fullAddress = '';
+        if (street) fullAddress += street;
+        if (city) {
+            if (fullAddress) fullAddress += ', ';
+            fullAddress += city;
+        }
+        if (state) {
+            if (fullAddress) fullAddress += ', ';
+            fullAddress += state;
+        }
+        
+        // Añadir España como país por defecto si no está incluido
+        if (!fullAddress.toLowerCase().includes('españa') && 
+            !fullAddress.toLowerCase().includes('spain')) {
+            fullAddress += ', España';
+        }
+        
+        document.getElementById('infoPanel').innerHTML = 
+            '<p>Buscando: ' + fullAddress + '</p>';
+        
+        // Usar Nominatim para geocodificar
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.length > 0) {
+                    const lat = parseFloat(data[0].lat);
+                    const lng = parseFloat(data[0].lon);
+                    
+                    // Actualizar los inputs
+                    latInput.value = lat;
+                    lngInput.value = lng;
+                    
+                    // Actualizar o crear marcador
+                    if (marker) {
+                        marker.setLatLng([lat, lng]);
+                    } else {
+                        marker = L.marker([lat, lng]).addTo(map);
+                    }
+                    
+                    // Centrar mapa y zoom
+                    map.setView([lat, lng], 15);
+                    
+                    document.getElementById('infoPanel').innerHTML = 
+                        '<p>Ubicación encontrada: ' + lat.toFixed(6) + ', ' + lng.toFixed(6) + '</p>';
+                } else {
+                    document.getElementById('infoPanel').innerHTML = 
+                        '<p class="text-red-500">No se pudo encontrar la dirección. Por favor, haz clic en el mapa para seleccionar manualmente.</p>';
+                }
+            })
+            .catch(error => {
+                console.error("Error geocodificando:", error);
+                document.getElementById('infoPanel').innerHTML = 
+                    '<p class="text-red-500">Error al buscar la dirección. Por favor, haz clic en el mapa para seleccionar manualmente.</p>';
+            });
+    }
+    
+    // Intentar geocodificar la dirección al cargar la página
+    document.addEventListener('DOMContentLoaded', function() {
+        // Solo realizar geocodificación automática si no hay coordenadas previas
+        if (!latInput.value || !lngInput.value) {
+            geocodeEmployeeAddress();
+        }
+    });
+    
+    // Agregar un botón para geocodificar la dirección
+    const form = document.getElementById('locationForm');
+    const saveBtn = document.getElementById('save-location-btn');
+    
+    // Si el formulario no tiene coordenadas válidas al enviar, intentar geocodificar primero
+    form.addEventListener('submit', function(event) {
+        if (!latInput.value || !lngInput.value) {
+            event.preventDefault();
+            geocodeEmployeeAddress();
+            
+            // Mostrar mensaje al usuario
+            document.getElementById('infoPanel').innerHTML += 
+                '<p>Por favor, selecciona una ubicación en el mapa antes de guardar.</p>';
+        }
+    });
+    
+    // Agregar un botón para buscar la dirección explícitamente
+    const infoPanel = document.getElementById('infoPanel');
+    infoPanel.innerHTML = `
+        <p>Haz clic en el mapa para seleccionar la ubicación</p>
+        <button id="find-address-btn" class="mt-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-sm">
+            <i class="fas fa-search-location mr-1"></i> Buscar dirección del empleado
+        </button>
+    `;
+    
+    document.getElementById('find-address-btn').addEventListener('click', function() {
+        geocodeEmployeeAddress();
+    });
+</script>
+{% endblock %}
