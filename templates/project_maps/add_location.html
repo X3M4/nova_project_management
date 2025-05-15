@@ -1,0 +1,194 @@
+<!-- filepath: /home/p102/django_projects/nova_workers_management/templates/project_maps/add_location.html -->
+{% extends 'base.html' %}
+
+{% block title %}Añadir Ubicación a {{ project.name }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+<style>
+    #map {
+        height: 400px;
+        width: 100%;
+        margin-top: 20px;
+    }
+    
+    .coordinates-display {
+        margin-top: 10px;
+        padding: 10px;
+        background-color: #f3f4f6;
+        border-radius: 4px;
+        font-family: monospace;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-orange-600">Añadir Ubicación</h1>
+        <a href="{% url 'project_map' %}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded inline-flex items-center">
+            <i class="fas fa-arrow-left mr-2"></i> Volver al mapa
+        </a>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="p-6">
+            <h2 class="text-xl font-semibold mb-4">{{ project.name }}</h2>
+            <p class="text-gray-600 mb-6">{{ project.type }} - Manager: {{ project.manager }}</p>
+            
+            <form method="post" id="location-form">
+                {% csrf_token %}
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="address">
+                                Dirección
+                            </label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                                   id="address" name="address" type="text" placeholder="Introduce una dirección">
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="city">
+                                Ciudad
+                            </label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                                   id="city" name="city" type="text">
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="province">
+                                Provincia
+                            </label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                                   id="province" name="province" type="text">
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="country">
+                                País
+                            </label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                                   id="country" name="country" type="text" value="España">
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">
+                                Coordenadas
+                            </label>
+                            <div class="coordinates-display">
+                                Lat: <span id="latitude-display">0</span>, Lng: <span id="longitude-display">0</span>
+                            </div>
+                            <input type="hidden" id="latitude" name="latitude">
+                            <input type="hidden" id="longitude" name="longitude">
+                        </div>
+                        
+                        <button type="button" id="geocode-btn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4">
+                            <i class="fas fa-search-location mr-2"></i> Buscar dirección
+                        </button>
+                        
+                        <button type="submit" class="bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded">
+                            <i class="fas fa-save mr-2"></i> Guardar ubicación
+                        </button>
+                    </div>
+                    
+                    <div>
+                        <div id="map"></div>
+                        <p class="text-sm text-gray-500 mt-2">Haz clic en el mapa para establecer la ubicación o busca por dirección.</p>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar el mapa
+        var map = L.map('map').setView([40.4168, -3.7038], 6);
+        
+        // Añadir capa de OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        
+        // Variables para el marcador
+        var marker;
+        
+        // Función para actualizar marcador
+        function updateMarker(lat, lng) {
+            // Actualizar o crear marcador
+            if (marker) {
+                marker.setLatLng([lat, lng]);
+            } else {
+                marker = L.marker([lat, lng], {draggable: true}).addTo(map);
+                
+                // Evento al arrastrar el marcador
+                marker.on('dragend', function(e) {
+                    var position = marker.getLatLng();
+                    updateCoordinatesDisplay(position.lat, position.lng);
+                });
+            }
+            
+            // Actualizar valores en el formulario
+            updateCoordinatesDisplay(lat, lng);
+            
+            // Centrar mapa
+            map.setView([lat, lng], 15);
+        }
+        
+        // Actualizar display de coordenadas
+        function updateCoordinatesDisplay(lat, lng) {
+            document.getElementById('latitude-display').textContent = lat.toFixed(6);
+            document.getElementById('longitude-display').textContent = lng.toFixed(6);
+            document.getElementById('latitude').value = lat;
+            document.getElementById('longitude').value = lng;
+        }
+        
+        // Evento de clic en el mapa
+        map.on('click', function(e) {
+            updateMarker(e.latlng.lat, e.latlng.lng);
+        });
+        
+        // Evento del botón de geocodificación
+        document.getElementById('geocode-btn').addEventListener('click', function() {
+            const address = document.getElementById('address').value;
+            const city = document.getElementById('city').value;
+            const province = document.getElementById('province').value;
+            const country = document.getElementById('country').value;
+            
+            if (!address) {
+                alert("Por favor, introduce una dirección");
+                return;
+            }
+            
+            // Construir dirección completa
+            let fullAddress = address;
+            if (city) fullAddress += `, ${city}`;
+            if (province) fullAddress += `, ${province}`;
+            if (country) fullAddress += `, ${country}`;
+            
+            // Usar Nominatim para geocodificar
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.length > 0) {
+                        const lat = parseFloat(data[0].lat);
+                        const lng = parseFloat(data[0].lon);
+                        updateMarker(lat, lng);
+                    } else {
+                        alert("No se encontró la dirección. Intenta con otra ubicación o haz clic directamente en el mapa.");
+                    }
+                })
+                .catch(error => {
+                    console.error("Error al geocodificar:", error);
+                    alert("Error al buscar la dirección. Intenta de nuevo más tarde.");
+                });
+        });
+    });
+</script>
+{% endblock %}

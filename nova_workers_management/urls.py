@@ -25,6 +25,7 @@ urlpatterns = [
     path("", lambda request: redirect('employee_list'), name='home'),
     path("", include('novacartografia_employee_management.urls')),
     path('accounts/', include('django.contrib.auth.urls')),  # For login, logout, etc.
+    path('maps/', include('project_maps.urls')),  # Include project_maps URLs
 ]
 
 # Add static and media URLs for development

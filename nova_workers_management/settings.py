@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "novacartografia_employee_management",
+    'project_maps',
 ]
 
 MIDDLEWARE = [
