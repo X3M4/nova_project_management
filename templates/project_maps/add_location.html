@@ -42,60 +42,74 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <div class="mb-4">
-                            <label class="block text-gray-700 text-sm font-bold mb-2" for="address">
-                                Dirección
-                            </label>
-                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
-                                   id="address" name="address" type="text" placeholder="Introduce una dirección">
+                            <label for="locality" class="block text-gray-700 text-sm font-bold mb-2">Localidad*</label>
+                            <input type="text" name="locality" id="locality" 
+                                   class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                   placeholder="Nombre de la ciudad o localidad" 
+                                   value="{{ location.locality|default:'' }}" required>
                         </div>
                         
                         <div class="mb-4">
-                            <label class="block text-gray-700 text-sm font-bold mb-2" for="city">
-                                Ciudad
-                            </label>
-                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
-                                   id="city" name="city" type="text">
+                            <label for="province" class="block text-gray-700 text-sm font-bold mb-2">Provincia</label>
+                            <input type="text" name="province" id="province" 
+                                   class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                   placeholder="Nombre de la provincia" 
+                                   value="{{ location.province|default:'' }}">
                         </div>
                         
                         <div class="mb-4">
-                            <label class="block text-gray-700 text-sm font-bold mb-2" for="province">
-                                Provincia
-                            </label>
-                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
-                                   id="province" name="province" type="text">
+                            <label for="address" class="block text-gray-700 text-sm font-bold mb-2">Dirección específica (opcional)</label>
+                            <input type="text" name="address" id="address" 
+                                   class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                   placeholder="Calle, número, etc." 
+                                   value="{{ location.address|default:'' }}">
                         </div>
                         
                         <div class="mb-4">
-                            <label class="block text-gray-700 text-sm font-bold mb-2" for="country">
-                                País
-                            </label>
-                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
-                                   id="country" name="country" type="text" value="España">
+                            <label for="country" class="block text-gray-700 text-sm font-bold mb-2">País</label>
+                            <input type="text" name="country" id="country" 
+                                   class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                   placeholder="País" 
+                                   value="{{ location.country|default:'España' }}">
                         </div>
                         
                         <div class="mb-4">
-                            <label class="block text-gray-700 text-sm font-bold mb-2">
-                                Coordenadas
-                            </label>
-                            <div class="coordinates-display">
-                                Lat: <span id="latitude-display">0</span>, Lng: <span id="longitude-display">0</span>
+                            <button type="button" id="geocode-btn" 
+                                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                                <i class="fas fa-search-location mr-2"></i> Buscar en el mapa
+                            </button>
+                        </div>
+                        
+                        <div class="coordinates-display">
+                            <p class="text-sm text-gray-600 mb-1">Coordenadas seleccionadas:</p>
+                            <div class="flex space-x-4">
+                                <div>
+                                    <p class="text-xs text-gray-500">Latitud:</p>
+                                    <span id="latitude-display">{{ location.latitude|default:'--' }}</span>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">Longitud:</p>
+                                    <span id="longitude-display">{{ location.longitude|default:'--' }}</span>
+                                </div>
                             </div>
-                            <input type="hidden" id="latitude" name="latitude">
-                            <input type="hidden" id="longitude" name="longitude">
                         </div>
                         
-                        <button type="button" id="geocode-btn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4">
-                            <i class="fas fa-search-location mr-2"></i> Buscar dirección
-                        </button>
-                        
-                        <button type="submit" class="bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded">
-                            <i class="fas fa-save mr-2"></i> Guardar ubicación
-                        </button>
+                        <!-- Hidden coordinate fields -->
+                        <input type="hidden" name="latitude" id="latitude" value="{{ location.latitude|default:'' }}">
+                        <input type="hidden" name="longitude" id="longitude" value="{{ location.longitude|default:'' }}">
                     </div>
                     
                     <div>
-                        <div id="map"></div>
-                        <p class="text-sm text-gray-500 mt-2">Haz clic en el mapa para establecer la ubicación o busca por dirección.</p>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Selecciona la ubicación en el mapa</label>
+                            <div id="map"></div>
+                        </div>
+                        
+                        <div class="flex justify-end mt-4">
+                            <button type="submit" class="bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded">
+                                <i class="fas fa-save mr-2"></i> Guardar ubicación
+                            </button>
+                        </div>
                     </div>
                 </div>
             </form>
@@ -149,6 +163,14 @@
             document.getElementById('longitude').value = lng;
         }
         
+        // Inicializar marcador si ya tenemos coordenadas
+        var initialLat = "{{ location.latitude|default:'' }}";
+        var initialLng = "{{ location.longitude|default:'' }}";
+        
+        if(initialLat && initialLng) {
+            updateMarker(parseFloat(initialLat), parseFloat(initialLng));
+        }
+        
         // Evento de clic en el mapa
         map.on('click', function(e) {
             updateMarker(e.latlng.lat, e.latlng.lng);
@@ -157,20 +179,31 @@
         // Evento del botón de geocodificación
         document.getElementById('geocode-btn').addEventListener('click', function() {
             const address = document.getElementById('address').value;
-            const city = document.getElementById('city').value;
+            const city = document.getElementById('locality').value;
             const province = document.getElementById('province').value;
             const country = document.getElementById('country').value;
             
-            if (!address) {
-                alert("Por favor, introduce una dirección");
+            // Verificar que al menos tengamos ciudad o dirección
+            if (!city && !address) {
+                alert('Por favor, introduce al menos la localidad o dirección para buscar en el mapa');
                 return;
             }
             
             // Construir dirección completa
-            let fullAddress = address;
-            if (city) fullAddress += `, ${city}`;
-            if (province) fullAddress += `, ${province}`;
-            if (country) fullAddress += `, ${country}`;
+            let fullAddress = '';
+            if (address) fullAddress += address;
+            if (city) {
+                if (fullAddress) fullAddress += ', ';
+                fullAddress += city;
+            }
+            if (province) {
+                if (fullAddress) fullAddress += ', ';
+                fullAddress += province;
+            }
+            if (country) {
+                if (fullAddress) fullAddress += ', ';
+                fullAddress += country;
+            }
             
             // Usar Nominatim para geocodificar
             fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}`)
@@ -181,13 +214,25 @@
                         const lng = parseFloat(data[0].lon);
                         updateMarker(lat, lng);
                     } else {
-                        alert("No se encontró la dirección. Intenta con otra ubicación o haz clic directamente en el mapa.");
+                        alert('No se pudo encontrar la dirección especificada. Por favor, intenta con otra dirección o selecciona la ubicación manualmente en el mapa.');
                     }
                 })
                 .catch(error => {
                     console.error("Error al geocodificar:", error);
                     alert("Error al buscar la dirección. Intenta de nuevo más tarde.");
                 });
+        });
+        
+        // Validación del formulario antes de enviar
+        document.getElementById('location-form').addEventListener('submit', function(event) {
+            const locality = document.getElementById('locality').value.trim();
+            const latitude = document.getElementById('latitude').value;
+            const longitude = document.getElementById('longitude').value;
+            
+            if ((!locality && !latitude && !longitude) || (locality && !latitude && !longitude)) {
+                event.preventDefault();
+                alert('Por favor, introduce la localidad o selecciona un punto en el mapa antes de guardar.');
+            }
         });
     });
 </script>

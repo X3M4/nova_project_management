@@ -14,9 +14,10 @@ from geopy.exc import GeocoderTimedOut, GeocoderUnavailable, GeocoderRateLimited
 @login_required
 def project_map(request):
     # Crear un mapa centrado en España
-    m = folium.Map(location=[40.4168, -3.7038], zoom_start=6, 
-                  tiles='CartoDB positron')
+    m = folium.Map(location=[39.4168, -4.7038], zoom_start=7, 
+                  tiles='OpenStreetMap', min_zoom=7, max_zoom=12, prefer_canvas=True)
     
+    marker_cluster = MarkerCluster().add_to(m)
     # Añadir controles de pantalla completa
     Fullscreen(
         position='topleft',
@@ -119,7 +120,7 @@ def project_map(request):
                     popup=folium.Popup(popup_text, max_width=300),
                     tooltip=employee.name,
                     icon=folium.Icon(color="red", icon="user", prefix="fa"),
-                ).add_to(m)
+                ).add_to(marker_cluster)
                 
             except (ValueError, TypeError, AttributeError) as e:
                 print(f"Error con coordenadas de empleado {employee.name}: {e}")
