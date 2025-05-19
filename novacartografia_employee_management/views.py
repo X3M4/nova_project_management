@@ -116,7 +116,12 @@ def import_employees_csv(request):
                             street = street.replace(",", "").strip()
                             street = street.replace("-", "")
                             street = street.replace(" B ", "").strip()
-                            street = street.replace(" B ", "").strip()
+                            street = street.replace(" A ", "").strip()
+                            street = street.replace(" K ", "").strip()
+                            street = street.replace(" P ", "").strip()
+                            street = street.replace(" izq ", "").strip()
+                            street = street.replace(" der ", "").strip()
+                            
                             
                         city = row.get('City', '').strip()
                         state = row.get('State', '').strip()

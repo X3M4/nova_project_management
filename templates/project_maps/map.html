@@ -4,6 +4,7 @@
 
 {% block extra_css %}
 <style>
+    
     /* Hacer que el contenedor principal ocupe toda la altura disponible */
     html, body {
         height: 100%;
@@ -105,23 +106,29 @@
         width: 100%;
     }
 </style>
+
+<!-- filepath: /home/p102/django_projects/nova_workers_management/templates/base.html -->
+
+<!-- Add this to the <style> section in your base.html inside the head tag -->
+<style type="text/tailwindcss">
+    @layer utilities {
+        .content-container {
+            @apply w-full mx-auto px-4 sm:px-6 lg:px-8;
+        }
+        
+        /* Navigation styling to ensure it appears above the map */
+        .navbar-drpdown-container {
+            @apply bg-gray-100 shadow-md;
+            position: relative;
+            z-index: 2000; /* Higher than the map container */
+        }
+    }
+</style>
 {% endblock %}
 
 {% block content %}
 <!-- Añadir un div vacío para mantener el espacio correcto en el layout -->
 <div class="content-spacer"></div>
-
-<!-- Panel de estadísticas para depuración -->
-<div class="bg-white shadow-md rounded px-4 py-3 mb-4 fixed top-16 left-4 z-50">
-    <h3 class="font-semibold text-gray-800 mb-2">Estadísticas del mapa</h3>
-    <p><span class="font-medium">Proyectos con ubicación:</span> {{ project_count }}</p>
-    <p><span class="font-medium">Empleados con ubicación:</span> {{ employee_count }}</p>
-    {% if messages %}
-        {% for message in messages %}
-            <div class="mt-2 p-2 {{ message.tags }} rounded text-sm">{{ message }}</div>
-        {% endfor %}
-    {% endif %}
-</div>
 
 {% if geocoded_count > 0 %}
 <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4" role="alert">
@@ -145,16 +152,16 @@
         {{ map|safe }}
     </div>
     
-    <!-- Panel lateral colapsable -->
-    <div class="side-panel" id="sidePanel">
+    <!-- Panel lateral colapsable - Use different variable name for Alpine -->
+    <div class="side-panel" id="sidePanel" x-data="{ sidePanelOpen: true }">
         <div class="panel-header" id="panelHeader">
             <h3 class="font-semibold" id="panelTitle">Proyectos sin ubicación ({{ projects_without_location|length }})</h3>
-            <button id="togglePanel" class="text-gray-500 hover:text-gray-700">
-                <i class="fas fa-chevron-right"></i>
+            <button id="togglePanel" @click="sidePanelOpen = !sidePanelOpen" class="text-gray-500 hover:text-gray-700">
+                <i class="fas" :class="sidePanelOpen ? 'fa-chevron-right' : 'fa-chevron-left'"></i>
             </button>
         </div>
         
-        <div class="project-list" id="projectList">
+        <div class="project-list" id="projectList" x-show="sidePanelOpen">
             {% if projects_without_location %}
                 {% for project_id, project in projects_without_location.items %}
                     <div class="project-card bg-white hover:bg-gray-50">
@@ -168,7 +175,7 @@
                     </div>
                 {% endfor %}
             {% else %}
-                <p class="text-gray-500 text-center py-4">Todos los proyectos tienen ubicación</p>
+                <p class="text-gray-500 text-center py-10">Todos los proyectos tienen ubicación</p>
             {% endif %}
         </div>
     </div>
@@ -176,19 +183,16 @@
     <!-- Leyenda del mapa -->
     <div class="map-legend">
         <div class="mb-2">
-            <span class="color-indicator" style="background-color: #4ade80;"></span>
+            <span class="color-indicator bg-lime-500"></span>
             <span>Proyectos</span>
         </div>
         <div class="mb-2">
-            <span class="color-indicator" style="background-color: #a78bfa;"></span>
+            <span class="color-indicator bg-purple-500"></span>
             <span>Obras</span>
         </div>
+        
         <div class="mb-2">
-            <span class="color-indicator" style="background-color: #3b82f6;"></span>
-            <span>Otros</span>
-        </div>
-        <div>
-            <span class="color-indicator" style="background-color: #ef4444;"></span>
+            <span class="color-indicator bg-blue-500" ></span>
             <span>Empleados</span>
         </div>
     </div>
@@ -198,31 +202,6 @@
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Panel lateral colapsable
-        const sidePanel = document.getElementById('sidePanel');
-        const panelHeader = document.getElementById('panelHeader');
-        const togglePanel = document.getElementById('togglePanel');
-        const projectList = document.getElementById('projectList');
-        const panelTitle = document.getElementById('panelTitle');
-        
-        let isPanelCollapsed = false;
-        
-        togglePanel.addEventListener('click', function() {
-            isPanelCollapsed = !isPanelCollapsed;
-            
-            if (isPanelCollapsed) {
-                sidePanel.classList.add('collapsed');
-                togglePanel.innerHTML = '<i class="fas fa-chevron-left"></i>';
-                projectList.style.display = 'none';
-                panelTitle.style.display = 'none';
-            } else {
-                sidePanel.classList.remove('collapsed');
-                togglePanel.innerHTML = '<i class="fas fa-chevron-right"></i>';
-                projectList.style.display = 'block';
-                panelTitle.style.display = 'block';
-            }
-        });
-        
         // Asegurarse de que el mapa ocupe todo el espacio disponible
         const resizeMap = () => {
             const mapContainer = document.querySelector('.map-container');

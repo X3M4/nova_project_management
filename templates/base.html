@@ -40,12 +40,12 @@
                     </div>
                     <div class="hidden sm:ml-6 sm:flex sm:space-x-4">
                         <!-- Main Navigation -->
-                        <div class="relative" x-data="{ open: false }">
-                            <button @click="open = !open" class="text-orange-500 hover:text-orange-700 border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
+                        <div class="relative" x-data="{ navEmployeesOpen: false }">
+                            <button @click="navEmployeesOpen = !navEmployeesOpen" class="text-orange-500 hover:text-orange-700 border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
                                 <span>Employees</span>
                                 <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </button>
-                            <div @click.away="open = false" x-show="open" class="origin-top-left absolute left-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="transform opacity-0 scale-95" x-transition:enter-end="transform opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="transform opacity-100 scale-100" x-transition:leave-end="transform opacity-0 scale-95">
+                            <div @click.away="navEmployeesOpen = false" x-show="navEmployeesOpen" class="origin-top-left absolute left-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="transform opacity-0 scale-95" x-transition:enter-end="transform opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="transform opacity-100 scale-100" x-transition:leave-end="transform opacity-0 scale-95">
                                 <a href="{% url 'employee_list' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">All Employees</a>
                                 <a href="{% url 'employee_create' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Add Employee</a>
                                 <a href="{% url 'employee_locations_list' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Manage Employee Locations</a>
@@ -55,12 +55,12 @@
                             </div>
                         </div>
                         
-                        <div class="relative" x-data="{ open: false }">
-                            <button @click="open = !open" class="text-orange-500 hover:text-orange-700 border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
+                        <div class="relative" x-data="{ navProjectsOpen: false }">
+                            <button @click="navProjectsOpen = !navProjectsOpen" class="text-orange-500 hover:text-orange-700 border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
                                 <span>Projects</span>
                                 <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </button>
-                            <div @click.away="open = false" x-show="open" class="origin-top-left absolute left-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
+                            <div @click.away="navProjectsOpen = false" x-show="navProjectsOpen" class="origin-top-left absolute left-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
                                 <a href="{% url 'project_list' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">All Projects</a>
                                 <a href="{% url 'project_create' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Add Project</a>
                                 <a href="{% url 'import_projects_csv' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Import CSV</a>
@@ -68,12 +68,12 @@
                             </div>
                         </div>
 
-                        <div class="relative" x-data="{ open: false }">
-                            <button @click="open = !open" class="text-orange-500 hover:text-orange-700 border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
+                        <div class="relative" x-data="{ navNeedsOpen: false }">
+                            <button @click="navNeedsOpen = !navNeedsOpen" class="text-orange-500 hover:text-orange-700 border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
                                 <span>Employee Needs</span>
                                 <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </button>
-                            <div @click.away="open = false" x-show="open" class="origin-top-left absolute left-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
+                            <div @click.away="navNeedsOpen = false" x-show="navNeedsOpen" class="origin-top-left absolute left-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
                                 <a href="{% url 'employee_needed_list' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">All Requests</a>
                                 <a href="{% url 'employee_needed_create' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Add Request</a>
                             </div>

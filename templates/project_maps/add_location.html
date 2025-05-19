@@ -42,15 +42,15 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <div class="mb-4">
-                            <label for="locality" class="block text-gray-700 text-sm font-bold mb-2">Localidad*</label>
+                            <label for="locality" class="block text-gray-700 text-sm font-bold mb-2">Dirección*</label>
                             <input type="text" name="locality" id="locality" 
                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                                    placeholder="Nombre de la ciudad o localidad" 
-                                   value="{{ location.locality|default:'' }}" required>
+                                   value="{{ location.locality|default:'' }}" >
                         </div>
                         
                         <div class="mb-4">
-                            <label for="province" class="block text-gray-700 text-sm font-bold mb-2">Provincia</label>
+                            <label for="province" class="block text-gray-700 text-sm font-bold mb-2">Municipio</label>
                             <input type="text" name="province" id="province" 
                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                                    placeholder="Nombre de la provincia" 
@@ -58,7 +58,7 @@
                         </div>
                         
                         <div class="mb-4">
-                            <label for="address" class="block text-gray-700 text-sm font-bold mb-2">Dirección específica (opcional)</label>
+                            <label for="address" class="block text-gray-700 text-sm font-bold mb-2">Provincia</label>
                             <input type="text" name="address" id="address" 
                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                                    placeholder="Calle, número, etc." 

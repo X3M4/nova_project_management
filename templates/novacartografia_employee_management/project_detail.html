@@ -15,6 +15,23 @@
         <a href="{% url 'project_delete' project.id %}" class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded flex items-center">
             <i class="fas fa-trash mr-2"></i> Delete
         </a>
+        <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+            <dt class="text-sm font-medium text-gray-500">Location</dt>
+            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 flex justify-between items-center">
+              {% if project.projectlocation %}
+                {{ project.projectlocation.city }}, {{ project.projectlocation.province|default:'' }} {{ project.projectlocation.country|default:'España' }}
+                <a href="{% url 'edit_project_location' project.projectlocation.id %}" class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-orange-700 bg-orange-100 hover:bg-orange-200">
+                  <i class="fas fa-map-marker-alt mr-1"></i> Edit Location
+                </a>
+              {% else %}
+                <span class="text-gray-500 italic">No location set</span>
+                <a href="{% url 'add_project_location' project.id %}" class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-orange-700 bg-orange-100 hover:bg-orange-200">
+                  <i class="fas fa-map-marker-alt mr-1"></i> Add Location
+                </a>
+              {% endif %}
+            </dd>
+          </div>
+        
     </div>
 </div>
 

@@ -15,9 +15,10 @@ from geopy.exc import GeocoderTimedOut, GeocoderUnavailable, GeocoderRateLimited
 def project_map(request):
     # Crear un mapa centrado en España
     m = folium.Map(location=[39.4168, -4.7038], zoom_start=7, 
-                  tiles='OpenStreetMap', min_zoom=7, max_zoom=12, prefer_canvas=True)
+                  tiles='OpenStreetMap', min_zoom=6, max_zoom=12, prefer_canvas=True)
     
     marker_cluster = MarkerCluster().add_to(m)
+    marker_cluster_projects = MarkerCluster(name='Trabajos').add_to(m)
     # Añadir controles de pantalla completa
     Fullscreen(
         position='topleft',
@@ -75,7 +76,7 @@ def project_map(request):
                 popup=folium.Popup(popup_text, max_width=300),
                 tooltip=project.name,
                 icon=folium.Icon(color=color, icon="building", prefix="fa"),
-            ).add_to(m)
+            ).add_to(marker_cluster_projects)
             
         except (ValueError, TypeError) as e:
             print(f"Error con coordenadas de {project.name}: {e}")
@@ -119,7 +120,7 @@ def project_map(request):
                     location=[lat, lng],
                     popup=folium.Popup(popup_text, max_width=300),
                     tooltip=employee.name,
-                    icon=folium.Icon(color="red", icon="user", prefix="fa"),
+                    icon=folium.Icon(color="blue", icon="user", prefix="fa"),
                 ).add_to(marker_cluster)
                 
             except (ValueError, TypeError, AttributeError) as e:
@@ -444,38 +445,7 @@ def edit_project_location(request, location_id):
     
     return render(request, 'project_maps/add_location.html', context)
 
-@login_required
-def edit_employee_location(request, employee_id):
-    employee = get_object_or_404(Employee, pk=employee_id)
-    
-    if request.method == 'POST':
-        # Procesar el formulario manualmente
-        latitude = request.POST.get('latitude')
-        longitude = request.POST.get('longitude')
-        
-        if latitude and longitude:
-            # Actualizar ubicación
-            employee.latitude = latitude
-            employee.longitude = longitude
-            employee.save()
-            messages.success(request, f'Ubicación actualizada para {employee.name}')
-            return redirect('project_map')
-        else:
-            messages.error(request, 'Por favor selecciona una ubicación en el mapa.')
-    
-    context = {
-        'employee': employee,
-        'title': 'Editar ubicación del empleado',
-        'location': {
-            'address': employee.street,
-            'locality': employee.city,
-            'province': employee.get_state_display() if hasattr(employee, 'get_state_display') else '',
-            'latitude': employee.latitude if hasattr(employee, 'latitude') else None,
-            'longitude': employee.longitude if hasattr(employee, 'longitude') else None
-        }
-    }
-    
-    return render(request, 'project_maps/add_employee_location.html', context)
+
 
 # Añade estas vistas
 @login_required
