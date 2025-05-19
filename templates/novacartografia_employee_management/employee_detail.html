@@ -116,6 +116,15 @@
                     <p class="font-medium text-base text-gray-700">Confined Sapces</p>
                 </div>
             </div>
+
+            <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                <div class="{% if employee.height %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-8 h-8 flex items-center justify-center">
+                    <i class="fa-solid fa-person-falling text-xl"></i>
+                </div>
+                <div>
+                    <p class="font-medium text-base text-gray-700">Height Works</p>
+                </div>
+            </div>
             
             <!-- Minería -->
             <div class="flex items-center p-3 bg-gray-50 rounded-lg">

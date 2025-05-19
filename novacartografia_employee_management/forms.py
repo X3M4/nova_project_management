@@ -18,9 +18,9 @@ class EmployeeForm(forms.ModelForm):
     class Meta:
         model = Employee
         fields = [
-            'name', 'job', 'project_id', 'state', 'academic_training',
+            'name', 'job', 'project_id', 'street', 'city', 'state', 'academic_training',
             'driver_license', 'twenty_hours', 'sixty_hours', 
-            'confine', 'mining', 'railway_carriage', 'railway_mounting', 
+            'confine', 'height' , 'mining', 'railway_carriage', 'railway_mounting', 
             'building', 'office_work', 'scanner', 'leveling', 
             'static', 'drag', 'locked',
         ]
@@ -28,12 +28,14 @@ class EmployeeForm(forms.ModelForm):
             'name': 'Full Name',
             'job': 'Job Title',
             'project_id': 'Project',
+            
             'state': 'Province',
             'academic_training': 'Academic Training',
             'driver_license': 'Driver License',
             'twenty_hours': '20h Training',
             'sixty_hours': '60h Training',
             'confine': 'Confined Spaces',
+            'height': 'Height',
             'mining': 'Mining',
             'railway_carriage': 'Railway Carriage',
             'railway_mounting': 'Railway Mounting',
@@ -55,6 +57,7 @@ class EmployeeForm(forms.ModelForm):
             'twenty_hours': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
             'sixty_hours': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
             'confine': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
+            'height': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
             'mining': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
             'railway_carriage': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
             'railway_mounting': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
@@ -92,7 +95,7 @@ class EmployeeForm(forms.ModelForm):
         # Añadir clases específicas para campos booleanos (checkboxes)
         checkbox_fields = [
             'driver_license', 'twenty_hours', 'sixty_hours', 
-            'confine', 'mining', 'railway_carriage', 'railway_mounting', 
+            'confine', 'height', 'mining', 'railway_carriage', 'railway_mounting', 
             'building', 'office_work', 'scanner', 'leveling', 
             'static', 'drag'
         ]
@@ -145,7 +148,7 @@ class ProjectForm(forms.ModelForm):
     class Meta:
         model = Project
         fields = ['name', 'type', 'description', 'manager', 'state', 'academic_training',
-                  'twenty_hours', 'sixty_hours', 'confine', 'mining', 'railway_carriage',
+                  'twenty_hours', 'sixty_hours', 'confine', 'height' , 'mining', 'railway_carriage',
                   'railway_mounting', 'building', 'office_work', 'scanner', 'leveling',
                   'static', 'drag',  ]
         widgets = {
@@ -158,6 +161,7 @@ class ProjectForm(forms.ModelForm):
             'twenty_hours': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
             'sixty_hours': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
             'confine': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
+            'height': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
             'mining': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
             'railway_carriage': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
             'railway_mounting': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
@@ -177,6 +181,7 @@ class ProjectForm(forms.ModelForm):
             'twenty_hours': '20h Training',
             'sixty_hours': '60h Training',
             'confine': 'Confined Spaces',
+            'height': 'Height',
             'mining': 'Mining',
             'railway_carriage': 'Railway Carriage',
             'railway_mounting': 'Railway Mounting',
@@ -196,6 +201,7 @@ class ProjectForm(forms.ModelForm):
             'twenty_hours': 'Has completed 20h safety training',
             'sixty_hours': 'Has completed 60h advanced training',
             'confine': 'Certified for confined spaces work',
+            'height': 'Certified for working at heights',
             'mining': 'Experience in mining environments',
             'railway_carriage': 'Qualified for railway carriage tasks',
             'railway_mounting': 'Certified for railway mounting operations',

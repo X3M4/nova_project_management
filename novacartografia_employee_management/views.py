@@ -489,7 +489,7 @@ def project_detail(request, pk):
     
     # Contar las habilidades requeridas por el proyecto
     required_skill_fields = [skill for skill in [
-        'twenty_hours', 'sixty_hours', 'confine', 'mining', 
+        'twenty_hours', 'sixty_hours', 'confine', 'height', 'mining', 
         'railway_carriage', 'railway_mounting', 'building', 
         'office_work', 'scanner', 'leveling', 'static', 'drag'
     ] if getattr(project, skill, False)]

@@ -14,7 +14,7 @@ from geopy.exc import GeocoderTimedOut, GeocoderUnavailable, GeocoderRateLimited
 @login_required
 def project_map(request):
     # Crear un mapa centrado en España
-    m = folium.Map(location=[39.4168, -4.7038], zoom_start=7, 
+    m = folium.Map(location=[38, -4.7038], zoom_start=7, 
                   tiles='OpenStreetMap', min_zoom=6, max_zoom=12, prefer_canvas=True)
     
     marker_cluster = MarkerCluster().add_to(m)
@@ -62,12 +62,15 @@ def project_map(request):
             
             # Popup básico para pruebas
             popup_text = f"""
-            <div style="width:200px">
-                <h4>{project.name}</h4>
-                <p>Tipo: {project.type if hasattr(project, 'type') else 'No especificado'}</p>
-                <p>Ubicación: {location.city if hasattr(location, 'city') else ''}, 
-                             {location.province if hasattr(location, 'province') else ''}</p>
-            </div>
+                <div style="width:200px">
+                    <h4>{project.name}</h4>
+                    <p>Tipo: {project.type if hasattr(project, 'type') else 'No especificado'}</p>
+                    <p>Ubicación: {location.city if hasattr(location, 'city') else ''}, 
+                                {location.province if hasattr(location, 'province') else ''}</p>
+                    <p>Manager: {project.manager if hasattr(project, 'manager') else 'No asignado'}</p>
+                    <p>Empleados: {project.employee_set.count() if hasattr(project, 'employee_set') else 0}</p>
+                    <p><a href="/projects/{project.id}/" target="_blank">Ver proyecto</a></p>
+                </div>
             """
             
             # Añadir marcador directamente al mapa
@@ -76,7 +79,7 @@ def project_map(request):
                 popup=folium.Popup(popup_text, max_width=300),
                 tooltip=project.name,
                 icon=folium.Icon(color=color, icon="building", prefix="fa"),
-            ).add_to(marker_cluster_projects)
+            ).add_to(m)
             
         except (ValueError, TypeError) as e:
             print(f"Error con coordenadas de {project.name}: {e}")
