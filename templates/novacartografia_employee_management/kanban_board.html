@@ -783,5 +783,9 @@
 {% block extra_js %}
   {% load static %}
   <script src="{% static 'js/kanban.js' %}"></script>
+  <!-- Añade SortableJS antes de tus scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <!-- Reemplaza el script original por el nuevo -->
+  <script src="{% static 'js/touch_kanban.js' %}"></script>
 {% endblock %}
 
