@@ -337,25 +337,29 @@ def export_employees_csv(request):
     response['Content-Disposition'] = 'attachment; filename="employees.csv"'
     
     writer = csv.writer(response)
-    writer.writerow(['Name', 'Job', 'Project ID', 'State', 'Academic Training', 'Driver License', 'Twenty Hours', 'Sixty Hours', 'Confine', 'Mining', 'Railway Carriage', 'Railway Mounting', 'Building', 'Office Work', 'Scanner', 'Leveling', 'Static', 'Drag'])
+    writer.writerow(['Name', 'Job', 'Project ID', 'Street', 'City', 'State', 'Academic Training', 'Driver License', 'Twenty Hours', 'Sixty Hours', 'Confine', 'Height', 'Mining', 'Railway Carriage', 'Railway Mounting', 'Building', 'Office Work', 'Scanner', 'Leveling', 'Static', 'Drag'])
     
     employees = Employee.objects.all()
     for employee in employees:
-        writer.writerow([employee.name, employee.job, employee.project_id.name if employee.project_id else '', employee.state if employee.state else '', 
+        writer.writerow([employee.name, employee.job, employee.project_id.name if employee.project_id else '', 
+                        employee.street if employee.street else '',
+                        employee.city if employee.city else '', 
+                        employee.state if employee.state else '', 
                         employee.academic_training if employee.academic_training else '',
-                        employee.driver_license if employee.driver_license else '',
-                        employee.twenty_hours if employee.twenty_hours else '',
-                        employee.sixty_hours if employee.sixty_hours else '',
-                        employee.confine if employee.confine else '',
-                        employee.mining if employee.mining else '',
-                        employee.railway_carriage if employee.railway_carriage else '',
-                        employee.railway_mounting if employee.railway_mounting else '',
-                        employee.building if employee.building else '',
-                        employee.office_work if employee.office_work else '',
-                        employee.scanner if employee.scanner else '',
-                        employee.leveling if employee.leveling else '',
-                        employee.static if employee.static else '',
-                        employee.drag if employee.drag else ''])
+                        employee.driver_license if employee.driver_license else 'False',
+                        employee.twenty_hours if employee.twenty_hours else 'False',
+                        employee.sixty_hours if employee.sixty_hours else 'False',
+                        employee.confine if employee.confine else 'False',
+                        employee.height if employee.height else 'False',
+                        employee.mining if employee.mining else 'False',
+                        employee.railway_carriage if employee.railway_carriage else 'False',
+                        employee.railway_mounting if employee.railway_mounting else 'False',
+                        employee.building if employee.building else 'False',
+                        employee.office_work if employee.office_work else 'False',
+                        employee.scanner if employee.scanner else 'False',
+                        employee.leveling if employee.leveling else 'False',
+                        employee.static if employee.static else 'False',
+                        employee.drag if employee.drag else 'False'])
     return response
 
 
