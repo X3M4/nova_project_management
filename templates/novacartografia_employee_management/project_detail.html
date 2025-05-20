@@ -63,9 +63,9 @@
                                 <dt class="text-sm font-medium text-gray-500">Type</dt>
                                 <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                                     {% if project.type|lower == 'obra' %}
-                                        <span class="px-2 py-1 text-xs font-medium bg-violet-100 text-violet-800 rounded-full">{{ project.type }}</span>
+                                        <span class="px-2 py-1 text-xs font-medium bg-violet-100 text-violet-800 rounded-full">{{ project.get_type_display }}</span>
                                     {% else %}
-                                        <span class="px-2 py-1 text-xs font-medium bg-lime-100 text-lime-800 rounded-full">{{ project.type }}</span>
+                                        <span class="px-2 py-1 text-xs font-medium bg-lime-100 text-lime-800 rounded-full">{{ project.get_type_display }}</span>
                                     {% endif %}
                                 </dd>
                             </div>
@@ -236,9 +236,18 @@
                         <div class="grid grid-cols-12 gap-2">
                             <div class="col-span-4">
                                 <div class="flex items-center">
-                                    <div>
-                                        <div class="text-sm font-medium text-gray-900">{{ employee.name }}</div>
-                                        <div class="text-xs text-gray-500">{{ employee.get_state_display }}</div>
+                                    <div class="flex">
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-900">{{ employee.name }}</div>
+                                            <div class="text-xs text-gray-500">{{ employee.get_state_display }}</div>
+                                        </div>
+                                        <div class="ml-2">
+                                            {% if employee.state == project.state %}
+                                            <i class="fa-solid fa-home text-2xl text-lime-400"></i>
+                                            {% else %}
+                                            <i class="fa-solid fa-cart-flatbed-suitcase text-2xl text-rose-500"></i>
+                                            {% endif %}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
