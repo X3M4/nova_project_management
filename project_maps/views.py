@@ -8,17 +8,20 @@ from django.core.cache import cache
 from .models import ProjectLocation
 from novacartografia_employee_management.models import Employee, Project
 import time
+import random
 from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut, GeocoderUnavailable, GeocoderRateLimited
+
 
 @login_required
 def project_map(request):
     # Crear un mapa centrado en España
-    m = folium.Map(location=[38, -4.7038], zoom_start=7, 
-                  tiles='OpenStreetMap', min_zoom=6, max_zoom=12, prefer_canvas=True)
+    m = folium.Map(location=[38, -4.7038], zoom_start=7,
+                   tiles='OpenStreetMap', min_zoom=6, max_zoom=12, prefer_canvas=True)
     
     marker_cluster = MarkerCluster().add_to(m)
     marker_cluster_projects = MarkerCluster(name='Trabajos').add_to(m)
+    
     # Añadir controles de pantalla completa
     Fullscreen(
         position='topleft',
@@ -29,7 +32,7 @@ def project_map(request):
     
     # Verificar cuántos proyectos tienen coordenadas
     project_locations = ProjectLocation.objects.filter(
-        latitude__isnull=False, 
+        latitude__isnull=False,
         longitude__isnull=False
     ).select_related('project')
     
@@ -52,7 +55,7 @@ def project_map(request):
             print(f"Añadiendo marcador para {project.name} en [{lat}, {lng}]")
             
             # Color según tipo de proyecto
-            color = 'blue'
+            
             if hasattr(project, 'type'):
                 project_type = project.type.lower() if hasattr(project.type, 'lower') else ''
                 if 'project' in project_type:
@@ -85,7 +88,6 @@ def project_map(request):
             print(f"Error con coordenadas de {project.name}: {e}")
     
     # Añadir empleados al mapa
-    from novacartografia_employee_management.models import Employee
     
     # Intenta obtener empleados con coordenadas almacenadas
     employees_with_coords = Employee.objects.filter(
@@ -95,39 +97,85 @@ def project_map(request):
     
     print(f"Empleados con coordenadas almacenadas: {employees_with_coords.count()}")
     
-    # Si no tienes los campos latitude/longitude en el modelo Employee, Django arrojará un error
-    # en la consulta anterior, en cuyo caso debes usar esta alternativa:
+    employees_with_project = Employee.objects.filter(
+        project_id__isnull=False
+    ).select_related('project_id')
+    
     try:
         # Añadir marcadores para empleados con coordenadas
-        for employee in employees_with_coords:
+        # Usaremos la ubicación de sus proyectos como alternativa
+        for employee in employees_with_project:
             try:
-                lat = float(employee.latitude)
-                lng = float(employee.longitude)
-                
-                # Verificar rangos válidos
-                if not (-90 <= lat <= 90) or not (-180 <= lng <= 180):
+                # Solo obtener la ubicación del proyecto una vez por empleado
+                try:
+                    project_location = ProjectLocation.objects.get(
+                        project=employee.project_id,
+                        latitude__isnull=False,
+                        longitude__isnull=False
+                    )
+                except ProjectLocation.DoesNotExist:
+                    # Si el proyecto no tiene ubicación, saltamos este empleado
                     continue
                     
+                # Obtener coordenadas del proyecto
+                lat = float(project_location.latitude)
+                lon = float(project_location.longitude)
+                
+                # Añadir un pequeño desplazamiento aleatorio para evitar solapamiento
+                lat += (random.random() + 0.8) * 0.01
+                lon += (random.random() - 0.8) * 0.01
+                
+                # Obtener provincia del empleado y del proyecto para comparar
+                employee_state = employee.get_state_display() if hasattr(employee, 'get_state_display') else None
+                if employee_state is None and hasattr(employee, 'state'):
+                    employee_state = employee.state
+                
+                project_state = employee.project_id.state if hasattr(employee.project_id, 'state') else None
+                
+                # Determinar el color basado en si las provincias coinciden
+                if employee_state and project_state and employee_state != project_state:
+                    color = "red"  # Provincias diferentes
+                    location_mismatch = True
+                    mismatch_text = f"<p class='text-red-600'>¡Ubicación diferente! (Empleado: {employee_state}, Proyecto: {project_state})</p>"
+                else:
+                    color = "blue"  # Provincias iguales o falta información
+                    location_mismatch = False
+                    mismatch_text = ""
+                
+                # Logging para debugging
+                print(f"Empleado: {employee.name}, Estado empleado: {employee_state}, Estado proyecto: {project_state}, Color: {color}")
+                
                 # Popup para el empleado
                 popup_text = f"""
-                <div style="width:200px">
-                    <h4>{employee.name}</h4>
-                    <p>Puesto: {employee.job}</p>
-                    <p>Ubicación: {employee.city or ''}, {employee.get_state_display() or ''}</p>
-                    <p>Proyecto: {employee.project_id.name if employee.project_id else 'No asignado'}</p>
-                </div>
+                    <div style="width:200px">
+                        <h4>{employee.name if hasattr(employee, 'name') else 'Empleado'}</h4>
+                        <p>Puesto: {employee.job if hasattr(employee, 'job') and employee.job else 'No especificado'}</p>
+                        <p>Ubicación: {
+                            f"{employee.city}, " if hasattr(employee, 'city') and employee.city else ''
+                        }{employee_state or 'No especificado'}</p>
+                        <p>Proyecto: {
+                            employee.project_id.name if hasattr(employee, 'project_id') and employee.project_id else 'Sin proyecto'
+                        }</p>
+                        {mismatch_text}
+                    </div>
                 """
                 
-                # Añadir marcador
+                # Crear y añadir el marcador
                 folium.Marker(
-                    location=[lat, lng],
+                    location=[lat, lon],
                     popup=folium.Popup(popup_text, max_width=300),
                     tooltip=employee.name,
-                    icon=folium.Icon(color="blue", icon="user", prefix="fa"),
-                ).add_to(marker_cluster)
+                    icon=folium.Icon(color=color, icon="user", prefix="fa"),
+                ).add_to(m)
+                
+            except Exception as e:
+                # Capturar cualquier error y loggear para debugging
+                print(f"Error procesando empleado {employee.name}: {str(e)}")
+                continue
                 
             except (ValueError, TypeError, AttributeError) as e:
                 print(f"Error con coordenadas de empleado {employee.name}: {e}")
+    
     except Exception as e:
         # Si los campos latitude/longitude no existen en Employee, usaremos geocodificación
         print(f"No se pueden mostrar empleados con coordenadas: {str(e)}")
@@ -152,44 +200,86 @@ def project_map(request):
         for project_id, employees in employees_by_project_dict.items():
             try:
                 # Obtener ubicación del proyecto
-                location = ProjectLocation.objects.get(
+                project_location = ProjectLocation.objects.get(
                     project_id=project_id,
                     latitude__isnull=False,
                     longitude__isnull=False
                 )
                 
-                lat = float(location.latitude)
-                lng = float(location.longitude)
+                # Obtener la provincia del proyecto
+                project_province = project_location.province
+                
+                lat = float(project_location.latitude)
+                lng = float(project_location.longitude)
                 
                 # Para múltiples empleados en el mismo proyecto, agregar ligera dispersión
-                import random
                 for i, employee in enumerate(employees):
+                    # Obtener la provincia del empleado (si tiene)
+                    employee_province = employee.state if hasattr(employee, 'province') and employee.province else None
+                    
+                    # Determinar color del marcador basado en coincidencia de provincias
+                    marker_color = "blue"  # Color por defecto
+                    
+                    # Si las provincias no coinciden, usar rojo
+                    if project_province and employee_province and project_province.lower() != employee_province.lower():
+                        marker_color = "red"
+                        province_match_text = f"<p class='text-red-600'>¡Provincia diferente! Empleado: {employee_province}, Proyecto: {project_province}</p>"
+                    else:
+                        province_match_text = ""
+                        
                     # Añadir una pequeña variación para evitar solapamiento
                     employee_lat = lat + (random.random() - 0.5) * 0.01
                     employee_lng = lng + (random.random() - 0.5) * 0.01
                     
-                    # Popup para el empleado
+                    # Popup para el empleado con información de provincias
                     popup_text = f"""
-                    <div style="width:200px">
+                    <div style="width:250px">
                         <h4>{employee.name}</h4>
                         <p>Puesto: {employee.job}</p>
-                        <p>Ubicación aproximada (del proyecto)</p>
                         <p>Proyecto: {employee.project_id.name}</p>
+                        <p>Ubicación: {project_province}</p>
+                        {province_match_text}
                     </div>
                     """
                     
-                    # Añadir marcador
+                    # Añadir marcador usando las coordenadas del proyecto
                     folium.Marker(
                         location=[employee_lat, employee_lng],
                         popup=folium.Popup(popup_text, max_width=300),
                         tooltip=employee.name,
-                        icon=folium.Icon(color="orange", icon="user", prefix="fa"),
-                    ).add_to(m)
+                        icon=folium.Icon(color=marker_color, icon="user", prefix="fa"),
+                    ).add_to(marker_cluster)  # Añade al cluster de marcadores
                     
             except (ProjectLocation.DoesNotExist, ValueError, TypeError) as e:
                 # Proyecto sin ubicación o coordenadas inválidas
                 continue
     
+    # Filtramos solo los empleados sin proyecto asignado o aquellos que queremos mostrar en su ubicación real
+    employees_with_coords = Employee.objects.filter(
+        latitude__isnull=False,
+        longitude__isnull=False,
+        project_id__isnull=True  # Solo mostrar empleados sin proyecto en sus propias coordenadas
+    )
+    
+    for employee in employees_with_coords:
+        # Crear popup para el empleado
+        popup_html = f"""
+        <div style="width:200px">
+            <h4>{employee.name}</h4>
+            <p>Puesto: {employee.job if employee.job else 'No especificado'}</p>
+            <p>Ubicación: {employee.province if hasattr(employee, 'province') and employee.province else 'No especificada'}</p>
+            <p class="text-green-600">Disponible para asignación</p>
+        </div>
+        """
+        
+        # Añadir marcador con la ubicación real del empleado
+        folium.Marker(
+            location=[employee.latitude, employee.longitude],
+            popup=folium.Popup(popup_html, max_width=300),
+            tooltip=employee.name,
+            icon=folium.Icon(color="green", icon="user", prefix="fa"),  # Verde para empleados disponibles
+        ).add_to(marker_cluster)
+        
     # Recopilar proyectos sin ubicación
     projects_without_location = {}
     for project in Project.objects.all():
@@ -217,6 +307,7 @@ def project_map(request):
         'projects_without_location': projects_without_location,
         'project_count': project_locations.count()
     })
+
 
 def get_project_popup_html(project, num_employees, location, request=None):
     """
@@ -356,6 +447,7 @@ def get_project_popup_html(project, num_employees, location, request=None):
         </div>
         """
 
+
 @login_required
 def project_detail_redirect(request, project_id):
     """
@@ -370,6 +462,7 @@ def project_detail_redirect(request, project_id):
     
     # Si no funciona, intentar una URL directa
     return redirect(f'/projects/{project_id}/')
+
 
 @login_required
 def add_project_location(request, project_id):
@@ -411,6 +504,7 @@ def add_project_location(request, project_id):
         'title': 'Añadir ubicación'
     })
 
+
 @login_required
 def edit_project_location(request, location_id):
     location = get_object_or_404(ProjectLocation, pk=location_id)
@@ -429,7 +523,12 @@ def edit_project_location(request, location_id):
             location.province = province
             location.latitude = latitude
             location.longitude = longitude
+            
+            project.state = province
+            
             location.save()
+            project.save()
+            
             messages.success(request, f'Ubicación actualizada para {project.name}')
             return redirect('project_map')
         else:
@@ -449,13 +548,10 @@ def edit_project_location(request, location_id):
     return render(request, 'project_maps/add_location.html', context)
 
 
-
-# Añade estas vistas
 @login_required
 def employee_locations_list(request):
     """Vista para mostrar una lista de empleados y gestionar sus ubicaciones."""
     # Obtener todos los empleados
-    from novacartografia_employee_management.models import Employee
     employees = Employee.objects.all().order_by('name')
     
     # Contar empleados con y sin ubicación
@@ -478,10 +574,10 @@ def employee_locations_list(request):
         'total_employees': total_employees
     })
 
+
 @login_required
 def edit_employee_location(request, employee_id):
     """Vista para editar la ubicación de un empleado específico."""
-    from novacartografia_employee_management.models import Employee
     employee = get_object_or_404(Employee, pk=employee_id)
     
     if request.method == 'POST':
