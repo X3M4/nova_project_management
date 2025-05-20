@@ -3,6 +3,7 @@
 {% block title %}{{ project.name }} - Project Details{% endblock %}
 
 {% block content %}
+
 <div class="mb-6 flex justify-between items-center">
     <h2 class="text-2xl font-bold text-gray-800">Project Details</h2>
     <div class="flex space-x-2">
@@ -388,6 +389,12 @@
                             {% if project.confine and employee.confine %}
                                 <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
                                     Confine
+                                </span>
+                            {% endif %}
+
+                            {% if project.height and employee.height %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-200 text-yellow-800">
+                                    Height
                                 </span>
                             {% endif %}
                             

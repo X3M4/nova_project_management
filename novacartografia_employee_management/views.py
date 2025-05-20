@@ -493,10 +493,14 @@ def project_detail(request, pk):
     
     # Contar las habilidades requeridas por el proyecto
     required_skill_fields = [skill for skill in [
-        'twenty_hours', 'sixty_hours', 'confine', 'height', 'mining', 
+        'twenty_hours', 'sixty_hours', 'confine', 'height', 'mining',  # Verificamos que 'height' está aquí
         'railway_carriage', 'railway_mounting', 'building', 
         'office_work', 'scanner', 'leveling', 'static', 'drag'
     ] if getattr(project, skill, False)]
+    
+    # Añadir diagnóstico
+    print(f"Required skills: {required_skill_fields}")
+    print(f"Project height value: {project.height}")
     
     required_skills_count = len(required_skill_fields)
     
@@ -513,6 +517,11 @@ def project_detail(request, pk):
         for emp in employees:
             # Contar cuántas de las habilidades requeridas tiene este empleado
             matches = sum(1 for skill in required_skill_fields if getattr(emp, skill, False))
+            
+            # Añadir diagnóstico
+            if 'height' in required_skill_fields:
+                print(f"Employee {emp.name} height: {emp.height}, height matches: {'height' in required_skill_fields and emp.height}")
+            
             percentage = (matches / required_skills_count) * 100
             
             # Añadir atributos calculados para usar en la plantilla
@@ -534,6 +543,7 @@ def project_detail(request, pk):
     context = {
         'project': project,
         'employees_with_matching_skills': employees_with_matching_skills,
+        'debug': True,  # Añadir para mostrar mensajes de debug en la template
     }
     
     return render(request, 'novacartografia_employee_management/project_detail.html', context)
