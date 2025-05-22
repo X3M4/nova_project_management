@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "novacartografia_employee_management",
     'project_maps',
-    'rest_framework',
+    'rest_framework.authtoken',
     'corsheaders',
 ]
 
