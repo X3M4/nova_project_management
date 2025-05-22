@@ -19,6 +19,22 @@ from django.urls import include, path
 from django.shortcuts import redirect
 from django.conf import settings
 from django.conf.urls.static import static
+from rest_framework.routers import DefaultRouter
+from rest_framework.authtoken.views import obtain_auth_token
+from novacartografia_employee_management.api import (
+    EmployeeViewSet,
+    ProjectViewSet,
+    EmployeeNeededViewSet,
+    ProjectMovementLineViewSet,
+)
+# Create a router and register our viewsets with it.
+router = DefaultRouter()
+router.register(r'employees', EmployeeViewSet)
+router.register(r'projects', ProjectViewSet)
+router.register(r'employees_needed', EmployeeNeededViewSet)
+router.register(r'project_movement_lines', ProjectMovementLineViewSet)
+
+# Add the API URLs to the urlpatterns
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -26,6 +42,9 @@ urlpatterns = [
     path("", include('novacartografia_employee_management.urls')),
     path('accounts/', include('django.contrib.auth.urls')),  # For login, logout, etc.
     path('maps/', include('project_maps.urls')),  # Include project_maps URLs
+    path('api/', include(router.urls)),  # Include API URLs
+    path('api-auth/', include('rest_framework.urls')),  # For API authentication
+    path('api/token/', obtain_auth_token),
 ]
 
 # Add static and media URLs for development
