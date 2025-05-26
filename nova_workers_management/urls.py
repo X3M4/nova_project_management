@@ -27,12 +27,14 @@ from novacartografia_employee_management.api import (
     EmployeeNeededViewSet,
     ProjectMovementLineViewSet,
 )
+from project_maps.api import ProjectLocationViewSet
 # Create a router and register our viewsets with it.
 router = DefaultRouter()
 router.register(r'employees', EmployeeViewSet)
 router.register(r'projects', ProjectViewSet)
 router.register(r'employees_needed', EmployeeNeededViewSet)
 router.register(r'project_movement_lines', ProjectMovementLineViewSet)
+router.register(r'maps', ProjectLocationViewSet)
 
 # Add the API URLs to the urlpatterns
 
