@@ -494,10 +494,13 @@ def add_project_location(request, project_id):
                 longitude=longitude
             )
             location.save()
+            
+            # Asegurarse de que el estado se actualiza correctamente
+            project.state = province  # Actualizar el estado del proyecto
+            project.save(update_fields=['state'])  # Solo actualizar el campo state
+            
             messages.success(request, f'Ubicación añadida para {project.name}')
             return redirect('project_map')
-        else:
-            messages.error(request, 'Por favor introduce la localidad y/o selecciona una ubicación en el mapa.')
     
     return render(request, 'project_maps/add_location.html', {
         'project': project,
@@ -525,9 +528,9 @@ def edit_project_location(request, location_id):
             location.longitude = longitude
             
             project.state = province
+            project.save(update_fields=['state'])
             
             location.save()
-            project.save()
             
             messages.success(request, f'Ubicación actualizada para {project.name}')
             return redirect('project_map')

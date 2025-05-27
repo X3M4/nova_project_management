@@ -64,17 +64,13 @@
                 <label for="{{ form.state.id_for_label }}" class="block text-sm font-medium text-gray-700">
                     {{ form.state.label }}
                 </label>
-                <select name="{{ form.state.name }}" id="{{ form.state.id_for_label }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50">
-                    {% for value, label in form.fields.state.choices %}
-                        <option value="{{ value }}" {% if form.state.value == value %}selected{% endif %}>{{ label }}</option>
-                    {% endfor %}
-                </select>
+                {{ form.state }}
                 {% if form.state.help_text %}
-                    <p class="mt-1 text-xs text-gray-500">{{ form.state.help_text }}</p>
+                    <p class="mt-1 text-xs text-gray-500">{{ form.name.help_text }}</p>
                 {% endif %}
                 {% if form.state.errors %}
                     <div class="mt-1 text-sm text-red-600">
-                        {% for error in form.estate.errors %}
+                        {% for error in form.state.errors %}
                             <p>{{ error }}</p>
                         {% endfor %}
                     </div>
