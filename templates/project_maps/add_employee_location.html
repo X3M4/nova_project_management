@@ -33,7 +33,11 @@
     </div>
     
     <div class="bg-white shadow-md rounded-lg p-6 mb-6">
-        <h2 class="text-xl font-semibold mb-4">{{ employee.name }}</h2>
+        <h2 class="text-xl font-semibold mb-4">
+            <a href="{% url 'employee_update' employee.id %}" class="text-blue-600 hover:text-blue-800 hover:underline">
+                {{ employee.name }}
+            </a>
+        </h2>
         <p><strong>Puesto:</strong> {{ employee.job }}</p>
         <p><strong>Dirección:</strong> {{ location.address }}, {{ location.locality }}, {{ location.province }}</p>
     </div>

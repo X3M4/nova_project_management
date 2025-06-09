@@ -17,7 +17,7 @@ from geopy.exc import GeocoderTimedOut, GeocoderUnavailable, GeocoderRateLimited
 def project_map(request):
     # Crear un mapa centrado en España
     m = folium.Map(location=[38, -4.7038], zoom_start=7,
-                   tiles='OpenStreetMap', min_zoom=6, max_zoom=12, prefer_canvas=True)
+                   tiles='OpenStreetMap', min_zoom=6, max_zoom=14, prefer_canvas=True)
     
     marker_cluster = MarkerCluster().add_to(m)
     marker_cluster_projects = MarkerCluster(name='Trabajos').add_to(m)
@@ -216,16 +216,27 @@ def project_map(request):
                 for i, employee in enumerate(employees):
                     # Obtener la provincia del empleado (si tiene)
                     employee_province = employee.state if hasattr(employee, 'province') and employee.province else None
+                    employee_job = employee.job if hasattr(employee, 'job') else "No especificado"
                     
                     # Determinar color del marcador basado en coincidencia de provincias
-                    marker_color = "blue"  # Color por defecto
+                    marker_color = ""  # Color por defecto
+                    icon_color = "green"
+                    if "TOPÓGRAFO" in employee_job:
+                        # Si el empleado es topógrafo, cambiar el color del icono
+                        icon_color = " #20f00b"
+                    elif "Auxiliar" in employee_job:
+                        icon_color = " #f0e20b "  # Amarillo para auxiliares
+                    elif "Piloto" in employee_job:
+                        icon_color = " #0b99f0 "
+                    else: 
+                        icon_color = "orange"
                     
                     # Si las provincias no coinciden, usar rojo
                     if project_province and employee_province and project_province.lower() != employee_province.lower():
                         marker_color = "red"
                         province_match_text = f"<p class='text-red-600'>¡Provincia diferente! Empleado: {employee_province}, Proyecto: {project_province}</p>"
                     else:
-                        province_match_text = ""
+                        marker_color = "blue"
                         
                     # Añadir una pequeña variación para evitar solapamiento
                     employee_lat = lat + (random.random() - 0.5) * 0.01
@@ -247,7 +258,7 @@ def project_map(request):
                         location=[employee_lat, employee_lng],
                         popup=folium.Popup(popup_text, max_width=300),
                         tooltip=employee.name,
-                        icon=folium.Icon(color=marker_color, icon="user", prefix="fa"),
+                        icon=folium.Icon(color=marker_color,icon_color=icon_color, icon="user", prefix="fa"),
                     ).add_to(marker_cluster)  # Añade al cluster de marcadores
                     
             except (ProjectLocation.DoesNotExist, ValueError, TypeError) as e:
@@ -271,13 +282,23 @@ def project_map(request):
             <p class="text-green-600">Disponible para asignación</p>
         </div>
         """
+        icon_color = "green"
+        if "TOPÓGRAFO" in employee.job:
+            # Si el empleado es topógrafo, cambiar el color del icono
+            icon_color = " #20f00b"
+        elif "Auxiliar" in employee.job:
+            icon_color = " #f0e20b "  # Amarillo para auxiliares
+        elif "Piloto" in employee.job:
+            icon_color = " #0b99f0 "
+        else: 
+            icon_color = "orange"
         
         # Añadir marcador con la ubicación real del empleado
         folium.Marker(
             location=[employee.latitude, employee.longitude],
             popup=folium.Popup(popup_html, max_width=300),
             tooltip=employee.name,
-            icon=folium.Icon(color="green", icon="user", prefix="fa"),  # Verde para empleados disponibles
+            icon=folium.Icon(color="gray",icon_color=icon_color, icon="user", prefix="fa"),  # Verde para empleados disponibles
         ).add_to(marker_cluster)
         
     # Recopilar proyectos sin ubicación
