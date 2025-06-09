@@ -22,13 +22,17 @@ class EmployeeForm(forms.ModelForm):
             'driver_license', 'twenty_hours', 'sixty_hours', 
             'confine', 'height' , 'mining', 'railway_carriage', 'railway_mounting', 
             'building', 'office_work', 'scanner', 'leveling', 
-            'static', 'drag', 'locked',
+            'static', 'drag', 'locked', 'active', 'start_date', 'end_date'
         ]
         labels = {
             'name': 'Full Name',
             'job': 'Job Title',
             'project_id': 'Project',
-            
+            'city': 'City',
+            'street': 'Street',
+            'active': 'Active',
+            'start_date': 'Start Date',
+            'end_date': 'End Date',
             'state': 'Province',
             'academic_training': 'Academic Training',
             'driver_license': 'Driver License',

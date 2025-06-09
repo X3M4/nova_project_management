@@ -9,10 +9,14 @@ from django.contrib.auth.decorators import login_required
 from .forms import EmployeeCSVImportForm, EmployeeForm, EmployeeNeededForm, GetEmployeeLockedForm, ProjectCSVImportForm, ProjectForm
 from .models import Employee, GetEmployeeLocked, Project, ProjectMovementLine, EmployeeNeeded
 from django.http import HttpResponse, JsonResponse
-from django.db.models import Case, When, Value, CharField, Q, IntegerField, Count, Q, BooleanField, FloatField, F
+from django.db.models import Case, When, Value, CharField, Q, IntegerField, Count, Q, BooleanField, FloatField, F, Min
 from django.db.models.functions import Cast
 from functools import reduce
 import operator
+from datetime import datetime
+import re
+import locale
+# ...existing imports...
 
 @login_required
 def employee_list(request):
@@ -65,158 +69,94 @@ def import_employees_csv(request):
                     'Scanner': 'scanner',
                     'Leveling': 'leveling',
                     'Static': 'static',
-                    'Drag': 'drag'
-                    # 'Linear Work' no está en tu modelo, así que no lo incluimos
+                    'Drag': 'drag',
+                    'Active': 'active',
+                    'Service Start Date': 'start_date',
+                    'Service Termination Date': 'end_date'
                 }
-                
-                # Lista de campos booleanos para manejarlos especialmente
-                boolean_fields = [
-                    'driver_license', 'twenty_hours', 'sixty_hours', 
-                    'confine', 'mining', 'railway_carriage', 'railway_mounting',
-                    'building', 'office_work', 'scanner', 'leveling', 
-                    'static', 'drag'
-                ]
-                
-                # Verificar que las columnas requeridas estén presentes
-                required_columns = ['Name', 'Job']
-                if reader.fieldnames:
-                    missing_columns = [col for col in required_columns if col not in reader.fieldnames]
-                    if missing_columns:
-                        messages.error(request, f'CSV file is missing required columns: {", ".join(missing_columns)}')
-                        return redirect('import_employees_csv')
-                
-                # Obtener los valores válidos para el campo state directamente de la definición del campo
-                # Obtenemos la definición del campo 'state' y extraemos los valores válidos
-                valid_states = []
-                state_field = Employee._meta.get_field('state')
-                if hasattr(state_field, 'choices') and state_field.choices:
-                    valid_states = [choice[0] for choice in state_field.choices]
                 
                 for row in reader:
                     try:
-                        # Extraer y normalizar campos básicos usando el mapeo
-                        name = row.get('Name', '').strip()
-                        job = row.get('Job', '').strip()
-                        # Get street and clean it by removing "C/", numbers, and commas
-                        street = row.get('Street', '').strip()
-                        if street:
-                            # Remove "º" symbol
-                            street = street.replace("º", "")
-                            # Remove all numbers
-                            street = ''.join(char for char in street if not char.isdigit())
-                        if street:
-                            # Remove "C/" prefix
-                            street = street.replace("C/", "").strip()
-                            street = street.replace("piso", "").strip()
-                            street = street.replace("Piso", "").strip()
-                            street = street.replace("planta", "").strip()
-                            # Remove all numbers
-                            street = ''.join(char for char in street if not char.isdigit())
-                            # Remove commas
-                            street = street.replace(",", "").strip()
-                            street = street.replace("-", "")
-                            street = street.replace(" B ", "").strip()
-                            street = street.replace(" A ", "").strip()
-                            street = street.replace(" K ", "").strip()
-                            street = street.replace(" P ", "").strip()
-                            street = street.replace(" izq ", "").strip()
-                            street = street.replace(" der ", "").strip()
-                            
-                            
-                        city = row.get('City', '').strip()
-                        state = row.get('State', '').strip()
-                        academic_training = row.get('Academic Training', '').strip()
+                        # Prepare employee data
+                        employee_data = {}
                         
-                        # Skip empty rows
-                        if not name and not job:
-                            continue
-                        
-                        # Preparar los datos base del empleado
-                        employee_data = {
-                            'job': job,
-                            'academic_training': academic_training,
-                            'city': city,
-                            'street': street,
-                        }
-                        
-
-                        
-                        # Solo establecer el estado si se proporciona y es válido
-                        if state:
-                            # Normalizar el estado para comparar (convertir a minúsculas y reemplazar espacios)
-                            state_normalized = state.lower().replace(' ', '_')
-                            # Buscar coincidencias aproximadas
-                            matched_state = None
-                            for valid_state in valid_states:
-                                if valid_state == state_normalized or valid_state.replace('_', ' ') == state:
-                                    matched_state = valid_state
-                                    break
-                            
-                            if matched_state:
-                                employee_data['state'] = matched_state
-                        
-                        # Procesar cada campo booleano
                         for csv_field, model_field in csv_to_model_mapping.items():
-                            # Solo procesar campos booleanos
-                            if model_field in boolean_fields and csv_field in row:
-                                value = row.get(csv_field, '').strip()
+                            if csv_field in row and row[csv_field]:
+                                value = row[csv_field].strip()
                                 
-                                # Convertir el valor a booleano
-                                if value.lower() in ('true', 't', 'yes', 'y', '1', 'si', 'sí', 'x', '✓', '✔'):
-                                    employee_data[model_field] = True
-                                elif value.lower() in ('false', 'f', 'no', 'n', '0', '', ' '):
-                                    employee_data[model_field] = False
+                                # Handle boolean fields
+                                if model_field in ['driver_license', 'twenty_hours', 'sixty_hours', 'confine', 
+                                                 'mining', 'railway_carriage', 'railway_mounting', 'building', 
+                                                 'office_work', 'scanner', 'leveling', 'static', 'drag', 'active']:
+                                    employee_data[model_field] = value.lower() in ['true', '1', 'yes', 'sí', 'si']
+                                
+                                # Handle date fields
+                                elif model_field in ['start_date', 'end_date']:
+                                    if value:
+                                        try:
+                                            # Try different date formats
+                                            for date_format in ['%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y', '%Y/%m/%d']:
+                                                try:
+                                                    parsed_date = datetime.strptime(value, date_format).date()
+                                                    employee_data[model_field] = parsed_date
+                                                    break
+                                                except ValueError:
+                                                    continue
+                                            else:
+                                                # If no format worked, log error but continue
+                                                error_messages.append(f"Invalid date format for {csv_field}: {value}")
+                                        except Exception as e:
+                                            error_messages.append(f"Error parsing date {csv_field}: {str(e)}")
+                                
+                                # Handle other fields normally
+                                else:
+                                    employee_data[model_field] = value
                         
-                        # Check if employee exists
-                        existing_employee = Employee.objects.filter(name=name).first()
-                        
-                        if existing_employee:
-                            # Actualizar campos del empleado existente (excepto project_id)
-                            is_modified = False
+                        # Get or create employee
+                        if 'name' in employee_data:
+                            employee, created = Employee.objects.get_or_create(
+                                name=employee_data['name'],
+                                defaults=employee_data
+                            )
                             
-                            for field, value in employee_data.items():
-                                # Solo actualizar si el valor es diferente al actual
-                                if getattr(existing_employee, field) != value:
-                                    setattr(existing_employee, field, value)
-                                    is_modified = True
-                            
-                            if is_modified:
-                                existing_employee.save()
+                            if created:
+                                created_count += 1
+                            else:
+                                # Update existing employee
+                                for field, value in employee_data.items():
+                                    setattr(employee, field, value)
+                                employee.save()
                                 modified_count += 1
                         else:
-                            # Añadir el nombre para crear el empleado
-                            employee_data['name'] = name
+                            error_count += 1
+                            error_messages.append("Missing employee name in row")
                             
-                            Employee.objects.create(**employee_data)
-                            created_count += 1
                     except Exception as e:
                         error_count += 1
-                        error_detail = f"Error in row with name '{name}': {str(e)}"
-                        error_messages.append(error_detail)
-                        print(error_detail)  # Debug info
-                        continue
+                        error_messages.append(f"Error processing row: {str(e)}")
                 
                 # Show results
-                messages.success(request, f'CSV Import complete: {created_count} employees created, {modified_count} employees updated, {error_count} errors.')
+                success_message = f"Import completed: {created_count} created, {modified_count} modified"
+                if error_count > 0:
+                    success_message += f", {error_count} errors"
                 
-                # Si hay errores, mostrar los primeros 5 para debugging
+                messages.success(request, success_message)
+                
                 if error_messages:
-                    detail_message = "First few errors: " + " | ".join(error_messages[:5])
-                    if len(error_messages) > 5:
-                        detail_message += f" and {len(error_messages) - 5} more."
-                    messages.warning(request, detail_message)
+                    for error in error_messages[:10]:  # Show first 10 errors
+                        messages.warning(request, error)
+                    if len(error_messages) > 10:
+                        messages.warning(request, f"... and {len(error_messages) - 10} more errors")
                 
                 return redirect('employee_list')
                 
             except Exception as e:
-                messages.error(request, f'Error processing file: {str(e)}')
+                messages.error(request, f'Error processing CSV file: {str(e)}')
                 return redirect('import_employees_csv')
     else:
         form = EmployeeCSVImportForm()
-        
-    return render(request, 'novacartografia_employee_management/import_employees_csv.html', {
-        'form': form
-    })
+    
+    return render(request, 'novacartografia_employee_management/import_employees_csv.html', {'form': form})
     
 @login_required
 def import_projects_csv(request):
@@ -589,14 +529,20 @@ def movement_list(request):
 
 @login_required
 def kanban_board(request):
-    # Lo mismo para la vista de Kanban
+    # Anotar proyectos con información sobre necesidades, fechas y manager
     projects = Project.objects.annotate(
+        has_needs=Case(
+            When(employeeneeded__fulfilled=False, then=Value(1)),
+            default=Value(0),
+            output_field=IntegerField(),
+        ),
+        earliest_start_date=Min('employeeneeded__start_date'),
         manager_order=Case(
             When(manager__isnull=True, then=Value('ZZZZZZ')),  # Un valor que será ordenado al final
             default='manager',
             output_field=CharField(),
         )
-    ).order_by('manager_order')
+    ).distinct().order_by('-has_needs', 'earliest_start_date', 'manager_order')  # Primero por necesidades, luego por fecha más próxima, luego por manager
     
     employees = Employee.objects.all()
     needs = EmployeeNeeded.objects.filter(fulfilled=False)
@@ -886,4 +832,3 @@ def get_employee_locked_list(request):
     return render(request, 'novacartografia_employee_management/future_assignment_list.html', {
         'future_assignments': future_assignments,
     })
-    

@@ -52,6 +52,9 @@ class Employee(models.Model):
     project_id = models.ForeignKey(Project, on_delete=models.SET_NULL, related_name='employee_set', blank=True, null=True)
     street = models.CharField(max_length=100, blank=True, null=True)
     city = models.CharField(max_length=100, blank=True, null=True)
+    active = models.BooleanField(default=True, help_text="Indicates if the employee is currently active")
+    start_date = models.DateField(default=timezone.now, help_text="When the employee started working", null=True, blank=True)
+    end_date = models.DateField(blank=True, null=True, help_text="When the employee ended working, if applicable")
     state = models.CharField(max_length=50, default='valencia', 
            choices=[
                 ('Araba (Álava)', 'Álava'),
