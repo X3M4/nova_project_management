@@ -24,6 +24,8 @@ class EmployeeForm(forms.ModelForm):
             'building', 'office_work', 'scanner', 'leveling', 
             'static', 'drag', 'locked', 'active', 'start_date', 'end_date'
         ]
+        
+        
         labels = {
             'name': 'Full Name',
             'job': 'Job Title',
@@ -72,6 +74,11 @@ class EmployeeForm(forms.ModelForm):
             'static': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
             'drag': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
             'locked': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
+            'active': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
+            'start_date': forms.DateInput(attrs={'type': 'date', 'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50'}),
+            'end_date': forms.DateInput(attrs={'type': 'date', 'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50'}),
+            'street': forms.TextInput(attrs={'placeholder': 'Enter street address'}),
+            'city': forms.TextInput(attrs={'placeholder': 'Enter city'}),
         }
     
     def clean(self):

@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Employee Needed - {{ object.type }} for {{ object.project_id.name }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+        <div class="text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+            </div>
+            <h2 class="text-lg font-medium text-gray-900 mb-4">Confirm Delete</h2>
+            <p class="text-sm text-gray-500 mb-6">
+                Are you sure you want to delete the request for <strong>{{ object.quantity }} {{ object.type }}</strong> 
+                for project <strong>{{ object.project_id.name }}</strong>?
+            </p>
+            <p class="text-xs text-gray-400 mb-6">
+                Start Date: {{ object.start_date|date:"d/m/Y" }}<br>
+                This action cannot be undone.
+            </p>
+        </div>
+        
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            <div class="flex space-x-4">
+                <button type="submit" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out">
+                    <i class="fas fa-trash mr-2"></i>
+                    Delete
+                </button>
+                <a href="{% url 'employee_needed_list' %}" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium py-2 px-4 rounded-md text-center transition duration-150 ease-in-out">
+                    <i class="fas fa-times mr-2"></i>
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
