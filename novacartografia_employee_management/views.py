@@ -21,7 +21,24 @@ import locale
 @login_required
 def employee_list(request):
     employees = Employee.objects.all()
-    return render(request, 'novacartografia_employee_management/employee_list.html', {'employees': employees})
+    
+    # Handle search
+    search_query = request.GET.get('search')
+    if search_query:
+        employees = employees.filter(
+            Q(name__icontains=search_query) |
+            Q(job__icontains=search_query) |
+            Q(street__icontains=search_query) |
+            Q(city__icontains=search_query) |
+            Q(state__icontains=search_query) |
+            Q(academic_training__icontains=search_query) |
+            Q(project_id__name__icontains=search_query)
+        )
+    
+    return render(request, 'novacartografia_employee_management/employee_list.html', {
+        'employees': employees,
+        'search_query': search_query
+    })
 
 # Create your views here.
 @login_required
@@ -405,9 +422,26 @@ def project_list(request):
             default='manager',
             output_field=CharField(),
         )
-    ).order_by('manager_order', 'name')
+    )
     
-    return render(request, 'novacartografia_employee_management/project_list.html', {'projects': projects})
+    # Handle search
+    search_query = request.GET.get('search')
+    if search_query:
+        projects = projects.filter(
+            Q(name__icontains=search_query) |
+            Q(manager__icontains=search_query) |
+            Q(state__icontains=search_query) |
+            Q(description__icontains=search_query) |
+            Q(type__icontains=search_query)
+        )
+    
+    # Apply ordering after filtering
+    projects = projects.order_by('manager_order', 'name')
+    
+    return render(request, 'novacartografia_employee_management/project_list.html', {
+        'projects': projects,
+        'search_query': search_query
+    })
 
 @login_required
 def project_create(request):
@@ -544,7 +578,21 @@ def kanban_board(request):
             default='manager',
             output_field=CharField(),
         )
-    ).distinct().order_by('-has_needs', 'earliest_start_date', 'manager_order')  # Primero por necesidades, luego por fecha más próxima, luego por manager
+    ).distinct()
+    
+    # Handle search
+    search_query = request.GET.get('search')
+    if search_query:
+        projects = projects.filter(
+            Q(name__icontains=search_query) |
+            Q(manager__icontains=search_query) |
+            Q(state__icontains=search_query) |
+            Q(description__icontains=search_query) |
+            Q(type__icontains=search_query)
+        )
+    
+    # Apply ordering after filtering
+    projects = projects.order_by('-has_needs', 'earliest_start_date', 'manager_order')
     
     employees = Employee.objects.all()
     needs = EmployeeNeeded.objects.filter(fulfilled=False)
@@ -555,8 +603,8 @@ def kanban_board(request):
         'employees': employees,
         'needs': needs,
         'locks': locks,
+        'search_query': search_query,
     })
-
 
 @login_required
 def update_employee_project(request):
