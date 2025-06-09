@@ -55,6 +55,8 @@ def import_employees_csv(request):
                 csv_to_model_mapping = {
                     'Name': 'name',
                     'Job': 'job',
+                    'Street': 'street',
+                    'City': 'city',
                     'State': 'state',
                     'Academic Training': 'academic_training',
                     'Driver License': 'driver_license',
