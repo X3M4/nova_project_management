@@ -121,7 +121,7 @@
                 </div>
               {% endif %}
 
-              {% if employee.project_id == project and 'Auxiliar' in employee.job %}
+              {% if employee.project_id == project and 'Auxiliar' in employee.job or employee.project_id == project and 'Técnico GIS' in employee.job %}
                 <div class="employee-card p-2  bg-yellow-200 border  border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
                   <div class="flex justify-between items-start">
                     <div>
@@ -359,7 +359,7 @@
                       </div>
                     {% endif %}
 
-                    {% if employee.project_id == project and 'Auxiliar' in employee.job %}
+                    {% if employee.project_id == project and 'Auxiliar' in employee.job or employee.project_id == project and 'Técnico GIS' in employee.job %}
                       <div class="employee-card p-2 bg-yellow-200 border border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
                         <div class="flex justify-between items-start">
                           <div>
@@ -641,7 +641,7 @@
                       </div>
                     {% endif %}
 
-                    {% if employee.project_id == project and 'Auxiliar' in employee.job %}
+                    {% if employee.project_id == project and 'Auxiliar' in employee.job or employee.project_id == project and 'Técnico GIS' in employee.job %}
                       <div class="employee-card p-2 bg-yellow-200 border border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
                         <div class="flex justify-between items-start">
                           <div>
