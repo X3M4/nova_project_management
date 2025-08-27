@@ -66,11 +66,45 @@
                 </label>
                 {{ form.state }}
                 {% if form.state.help_text %}
-                    <p class="mt-1 text-xs text-gray-500">{{ form.name.help_text }}</p>
+                    <p class="mt-1 text-xs text-gray-500">{{ form.state.help_text }}</p>
                 {% endif %}
                 {% if form.state.errors %}
                     <div class="mt-1 text-sm text-red-600">
                         {% for error in form.state.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="mb-4">
+                <label for="{{ form.date_from.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                    {{ form.date_from.label }}
+                </label>
+                {{ form.date_from }}
+                {% if form.date_from.help_text %}
+                    <p class="mt-1 text-xs text-gray-500">{{ form.date_from.help_text }}</p>
+                {% endif %}
+                {% if form.date_from.errors %}
+                    <div class="mt-1 text-sm text-red-600">
+                        {% for error in form.date_from.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="mb-4">
+                <label for="{{ form.date_to.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                    {{ form.date_to.label }}
+                </label>
+                {{ form.date_to }}
+                {% if form.date_to.help_text %}
+                    <p class="mt-1 text-xs text-gray-500">{{ form.date_to.help_text }}</p>
+                {% endif %}
+                {% if form.date_to.errors %}
+                    <div class="mt-1 text-sm text-red-600">
+                        {% for error in form.date_to.errors %}
                             <p>{{ error }}</p>
                         {% endfor %}
                     </div>

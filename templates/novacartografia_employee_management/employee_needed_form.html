@@ -37,6 +37,10 @@
                         {% else %}
                             {{ field }}
                         {% endif %}
+
+                        {% if field.name == 'description' %}
+                            <p class="mt-1 text-xs text-gray-500">Provide a detailed description of the employee request.</p>
+                        {% endif %}
                         
                         {% if field.help_text %}
                             <p class="mt-1 text-xs text-gray-500">{{ field.help_text }}</p>

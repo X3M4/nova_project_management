@@ -25,6 +25,8 @@ class Project(models.Model):
     description = models.TextField(blank=True, null=True)
     manager = models.CharField(max_length=50, choices=MANAGER_TYPES, null=True, blank=True)
     state = models.CharField(max_length=50, null=True, blank=True, )
+    date_from = models.DateField(blank=True, null=True)
+    date_to = models.DateField(blank=True, null=True)
     
     academic_training = models.CharField(max_length=100, blank=True, null=True)
     twenty_hours = models.BooleanField(default=False)
@@ -151,6 +153,7 @@ class EmployeeNeeded(models.Model):
     start_date = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
     fulfilled = models.BooleanField(default=False)
+    description = models.TextField(blank=True, null=True)
     
     def __str__(self):
         return f"{self.project_id.name} - {self.type} ({self.quantity})"

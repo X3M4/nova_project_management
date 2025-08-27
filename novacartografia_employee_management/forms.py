@@ -158,16 +158,19 @@ class EmployeeForm(forms.ModelForm):
 class ProjectForm(forms.ModelForm):
     class Meta:
         model = Project
-        fields = ['name', 'type', 'description', 'manager', 'state', 'academic_training','twenty_hours', 'sixty_hours', 
+        fields = ['name', 'type', 'description', 'manager', 'state', 'date_from','date_to', 'academic_training','twenty_hours', 'sixty_hours', 
                   'confine', 'height', 'mining', 'railway_carriage', 'railway_mounting', 'building', 
                   'office_work', 'scanner', 'leveling', 'static', 'drag']
+        
         widgets = {
             'name': forms.TextInput(attrs={'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50'}),
             'type': forms.Select(attrs={'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50'}),
             'description': forms.Textarea(attrs={'rows': 3, 'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50'}),
             'manager': forms.Select(attrs={'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50'}),
             'state': forms.TextInput(attrs={'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50'}),
-            'academic_training': forms.TextInput(attrs={'placeholder': 'E.g. Engineering, Technical degree...'}),
+            'date_from': forms.DateInput(attrs={'type': 'date', 'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50'}),
+            'date_to': forms.DateInput(attrs={'type': 'date', 'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50'}),
+            'academic_training': forms.TextInput(attrs={'placeholder': 'E.g. Engineering, Technical degree...', 'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50'}),
             'twenty_hours': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
             'sixty_hours': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
             'confine': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
@@ -182,11 +185,15 @@ class ProjectForm(forms.ModelForm):
             'static': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
             'drag': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
         }
+        
         labels = {
             'name': 'Project Name',
             'type': 'Project Type',
             'description': 'Description',
             'manager': 'Project Manager',
+            'state': 'Province',
+            'date_from': 'Start Date',
+            'date_to': 'End Date',
             'academic_training': 'Academic Training',
             'twenty_hours': '20h Training',
             'sixty_hours': '60h Training',
@@ -207,6 +214,9 @@ class ProjectForm(forms.ModelForm):
             'type': 'Select the type of project',
             'description': 'Optional: Add details about this project',
             'manager': 'Select the manager responsible for this project',
+            'state': 'Enter the province where the project is located',
+            'date_from': 'Select the start date of the project',
+            'date_to': 'Select the end date of the project',
             'academic_training': 'E.g. Engineering, Technical degree...',
             'twenty_hours': 'Has completed 20h safety training',
             'sixty_hours': 'Has completed 60h advanced training',
@@ -236,6 +246,11 @@ class ProjectForm(forms.ModelForm):
         cleaned_data = super().clean()
         name = cleaned_data.get('name')
         type = cleaned_data.get('type')
+        date_from = cleaned_data.get('date_from')
+        date_to = cleaned_data.get('date_to')
+        
+        if date_from and date_to and date_from > date_to:
+            raise forms.ValidationError("End date must be after start date.")
         
         if not name or not type:
             raise forms.ValidationError("Project name and type are required.")
@@ -254,35 +269,27 @@ class ProjectForm(forms.ModelForm):
 class EmployeeNeededForm(forms.ModelForm):
     class Meta:
         model = EmployeeNeeded
-        fields = ['project_id', 'type', 'quantity', 'start_date']
+        fields = ['project_id', 'type', 'quantity', 'start_date', 'description']
         widgets = {
             'project_id': forms.Select(attrs={'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50'}),
             'type': forms.Select(attrs={'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50'}),
             'quantity': forms.NumberInput(attrs={'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50'}),
-            'start_date': forms.DateTimeInput(attrs={'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50'}),
+            'start_date': forms.DateInput(attrs={'type': 'date', 'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50'}),
+            'description': forms.Textarea(attrs={'rows': 3, 'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50'}),
         }
         labels = {
-            'project_id': 'Project',
-            'type': 'Position Type',
-            'quantity': 'Number of Employees Needed',
-            'start_date': 'Start Date'
+            'project_id': 'Proyecto',
+            'type': 'Tipo de Posición',
+            'quantity': 'Número de Empleados Necesarios',
+            'start_date': 'Fecha de Inicio',
+            'description': 'Descripción',
         }
         help_texts = {
-            'project_id': 'Select the project for which you need employees',
-            'type': 'Select the type of position needed',
-            'quantity': 'Enter the number of employees needed',
-            'start_date': 'Select the date when you need these employees to start'
-        }
-        error_messages = {
-            'project_id': {
-                'required': "Please select a project.",
-            },
-            'type': {
-                'required': "Please select a position type.",
-            },
-            'quantity': {
-                'required': "Please enter the number of employees needed.",
-            },
+            'project_id': 'Selecciona el proyecto para el cual necesitas empleados',
+            'type': 'Selecciona el tipo de posición necesaria',
+            'quantity': 'Introduce el número de empleados necesarios',
+            'start_date': 'Selecciona la fecha cuando necesitas que estos empleados comiencen',
+            'description': 'Proporciona una descripción detallada de la solicitud de empleado',
         }
         
         # El método clean debería estar aquí, fuera de la clase Meta
