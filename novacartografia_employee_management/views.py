@@ -65,8 +65,12 @@ def import_employees_csv(request):
                 # Track statistics
                 created_count = 0
                 modified_count = 0
+                deleted_count = 0
                 error_count = 0
                 error_messages = []
+                
+                # Lista para rastrear los empleados que están en el CSV
+                csv_employee_names = []
                 
                 # Mapeo de nombres de columnas CSV a nombres de campos del modelo
                 csv_to_model_mapping = {
@@ -133,6 +137,9 @@ def import_employees_csv(request):
                         
                         # Get or create employee
                         if 'name' in employee_data:
+                            # Añadir el nombre a la lista de empleados del CSV
+                            csv_employee_names.append(employee_data['name'])
+                            
                             employee, created = Employee.objects.get_or_create(
                                 name=employee_data['name'],
                                 defaults=employee_data
@@ -154,10 +161,19 @@ def import_employees_csv(request):
                         error_count += 1
                         error_messages.append(f"Error processing row: {str(e)}")
                 
+                # Eliminar empleados que no están en el CSV
+                employees_to_delete = Employee.objects.exclude(name__in=csv_employee_names)
+                deleted_employees = list(employees_to_delete.values_list('name', flat=True))
+                deleted_count = employees_to_delete.count()
+                
+                if deleted_count > 0:
+                    employees_to_delete.delete()
+                    print(f'Deleted employees: {", ".join(deleted_employees)}')
+                
                 # Show results
-                success_message = f"Import completed: {created_count} created, {modified_count} modified"
+                success_message = f"Importación completada: {created_count} empleados creados, {modified_count} empleados actualizados, {deleted_count} empleados eliminados"
                 if error_count > 0:
-                    success_message += f", {error_count} errors"
+                    success_message += f", {error_count} errores"
                 
                 messages.success(request, success_message)
                 
@@ -165,7 +181,7 @@ def import_employees_csv(request):
                     for error in error_messages[:10]:  # Show first 10 errors
                         messages.warning(request, error)
                     if len(error_messages) > 10:
-                        messages.warning(request, f"... and {len(error_messages) - 10} more errors")
+                        messages.warning(request, f"... y {len(error_messages) - 10} errores más")
                 
                 return redirect('employee_list')
                 
@@ -176,11 +192,12 @@ def import_employees_csv(request):
         form = EmployeeCSVImportForm()
     
     return render(request, 'novacartografia_employee_management/import_employees_csv.html', {'form': form})
-    
+
+
 @login_required
 def import_projects_csv(request):
     # Create form instance outside the if/else blocks
-    form = ProjectCSVImportForm()  # You'll need to create this form
+    form = ProjectCSVImportForm()
     
     if request.method == 'POST':
         form = ProjectCSVImportForm(request.POST, request.FILES)
@@ -207,10 +224,14 @@ def import_projects_csv(request):
                 # Verify columns
                 imported_count = 0
                 modified_count = 0
+                deleted_count = 0
+                
+                # Lista para rastrear los proyectos que están en el CSV
+                csv_project_names = []
+                csv_project_ids = []
                 
                 for row in reader:
                     # Extract data from CSV row
-                    # Check if the name field exists in the CSV row
                     name = row.get('Name', '')
                     if not name:  # Also try lowercase version
                         name = row.get('name', '')
@@ -227,8 +248,13 @@ def import_projects_csv(request):
                     if not name:
                         continue
                     
+                    # Añadir nombre a la lista de proyectos del CSV
+                    csv_project_names.append(name)
+                    
                     # Look for any unique identifier in the CSV
                     project_id = row.get('id', '') or row.get('ID', '') or row.get('project_id', '')
+                    if project_id:
+                        csv_project_ids.append(project_id)
                     
                     # Try to find existing project
                     existing_projects = None
@@ -282,7 +308,29 @@ def import_projects_csv(request):
                         imported_count += 1
                         print(f'Created project: {name}')
                 
-                messages.success(request, f'Successfully imported {imported_count} projects and updated {modified_count} existing projects.')
+                # Eliminar proyectos que no están en el CSV
+                # Construir filtro para proyectos que NO están en el CSV
+                if csv_project_ids:
+                    # Si tenemos IDs en el CSV, filtrar por ID o por nombre
+                    projects_to_delete = Project.objects.exclude(
+                        models.Q(id__in=csv_project_ids) | models.Q(name__in=csv_project_names)
+                    )
+                else:
+                    # Si no hay IDs, solo filtrar por nombre
+                    projects_to_delete = Project.objects.exclude(name__in=csv_project_names)
+                
+                deleted_projects = list(projects_to_delete.values_list('name', flat=True))
+                deleted_count = projects_to_delete.count()
+                
+                if deleted_count > 0:
+                    projects_to_delete.delete()
+                    print(f'Deleted projects: {", ".join(deleted_projects)}')
+                
+                messages.success(
+                    request, 
+                    f'Importación completada: {imported_count} proyectos importados, '
+                    f'{modified_count} proyectos actualizados, {deleted_count} proyectos eliminados.'
+                )
                 return redirect('project_list')
 
             except Exception as e:
@@ -290,6 +338,7 @@ def import_projects_csv(request):
     
     # For GET requests or if form is invalid, render the form
     return render(request, 'novacartografia_employee_management/import_projects_csv.html', {'form': form})
+
 
 def export_employees_csv(request):
     response = HttpResponse(content_type='text/csv')
