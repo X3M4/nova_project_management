@@ -4,37 +4,39 @@
 
 {% block extra_css %}
   <style>
-    /* Estilos específicos para ajustar el ancho de las columnas */
-    .table-auto {
-      table-layout: auto; /* Permite que las columnas se ajusten al contenido */
-    }
-    
-    /* Evita que las columnas se estiren demasiado */
-    .fit-content {
-      width: 1%; /* Truco para que la columna se ajuste al contenido */
-      white-space: nowrap; /* Evita que el texto se rompa en múltiples líneas */
-    }
-    
-    /* Para la columna de acciones, aseguramos un ancho suficiente */
-    .actions-column {
-      min-width: 120px;
-    }
-    
-    /* Estilos para asegurar que la tabla ocupa todo el ancho disponible */
+    /* Contenedor con scroll horizontal */
     .table-container {
+      width: 100%;
+      overflow-x: auto;
+    }
+    
+    /* Tabla con ancho mínimo para mostrar todas las columnas */
+    .employee-table {
+      min-width: 1200px; /* Ajusta según necesites */
       width: 100%;
     }
     
-    /* Permitir que la tabla no ocupe todo el ancho si el contenido es corto */
-    .table-natural-width {
-      width: auto;
-      margin: 0 auto;
+    /* Columnas con ancho fijo */
+    .col-name { min-width: 150px; }
+    .col-job { min-width: 120px; }
+    .col-street { min-width: 180px; }
+    .col-city { min-width: 100px; }
+    .col-province { min-width: 100px; }
+    .col-project { min-width: 120px; }
+    .col-date { min-width: 90px; }
+    .col-license { min-width: 80px; }
+    .col-actions { min-width: 120px; }
+    
+    /* Texto que no se corte */
+    .no-wrap {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
   </style>
 {% endblock %}
 
 {% block content %}
-<!-- Contenedor principal con padding mínimo para no estar pegado a los bordes -->
 <div class="main-content-wrapper">    
     <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-4">
         <h2 class="text-2xl font-bold text-gray-800 mb-4 md:mb-0">Employees</h2>

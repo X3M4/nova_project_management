@@ -22,7 +22,8 @@ class EmployeeForm(forms.ModelForm):
             'driver_license', 'twenty_hours', 'sixty_hours', 
             'confine', 'height' , 'mining', 'railway_carriage', 'railway_mounting', 
             'building', 'office_work', 'scanner', 'leveling', 
-            'static', 'drag', 'locked', 'active', 'start_date', 'end_date'
+            'static', 'drag', 'locked', 'active', 'start_date', 'end_date', 'vacations_from', 'vacations_to',
+            'leave_from', 'leave_to',
         ]
         
         
@@ -52,6 +53,10 @@ class EmployeeForm(forms.ModelForm):
             'static': 'Static',
             'drag': 'Drag',
             'locked': 'Locked',
+            'vacations_from': 'Vacation From',
+            'vacations_to': 'Vacation To',
+            'leave_from': 'Leave From',
+            'leave_to': 'Leave To',
         }
         widgets = {
             'name': forms.TextInput(attrs={'placeholder': 'Enter employee name'}),
@@ -79,6 +84,10 @@ class EmployeeForm(forms.ModelForm):
             'end_date': forms.DateInput(attrs={'type': 'date', 'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50'}),
             'street': forms.TextInput(attrs={'placeholder': 'Enter street address'}),
             'city': forms.TextInput(attrs={'placeholder': 'Enter city'}),
+            'vacations_from': forms.DateInput(attrs={'type': 'date', 'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50'}),
+            'vacations_to': forms.DateInput(attrs={'type': 'date', 'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50'}),
+            'leave_from': forms.DateInput(attrs={'type': 'date', 'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50'}),
+            'leave_to': forms.DateInput(attrs={'type': 'date', 'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50'}),
         }
     
     def clean(self):
@@ -119,7 +128,8 @@ class EmployeeForm(forms.ModelForm):
         # Reorganizar el orden de los campos para agruparlos lógicamente
         field_order = [
             # Información personal
-            'name', 'job', 'project_id', 'state', 'academic_training',
+            'name', 'job', 'project_id', 'state', 'academic_training', 'vacations_from', 'vacations_to',
+            'leave_from', 'leave_to',
             
             # Licencias y formaciones
             'driver_license', 'twenty_hours', 'sixty_hours', 

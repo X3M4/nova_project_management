@@ -5,7 +5,9 @@ import io
 import json
 from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.core.exceptions import PermissionDenied
+from django.contrib.auth.models import Group
 from .forms import EmployeeCSVImportForm, EmployeeForm, EmployeeNeededForm, GetEmployeeLockedForm, ProjectCSVImportForm, ProjectForm
 from .models import Employee, GetEmployeeLocked, Project, ProjectMovementLine, EmployeeNeeded
 from django.http import HttpResponse, JsonResponse
@@ -16,7 +18,28 @@ import operator
 from datetime import datetime
 import re
 import locale
-# ...existing imports...
+
+# Función auxiliar para verificar permisos de escritura
+def can_edit(user):
+    """Verifica si el usuario puede editar (no está en grupo solo_lectura)"""
+    try:
+        solo_lectura_group = Group.objects.get(name='solo_lectura')
+        return not user.groups.filter(id=solo_lectura_group.id).exists()
+    except Group.DoesNotExist:
+        # Si el grupo no existe, permitir edición
+        return True
+
+# Decorador personalizado para vistas que requieren permisos de escritura
+def require_edit_permission(view_func):
+    """Decorador que verifica si el usuario puede editar"""
+    def wrapper(request, *args, **kwargs):
+        if not can_edit(request.user):
+            messages.error(request, 'No tienes permisos para realizar esta acción.')
+            return redirect('kanban_board')  # o la vista que prefieras
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+# ...existing code...
 
 @login_required
 def employee_list(request):
@@ -35,13 +58,18 @@ def employee_list(request):
             Q(project_id__name__icontains=search_query)
         )
     
-    return render(request, 'novacartografia_employee_management/employee_list.html', {
+    # Añadir variable de contexto para permisos
+    context = {
         'employees': employees,
-        'search_query': search_query
-    })
+        'can_edit': can_edit(request.user),
+        'search_query': search_query,
+    }
+    
+    return render(request, 'novacartografia_employee_management/employee_list.html', context)
 
 # Create your views here.
 @login_required
+@require_edit_permission
 def import_employees_csv(request):
     if request.method == 'POST':
         form = EmployeeCSVImportForm(request.POST, request.FILES)
@@ -195,6 +223,7 @@ def import_employees_csv(request):
 
 
 @login_required
+@require_edit_permission
 def import_projects_csv(request):
     # Create form instance outside the if/else blocks
     form = ProjectCSVImportForm()
@@ -372,6 +401,7 @@ def export_employees_csv(request):
 
 
 @login_required
+@require_edit_permission
 def employee_create(request):
     if request.method == 'POST':
         form = EmployeeForm(request.POST)
@@ -402,6 +432,7 @@ def employee_detail(request, pk):
 
 
 @login_required
+@require_edit_permission
 def employee_update(request, pk):
     employee = get_object_or_404(Employee, pk=pk)
     
@@ -424,6 +455,7 @@ def employee_update(request, pk):
 
 
 @login_required
+@require_edit_permission
 def employee_delete(request, pk):
     employee = get_object_or_404(Employee, pk=pk)
     
@@ -493,6 +525,7 @@ def project_list(request):
     })
 
 @login_required
+@require_edit_permission
 def project_create(request):
     if request.method == 'POST':
         form = ProjectForm(request.POST)
@@ -574,6 +607,7 @@ def project_detail(request, pk):
     return render(request, 'novacartografia_employee_management/project_detail.html', context)
 
 @login_required
+@require_edit_permission
 def project_update(request, pk):
     project = get_object_or_404(Project, pk=pk)
     
@@ -595,6 +629,7 @@ def project_update(request, pk):
     })
 
 @login_required
+@require_edit_permission
 def project_delete(request, pk):
     project = get_object_or_404(Project, pk=pk)
     
@@ -695,6 +730,7 @@ def employee_needed_list(request):
     return render(request, 'novacartografia_employee_management/employee_needed_list.html', {'employee_needed': employee_needed})
 
 @login_required
+@require_edit_permission
 def employee_needed_create(request):
     # Verificar si se proporcionó un project_id en la URL
     project_id = request.GET.get('project_id')
@@ -731,6 +767,7 @@ def employee_needed_create(request):
     })
 
 @login_required
+@require_edit_permission
 def employee_needed_update(request, pk):
     employee_needed = get_object_or_404(EmployeeNeeded, pk=pk)
     
@@ -754,6 +791,7 @@ def employee_needed_update(request, pk):
     })
     
 @login_required
+@require_edit_permission
 def employee_needed_delete(request, pk):
     employee_needed = get_object_or_404(EmployeeNeeded, pk=pk)
     
@@ -777,6 +815,7 @@ def employee_needed_fulfill(request, pk):
     return render(request, 'novacartografia_employee_management/employee_needed_confirm_fulfill.html', {'employee_needed': employee_needed})
 
 @login_required
+@require_edit_permission
 def employee_needed_create_from_project(request, project_id):
     project = get_object_or_404(Project, pk=project_id)
     
@@ -809,6 +848,7 @@ urlpatterns = [
 ]
 
 @login_required
+@require_edit_permission
 def assign_employee_to_project(request, employee_id, project_id):
     if request.method == 'POST':
         employee = get_object_or_404(Employee, pk=employee_id)
@@ -840,6 +880,7 @@ def assign_employee_to_project(request, employee_id, project_id):
 
 
 @login_required
+@require_edit_permission
 def unassign_employee_from_project(request, employee_id):
     if request.method == 'POST':
         employee = get_object_or_404(Employee, pk=employee_id)
@@ -863,6 +904,7 @@ def unassign_employee_from_project(request, employee_id):
     return redirect('employee_detail', pk=employee_id)
 
 @login_required
+@require_edit_permission
 def get_employee_locked_create(request, project_id=None):
     # Si se proporciona un ID de proyecto, pre-seleccionamos ese proyecto
     initial_data = {}
@@ -890,6 +932,7 @@ def get_employee_locked_create(request, project_id=None):
     })
 
 @login_required
+@require_edit_permission
 def get_employee_locked_update(request, pk):
     future_assignment = get_object_or_404(GetEmployeeLocked, pk=pk)
     

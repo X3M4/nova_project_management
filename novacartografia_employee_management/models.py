@@ -135,6 +135,11 @@ class Employee(models.Model):
     
     locked = models.BooleanField(default=False, help_text="Indicates if the employee is locked for a future project")
     
+    vacations_from = models.DateField(blank=True, null=True)
+    vacations_to = models.DateField(blank=True, null=True)
+    leave_from = models.DateField(blank=True, null=True)
+    leave_to = models.DateField(blank=True, null=True)
+    
     def __str__(self):
         return f"{self.name} - {self.state}"
     
