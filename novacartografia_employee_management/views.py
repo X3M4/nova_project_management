@@ -9,13 +9,13 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import Group
 from .forms import EmployeeCSVImportForm, EmployeeForm, EmployeeNeededForm, GetEmployeeLockedForm, ProjectCSVImportForm, ProjectForm
-from .models import Employee, GetEmployeeLocked, Project, ProjectMovementLine, EmployeeNeeded
+from .models import Employee, GetEmployeeLocked, Project, ProjectMovementLine, EmployeeNeeded, EmployeeVacation
 from django.http import HttpResponse, JsonResponse
 from django.db.models import Case, When, Value, CharField, Q, IntegerField, Count, Q, BooleanField, FloatField, F, Min
 from django.db.models.functions import Cast
 from functools import reduce
 import operator
-from datetime import datetime
+from datetime import datetime, date, timedelta
 import re
 import locale
 
@@ -71,101 +71,130 @@ def employee_list(request):
 @login_required
 @require_edit_permission
 def import_employees_csv(request):
+    # Crear la instancia del formulario fuera de los bloques if/else
+    form = EmployeeCSVImportForm()
+    
     if request.method == 'POST':
         form = EmployeeCSVImportForm(request.POST, request.FILES)
+        
         if form.is_valid():
-            csv_file = request.FILES['csv_file']
+            csv_file = request.FILES.get('csv_file')
             
-            # Check if file is CSV
-            if not csv_file.name.endswith('.csv'):
-                messages.error(request, 'File is not CSV type')
-                return redirect('import_employees_csv')
-                
-            # If file is too large
-            if csv_file.multiple_chunks():
-                messages.error(request, 'Uploaded file is too big (%.2f MB).' % (csv_file.size/(1000*1000),))
-                return redirect('import_employees_csv')
+            if not csv_file or not csv_file.name.endswith('.csv'):
+                messages.error(request, 'Por favor, selecciona un archivo CSV válido.')
+                return redirect('employee_list')
             
             try:
-                decoded_file = csv_file.read().decode('utf-8').splitlines()
-                reader = csv.DictReader(decoded_file)
+                # Read CSV file
+                file_data = csv_file.read().decode('utf-8')
+                csv_reader = csv.DictReader(io.StringIO(file_data))
                 
-                # Track statistics
                 created_count = 0
                 modified_count = 0
                 deleted_count = 0
                 error_count = 0
                 error_messages = []
-                
-                # Lista para rastrear los empleados que están en el CSV
                 csv_employee_names = []
                 
-                # Mapeo de nombres de columnas CSV a nombres de campos del modelo
-                csv_to_model_mapping = {
-                    'Name': 'name',
-                    'Job': 'job',
-                    'Street': 'street',
-                    'City': 'city',
-                    'State': 'state',
-                    'Academic Training': 'academic_training',
-                    'Driver License': 'driver_license',
-                    'Twenty Hours': 'twenty_hours',
-                    'Sixty Hours': 'sixty_hours',
-                    'Confine': 'confine',
-                    'Mining': 'mining',
-                    'Railway Carriage': 'railway_carriage',
-                    'Railway Mounting': 'railway_mounting',
-                    'Building': 'building',
-                    'Office Work': 'office_work',
-                    'Scanner': 'scanner',
-                    'Leveling': 'leveling',
-                    'Static': 'static',
-                    'Drag': 'drag',
-                    'Active': 'active',
-                    'Service Start Date': 'start_date',
-                    'Service Termination Date': 'end_date'
-                }
+                # Contadores para vacaciones
+                vacation_created_count = 0
+                vacation_updated_count = 0
+                vacation_deleted_count = 0
                 
-                for row in reader:
+                for row in csv_reader:
                     try:
-                        # Prepare employee data
+                        # Procesar datos del empleado
                         employee_data = {}
+                        vacation_data = {}
                         
-                        for csv_field, model_field in csv_to_model_mapping.items():
-                            if csv_field in row and row[csv_field]:
+                        # Mapeo de campos del empleado
+                        field_mapping = {
+                            'Name': 'name',
+                            'Job': 'job',
+                            'Street': 'street',
+                            'City': 'city',
+                            'State': 'state',
+                            'Academic Training': 'academic_training',
+                            'Driver License': 'driver_license',
+                            'Twenty Hours': 'twenty_hours',
+                            'Sixty Hours': 'sixty_hours',
+                            'Confine': 'confine',
+                            'Mining': 'mining',
+                            'Railway Carriage': 'railway_carriage',
+                            'Railway Mounting': 'railway_mounting',
+                            'Building': 'building',
+                            'Office Work': 'office_work',
+                            'Scanner': 'scanner',
+                            'Leveling': 'leveling',
+                            'Static': 'static',
+                            'Drag': 'drag',
+                            'Active': 'active',
+                            'Service Start Date': 'start_date',
+                            'Service Termination Date': 'end_date'
+                        }
+                        
+                        # Procesar campos del empleado
+                        for csv_field, model_field in field_mapping.items():
+                            if csv_field in row and row[csv_field].strip():
                                 value = row[csv_field].strip()
                                 
-                                # Handle boolean fields
-                                if model_field in ['driver_license', 'twenty_hours', 'sixty_hours', 'confine', 
+                                # Conversión de tipos específicos
+                                if model_field in ['driver_license', 'twenty_hours', 'sixty_hours', 'confine', 'height',
                                                  'mining', 'railway_carriage', 'railway_mounting', 'building', 
                                                  'office_work', 'scanner', 'leveling', 'static', 'drag', 'active']:
                                     employee_data[model_field] = value.lower() in ['true', '1', 'yes', 'sí', 'si']
-                                
-                                # Handle date fields
                                 elif model_field in ['start_date', 'end_date']:
-                                    if value:
-                                        try:
-                                            # Try different date formats
-                                            for date_format in ['%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y', '%Y/%m/%d']:
-                                                try:
-                                                    parsed_date = datetime.strptime(value, date_format).date()
-                                                    employee_data[model_field] = parsed_date
-                                                    break
-                                                except ValueError:
-                                                    continue
-                                            else:
-                                                # If no format worked, log error but continue
-                                                error_messages.append(f"Invalid date format for {csv_field}: {value}")
-                                        except Exception as e:
-                                            error_messages.append(f"Error parsing date {csv_field}: {str(e)}")
-                                
-                                # Handle other fields normally
+                                    try:
+                                        # Intentar diferentes formatos de fecha
+                                        date_formats = ['%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y', '%d-%m-%Y']
+                                        for date_format in date_formats:
+                                            try:
+                                                employee_data[model_field] = datetime.strptime(value, date_format).date()
+                                                break
+                                            except ValueError:
+                                                continue
+                                        else:
+                                            error_messages.append(f"Formato de fecha inválido para {csv_field}: {value}")
+                                            continue
+                                    except Exception as e:
+                                        error_messages.append(f"Error procesando fecha {csv_field}: {str(e)}")
+                                        continue
                                 else:
                                     employee_data[model_field] = value
                         
-                        # Get or create employee
+                        # Procesar campos de vacaciones
+                        if 'Date from' in row and row['Date from'].strip():
+                            try:
+                                date_from_str = row['Date from'].strip()
+                                date_formats = ['%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y', '%d-%m-%Y']
+                                for date_format in date_formats:
+                                    try:
+                                        vacation_data['date_from'] = datetime.strptime(date_from_str, date_format).date()
+                                        break
+                                    except ValueError:
+                                        continue
+                                else:
+                                    error_messages.append(f"Formato de fecha inválido para Date from: {date_from_str}")
+                            except Exception as e:
+                                error_messages.append(f"Error procesando Date from: {str(e)}")
+                        
+                        if 'Date to' in row and row['Date to'].strip():
+                            try:
+                                date_to_str = row['Date to'].strip()
+                                date_formats = ['%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y', '%d-%m-%Y']
+                                for date_format in date_formats:
+                                    try:
+                                        vacation_data['date_to'] = datetime.strptime(date_to_str, date_format).date()
+                                        break
+                                    except ValueError:
+                                        continue
+                                else:
+                                    error_messages.append(f"Formato de fecha inválido para Date to: {date_to_str}")
+                            except Exception as e:
+                                error_messages.append(f"Error procesando Date to: {str(e)}")
+                        
+                        # Crear o actualizar empleado
                         if 'name' in employee_data:
-                            # Añadir el nombre a la lista de empleados del CSV
                             csv_employee_names.append(employee_data['name'])
                             
                             employee, created = Employee.objects.get_or_create(
@@ -176,18 +205,70 @@ def import_employees_csv(request):
                             if created:
                                 created_count += 1
                             else:
-                                # Update existing employee
+                                # Actualizar empleado existente
                                 for field, value in employee_data.items():
                                     setattr(employee, field, value)
                                 employee.save()
                                 modified_count += 1
+                            
+                            # Crear o actualizar registro de vacaciones
+                            if vacation_data:
+                                if 'date_from' in vacation_data and 'date_to' in vacation_data:
+                                    # Validar que date_from sea anterior o igual a date_to
+                                    if vacation_data['date_from'] > vacation_data['date_to']:
+                                        error_messages.append(f"Fecha inicio ({vacation_data['date_from']}) no puede ser posterior a fecha fin ({vacation_data['date_to']}) para {employee.name}")
+                                    else:
+                                        # Buscar si ya existe un registro de vacaciones para estas fechas exactas
+                                        vacation, vacation_created = EmployeeVacation.objects.get_or_create(
+                                            employee=employee,
+                                            date_from=vacation_data['date_from'],
+                                            date_to=vacation_data['date_to']
+                                        )
+                                        
+                                        if vacation_created:
+                                            vacation_created_count += 1
+                                        else:
+                                            vacation_updated_count += 1
+                                else:
+                                    # Si solo hay una fecha, crear un registro de un solo día
+                                    if 'date_from' in vacation_data:
+                                        vacation, vacation_created = EmployeeVacation.objects.get_or_create(
+                                            employee=employee,
+                                            date_from=vacation_data['date_from'],
+                                            date_to=vacation_data['date_from']  # Mismo día
+                                        )
+                                        
+                                        if vacation_created:
+                                            vacation_created_count += 1
+                                        else:
+                                            vacation_updated_count += 1
+                                    elif 'date_to' in vacation_data:
+                                        vacation, vacation_created = EmployeeVacation.objects.get_or_create(
+                                            employee=employee,
+                                            date_from=vacation_data['date_to'],
+                                            date_to=vacation_data['date_to']  # Mismo día
+                                        )
+                                        
+                                        if vacation_created:
+                                            vacation_created_count += 1
+                                        else:
+                                            vacation_updated_count += 1
+                                
+                                # Actualizar campos de vacaciones en el modelo Employee
+                                if 'date_from' in vacation_data:
+                                    employee.vacations_from = vacation_data['date_from']
+                                if 'date_to' in vacation_data:
+                                    employee.vacations_to = vacation_data['date_to']
+                                
+                                employee.save()
+                        
                         else:
                             error_count += 1
-                            error_messages.append("Missing employee name in row")
+                            error_messages.append("Falta el nombre del empleado en la fila")
                             
                     except Exception as e:
                         error_count += 1
-                        error_messages.append(f"Error processing row: {str(e)}")
+                        error_messages.append(f"Error procesando fila: {str(e)}")
                 
                 # Eliminar empleados que no están en el CSV
                 employees_to_delete = Employee.objects.exclude(name__in=csv_employee_names)
@@ -195,32 +276,53 @@ def import_employees_csv(request):
                 deleted_count = employees_to_delete.count()
                 
                 if deleted_count > 0:
-                    employees_to_delete.delete()
-                    print(f'Deleted employees: {", ".join(deleted_employees)}')
+                    # Contar vacaciones que se eliminarán en cascada
+                    vacation_deleted_count = EmployeeVacation.objects.filter(employee__in=employees_to_delete).count()
+                    employees_to_delete.delete()  # Esto eliminará en cascada las vacaciones
+                    print(f'Empleados eliminados: {", ".join(deleted_employees)}')
                 
-                # Show results
-                success_message = f"Importación completada: {created_count} empleados creados, {modified_count} empleados actualizados, {deleted_count} empleados eliminados"
+                # Mostrar resultados incluyendo vacaciones
+                success_message = f"Importación completada: {created_count} empleados creados, {modified_count} empleados actualizados"
+                
+                if deleted_count > 0:
+                    success_message += f", {deleted_count} empleados eliminados"
+                
+                # Añadir información sobre vacaciones
+                if vacation_created_count > 0 or vacation_updated_count > 0 or vacation_deleted_count > 0:
+                    vacation_message = []
+                    if vacation_created_count > 0:
+                        vacation_message.append(f"{vacation_created_count} vacaciones creadas")
+                    if vacation_updated_count > 0:
+                        vacation_message.append(f"{vacation_updated_count} vacaciones actualizadas")
+                    if vacation_deleted_count > 0:
+                        vacation_message.append(f"{vacation_deleted_count} vacaciones eliminadas")
+                    
+                    success_message += f" | Vacaciones: {', '.join(vacation_message)}"
+                
                 if error_count > 0:
-                    success_message += f", {error_count} errores"
+                    success_message += f" | {error_count} errores encontrados"
                 
                 messages.success(request, success_message)
                 
+                # Mostrar errores específicos
                 if error_messages:
-                    for error in error_messages[:10]:  # Show first 10 errors
+                    for error in error_messages[:5]:  # Mostrar los primeros 5 errores
                         messages.warning(request, error)
-                    if len(error_messages) > 10:
-                        messages.warning(request, f"... y {len(error_messages) - 10} errores más")
+                    if len(error_messages) > 5:
+                        messages.warning(request, f"... y {len(error_messages) - 5} errores más")
                 
                 return redirect('employee_list')
                 
             except Exception as e:
-                messages.error(request, f'Error processing CSV file: {str(e)}')
-                return redirect('import_employees_csv')
-    else:
-        form = EmployeeCSVImportForm()
+                messages.error(request, f'Error al procesar el archivo CSV: {str(e)}')
+                return redirect('employee_list')
+        
+        else:
+            # Si el formulario no es válido, mostrar errores
+            messages.error(request, 'Error en el formulario. Por favor, verifica los datos.')
     
+    # Esta línea ahora funcionará porque 'form' está definido
     return render(request, 'novacartografia_employee_management/import_employees_csv.html', {'form': form})
-
 
 @login_required
 @require_edit_permission
@@ -342,7 +444,7 @@ def import_projects_csv(request):
                 if csv_project_ids:
                     # Si tenemos IDs en el CSV, filtrar por ID o por nombre
                     projects_to_delete = Project.objects.exclude(
-                        models.Q(id__in=csv_project_ids) | models.Q(name__in=csv_project_names)
+                        Q(id__in=csv_project_ids) | Q(name__in=csv_project_names)
                     )
                 else:
                     # Si no hay IDs, solo filtrar por nombre
@@ -649,6 +751,8 @@ def movement_list(request):
 
 @login_required
 def kanban_board(request):
+    today = timezone.now().date()
+    
     # Anotar proyectos con información sobre necesidades, fechas y manager
     projects = Project.objects.annotate(
         has_needs=Case(
@@ -678,7 +782,37 @@ def kanban_board(request):
     # Apply ordering after filtering
     projects = projects.order_by('-has_needs', 'earliest_start_date', 'manager_order')
     
-    employees = Employee.objects.all()
+    # **NUEVO: Ordenar empleados por vacaciones**
+    employees = Employee.objects.annotate(
+        # Crear categorías para el ordenamiento de vacaciones
+        vacation_category=Case(
+            # Vacaciones actuales (en curso)
+            When(
+                vacations_from__lte=today, 
+                vacations_to__gte=today, 
+                then=Value(1)
+            ),
+            # Vacaciones recientes (terminadas hace poco)
+            When(
+                vacations_to__lt=today, 
+                vacations_to__gte=today - timedelta(days=30), 
+                then=Value(2)
+            ),
+            # Vacaciones futuras
+            When(
+                vacations_from__gt=today, 
+                then=Value(3)
+            ),
+            # Vacaciones muy antiguas o sin vacaciones
+            default=Value(4),
+            output_field=IntegerField(),
+        )
+    ).order_by(
+        'vacation_category',           # Primero por categoría
+        '-vacations_from',            # Luego por fecha de inicio descendente (más recientes primero)
+        'name'                        # Finalmente por nombre para consistencia
+    )
+    
     needs = EmployeeNeeded.objects.filter(fulfilled=False)
     locks = GetEmployeeLocked.objects.filter(fulfilled=False)
     
@@ -974,3 +1108,4 @@ def get_employee_locked_list(request):
     return render(request, 'novacartografia_employee_management/future_assignment_list.html', {
         'future_assignments': future_assignments,
     })
+

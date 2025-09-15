@@ -262,3 +262,17 @@ class GetEmployeeLocked(models.Model):
             return f"{employee_name} → {project_name} (Start: {self.start_date})"
         except Exception:
             return f"Future Assignment {self.pk}"
+        
+class EmployeeVacation(models.Model):
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='holidays')
+    date_from = models.DateField()
+    date_to = models.DateField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.employee.name}: {self.date_from} to {self.date_to}"
+    class Meta:       
+        ordering = ['date_from']
+        verbose_name = "Employee Holiday"
+        verbose_name_plural = "Employee Holidays"
+        
