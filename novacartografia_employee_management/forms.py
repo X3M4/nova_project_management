@@ -358,3 +358,106 @@ class GetEmployeeLockedForm(forms.ModelForm):
             field.widget.attrs.update({
                 'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50',
             })
+            
+from django import forms
+from django.core.exceptions import ValidationError
+from .models import EmployeeVacation, Employee
+
+class EmployeeVacationForm(forms.ModelForm):
+    class Meta:
+        model = EmployeeVacation
+        fields = ['employee', 'date_from', 'date_to']
+        widgets = {
+            'employee': forms.Select(attrs={
+                'class': 'form-select',
+                'required': True,
+            }),
+            'date_from': forms.DateInput(attrs={
+                'type': 'date',
+                'class': 'form-control',
+                'required': True,
+            }),
+            'date_to': forms.DateInput(attrs={
+                'type': 'date',
+                'class': 'form-control',
+                'required': True,
+            }),
+        }
+        labels = {
+            'employee': 'Empleado',
+            'date_from': 'Fecha de Inicio',
+            'date_to': 'Fecha de Fin',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Filtrar solo empleados activos
+        self.fields['employee'].queryset = Employee.objects.filter(
+            active=True
+        ).order_by('name')
+        
+        # Añadir placeholder y ayuda
+        self.fields['employee'].empty_label = "Selecciona un empleado"
+        self.fields['date_from'].help_text = "Fecha de inicio de las vacaciones"
+        self.fields['date_to'].help_text = "Fecha de fin de las vacaciones"
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        date_from = cleaned_data.get('date_from')
+        date_to = cleaned_data.get('date_to')
+        employee = cleaned_data.get('employee')
+        
+        if date_from and date_to:
+            # Validar que date_from sea anterior o igual a date_to
+            if date_from > date_to:
+                raise ValidationError(
+                    'La fecha de inicio no puede ser posterior a la fecha de fin.'
+                )
+            
+            # Validar que no haya solapamiento con otras vacaciones del mismo empleado
+            if employee:
+                overlapping_vacations = EmployeeVacation.objects.filter(
+                    employee=employee,
+                    date_from__lte=date_to,
+                    date_to__gte=date_from
+                )
+                
+                # Si estamos editando, excluir la vacación actual
+                if self.instance and self.instance.pk:
+                    overlapping_vacations = overlapping_vacations.exclude(pk=self.instance.pk)
+                
+                if overlapping_vacations.exists():
+                    existing = overlapping_vacations.first()
+                    raise ValidationError(
+                        f'Las fechas se superponen con unas vacaciones existentes: '
+                        f'{existing.date_from.strftime("%d/%m/%Y")} - {existing.date_to.strftime("%d/%m/%Y")}'
+                    )
+        
+        return cleaned_data
+    
+    def clean_date_from(self):
+        date_from = self.cleaned_data.get('date_from')
+        
+        if date_from:
+            # Opcional: validar que no sea demasiado en el pasado
+            from datetime import date, timedelta
+            if date_from < date.today() - timedelta(days=365):
+                raise ValidationError(
+                    'La fecha de inicio no puede ser de hace más de un año.'
+                )
+        
+        return date_from
+    
+    def clean_date_to(self):
+        date_to = self.cleaned_data.get('date_to')
+        
+        if date_to:
+            # Opcional: validar que no sea demasiado en el futuro
+            from datetime import date, timedelta
+            if date_to > date.today() + timedelta(days=365):
+                raise ValidationError(
+                    'La fecha de fin no puede ser de más de un año en el futuro.'
+                )
+        
+        return date_to

@@ -8,11 +8,12 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import Group
-from .forms import EmployeeCSVImportForm, EmployeeForm, EmployeeNeededForm, GetEmployeeLockedForm, ProjectCSVImportForm, ProjectForm
+from .forms import EmployeeCSVImportForm, EmployeeForm, EmployeeNeededForm, GetEmployeeLockedForm, ProjectCSVImportForm, ProjectForm, EmployeeVacationForm
 from .models import Employee, GetEmployeeLocked, Project, ProjectMovementLine, EmployeeNeeded, EmployeeVacation
 from django.http import HttpResponse, JsonResponse
 from django.db.models import Case, When, Value, CharField, Q, IntegerField, Count, Q, BooleanField, FloatField, F, Min
 from django.db.models.functions import Cast
+from django.core.paginator import Paginator
 from functools import reduce
 import operator
 from datetime import datetime, date, timedelta
@@ -795,7 +796,7 @@ def kanban_board(request):
             # Vacaciones recientes (terminadas hace poco)
             When(
                 vacations_to__lt=today, 
-                vacations_to__gte=today - timedelta(days=30), 
+                vacations_to__gte=today - timedelta(days=10), 
                 then=Value(2)
             ),
             # Vacaciones futuras
@@ -1109,3 +1110,387 @@ def get_employee_locked_list(request):
         'future_assignments': future_assignments,
     })
 
+
+@login_required
+def employee_vacation_list(request):
+    """Lista todas las vacaciones de empleados con filtros y búsqueda"""
+    
+    # Obtener parámetros de búsqueda y filtros
+    search_query = request.GET.get('search', '')
+    status_filter = request.GET.get('status', '')
+    
+    # Consulta base con ordenamiento inteligente
+    today = timezone.now().date()
+    
+    vacations = EmployeeVacation.objects.annotate(
+        status_category=Case(
+            # Vacaciones en curso
+            When(date_from__lte=today, date_to__gte=today, then=Value(1)),
+            # Vacaciones próximas (futuras)
+            When(date_from__gt=today, then=Value(2)),
+            # Vacaciones pasadas
+            When(date_to__lt=today, then=Value(3)),
+            default=Value(4),
+            output_field=IntegerField(),
+        )
+    ).select_related('employee')
+    
+    # Aplicar filtro de búsqueda
+    if search_query:
+        vacations = vacations.filter(
+            Q(employee__name__icontains=search_query) |
+            Q(employee__job__icontains=search_query) |
+            Q(employee__state__icontains=search_query)
+        )
+    
+    # Aplicar filtro de estado
+    if status_filter == 'current':
+        vacations = vacations.filter(date_from__lte=today, date_to__gte=today)
+    elif status_filter == 'upcoming':
+        vacations = vacations.filter(date_from__gt=today)
+    elif status_filter == 'past':
+        vacations = vacations.filter(date_to__lt=today)
+    
+    # Ordenamiento: primero en curso, luego próximas, luego pasadas
+    # Dentro de cada categoría, las más recientes primero
+    vacations = vacations.order_by('status_category', '-date_from', 'employee__name')
+    
+    # Paginación
+    paginator = Paginator(vacations, 12)  # 12 vacaciones por página
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'employee_vacations': page_obj,
+        'page_obj': page_obj,
+        'is_paginated': page_obj.has_other_pages(),
+        'search_query': search_query,
+        'status_filter': status_filter,
+        'can_edit': request.user.groups.filter(name='Editores').exists() or request.user.is_superuser,
+    }
+    
+    return render(request, 'novacartografia_employee_management/employee_vacation_list.html', context)
+
+
+@login_required
+@require_edit_permission
+def employee_vacation_create(request):
+    """Crear nueva vacación para un empleado"""
+    
+    if request.method == 'POST':
+        form = EmployeeVacationForm(request.POST)
+        if form.is_valid():
+            vacation = form.save()
+            
+            # Actualizar los campos de vacaciones en el modelo Employee
+            employee = vacation.employee
+            employee.vacations_from = vacation.date_from
+            employee.vacations_to = vacation.date_to
+            employee.save()
+            
+            messages.success(
+                request, 
+                f'Vacaciones creadas exitosamente para {vacation.employee.name} '
+                f'del {vacation.date_from.strftime("%d/%m/%Y")} al {vacation.date_to.strftime("%d/%m/%Y")}.'
+            )
+            return redirect('employee_vacation_list')
+        else:
+            messages.error(request, 'Por favor, corrige los errores en el formulario.')
+    else:
+        form = EmployeeVacationForm()
+        
+        # Pre-seleccionar empleado si viene del detalle de empleado
+        employee_id = request.GET.get('employee_id')
+        if employee_id:
+            try:
+                employee = Employee.objects.get(id=employee_id)
+                form.fields['employee'].initial = employee
+            except Employee.DoesNotExist:
+                pass
+    
+    context = {
+        'form': form,
+        'title': 'Nueva Vacación',
+        'submit_text': 'Crear Vacación',
+    }
+    
+    return render(request, 'novacartografia_employee_management/employee_vacation_form.html', context)
+
+
+@login_required
+@require_edit_permission
+def employee_vacation_update(request, pk):
+    """Actualizar vacación existente"""
+    
+    vacation = get_object_or_404(EmployeeVacation, pk=pk)
+    
+    if request.method == 'POST':
+        form = EmployeeVacationForm(request.POST, instance=vacation)
+        if form.is_valid():
+            updated_vacation = form.save()
+            
+            # Actualizar los campos de vacaciones en el modelo Employee
+            employee = updated_vacation.employee
+            
+            # Verificar si esta es la vacación más reciente/actual del empleado
+            latest_vacation = EmployeeVacation.objects.filter(
+                employee=employee
+            ).order_by('-date_from').first()
+            
+            if latest_vacation and latest_vacation.id == updated_vacation.id:
+                employee.vacations_from = updated_vacation.date_from
+                employee.vacations_to = updated_vacation.date_to
+                employee.save()
+            
+            messages.success(
+                request, 
+                f'Vacaciones de {updated_vacation.employee.name} actualizadas exitosamente.'
+            )
+            return redirect('employee_vacation_list')
+        else:
+            messages.error(request, 'Por favor, corrige los errores en el formulario.')
+    else:
+        form = EmployeeVacationForm(instance=vacation)
+    
+    context = {
+        'form': form,
+        'title': f'Editar Vacación - {vacation.employee.name}',
+        'submit_text': 'Actualizar Vacación',
+    }
+    
+    return render(request, 'novacartografia_employee_management/employee_vacation_form.html', context)
+
+
+@login_required
+@require_edit_permission
+def employee_vacation_delete(request, pk):
+    """Eliminar vacación"""
+    
+    vacation = get_object_or_404(EmployeeVacation, pk=pk)
+    
+    if request.method == 'POST':
+        employee_name = vacation.employee.name
+        employee = vacation.employee
+        
+        # Eliminar la vacación
+        vacation.delete()
+        
+        # Limpiar campos de vacaciones en Employee si era la vacación actual
+        if (employee.vacations_from == vacation.date_from and 
+            employee.vacations_to == vacation.date_to):
+            
+            # Buscar la vacación más reciente restante
+            latest_vacation = EmployeeVacation.objects.filter(
+                employee=employee
+            ).order_by('-date_from').first()
+            
+            if latest_vacation:
+                employee.vacations_from = latest_vacation.date_from
+                employee.vacations_to = latest_vacation.date_to
+            else:
+                employee.vacations_from = None
+                employee.vacations_to = None
+            
+            employee.save()
+        
+        messages.success(
+            request, 
+            f'Vacaciones de {employee_name} eliminadas exitosamente.'
+        )
+        return redirect('employee_vacation_list')
+    
+    context = {
+        'object': vacation,
+        'title': 'Confirmar Eliminación',
+    }
+    
+    return render(request, 'novacartografia_employee_management/employee_vacation_confirm_delete.html', context)
+
+
+@login_required
+def employee_vacation_detail(request, pk):
+    """Vista detalle de una vacación específica"""
+    
+    vacation = get_object_or_404(EmployeeVacation, pk=pk)
+    today = timezone.now().date()
+    
+    # Determinar el estado de la vacación
+    if vacation.date_from <= today <= vacation.date_to:
+        status = 'current'
+        status_text = 'En Curso'
+        status_color = 'green'
+    elif vacation.date_from > today:
+        status = 'upcoming'
+        status_text = 'Próxima'
+        status_color = 'blue'
+    else:
+        status = 'past'
+        status_text = 'Finalizada'
+        status_color = 'gray'
+    
+    # Calcular duración
+    duration = (vacation.date_to - vacation.date_from).days + 1
+    
+    # Buscar otras vacaciones del mismo empleado
+    other_vacations = EmployeeVacation.objects.filter(
+        employee=vacation.employee
+    ).exclude(pk=vacation.pk).order_by('-date_from')[:5]
+    
+    context = {
+        'vacation': vacation,
+        'status': status,
+        'status_text': status_text,
+        'status_color': status_color,
+        'duration': duration,
+        'other_vacations': other_vacations,
+        'can_edit': request.user.groups.filter(name='Editores').exists() or request.user.is_superuser,
+    }
+    
+    return render(request, 'novacartografia_employee_management/employee_vacation_detail.html', context)
+
+
+# Vista para gestión masiva de vacaciones (opcional)
+@login_required
+@require_edit_permission
+def employee_vacation_bulk_action(request):
+    """Permite acciones masivas sobre vacaciones"""
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        vacation_ids = request.POST.getlist('vacation_ids')
+        
+        if not vacation_ids:
+            messages.warning(request, 'No se seleccionaron vacaciones.')
+            return redirect('employee_vacation_list')
+        
+        vacations = EmployeeVacation.objects.filter(id__in=vacation_ids)
+        count = vacations.count()
+        
+        if action == 'delete':
+            # Eliminar vacaciones seleccionadas
+            affected_employees = []
+            for vacation in vacations:
+                affected_employees.append(vacation.employee)
+            
+            vacations.delete()
+            
+            # Limpiar campos de Employee para empleados afectados
+            for employee in set(affected_employees):
+                latest_vacation = EmployeeVacation.objects.filter(
+                    employee=employee
+                ).order_by('-date_from').first()
+                
+                if latest_vacation:
+                    employee.vacations_from = latest_vacation.date_from
+                    employee.vacations_to = latest_vacation.date_to
+                else:
+                    employee.vacations_from = None
+                    employee.vacations_to = None
+                
+                employee.save()
+            
+            messages.success(request, f'{count} vacaciones eliminadas exitosamente.')
+        
+        elif action == 'export':
+            # Exportar vacaciones seleccionadas (implementar según necesidades)
+            messages.info(request, f'{count} vacaciones seleccionadas para exportar.')
+    
+    return redirect('employee_vacation_list')
+
+
+# Vista auxiliar para obtener vacaciones de un empleado específico (AJAX)
+@login_required
+def employee_vacations_json(request, employee_id):
+    """Retorna las vacaciones de un empleado en formato JSON"""
+    
+    try:
+        employee = Employee.objects.get(id=employee_id)
+        vacations = EmployeeVacation.objects.filter(employee=employee).order_by('-date_from')
+        
+        vacation_data = []
+        for vacation in vacations:
+            vacation_data.append({
+                'id': vacation.id,
+                'date_from': vacation.date_from.strftime('%Y-%m-%d'),
+                'date_to': vacation.date_to.strftime('%Y-%m-%d'),
+                'date_from_formatted': vacation.date_from.strftime('%d/%m/%Y'),
+                'date_to_formatted': vacation.date_to.strftime('%d/%m/%Y'),
+                'duration': (vacation.date_to - vacation.date_from).days + 1,
+                'created_at': vacation.created_at.strftime('%d/%m/%Y %H:%M'),
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'employee_name': employee.name,
+            'vacations': vacation_data
+        })
+        
+    except Employee.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Empleado no encontrado'
+        }, status=404)
+
+
+# Vista para limpiar vacaciones expiradas (management command alternativo)
+@login_required
+@require_edit_permission
+def cleanup_expired_vacations(request):
+    """Limpia vacaciones muy antiguas"""
+    
+    if request.method == 'POST':
+        days_threshold = int(request.POST.get('days_threshold', 90))
+        today = timezone.now().date()
+        cutoff_date = today - timedelta(days=days_threshold)
+        
+        # Buscar vacaciones muy antiguas
+        old_vacations = EmployeeVacation.objects.filter(date_to__lt=cutoff_date)
+        count = old_vacations.count()
+        
+        if count > 0:
+            # Obtener empleados afectados antes de eliminar
+            affected_employees = list(set([v.employee for v in old_vacations]))
+            
+            # Eliminar vacaciones antiguas
+            old_vacations.delete()
+            
+            # Limpiar campos de Employee para empleados afectados
+            for employee in affected_employees:
+                latest_vacation = EmployeeVacation.objects.filter(
+                    employee=employee
+                ).order_by('-date_from').first()
+                
+                if latest_vacation:
+                    employee.vacations_from = latest_vacation.date_from
+                    employee.vacations_to = latest_vacation.date_to
+                else:
+                    employee.vacations_from = None
+                    employee.vacations_to = None
+                
+                employee.save()
+            
+            messages.success(
+                request, 
+                f'Se eliminaron {count} vacaciones finalizadas hace más de {days_threshold} días.'
+            )
+        else:
+            messages.info(
+                request, 
+                f'No se encontraron vacaciones finalizadas hace más de {days_threshold} días.'
+            )
+        
+        return redirect('employee_vacation_list')
+    
+    # Mostrar formulario de confirmación
+    today = timezone.now().date()
+    old_vacations_30 = EmployeeVacation.objects.filter(date_to__lt=today - timedelta(days=30)).count()
+    old_vacations_60 = EmployeeVacation.objects.filter(date_to__lt=today - timedelta(days=60)).count()
+    old_vacations_90 = EmployeeVacation.objects.filter(date_to__lt=today - timedelta(days=90)).count()
+    
+    context = {
+        'old_vacations_30': old_vacations_30,
+        'old_vacations_60': old_vacations_60,
+        'old_vacations_90': old_vacations_90,
+    }
+    
+    return render(request, 'novacartografia_employee_management/cleanup_expired_vacations.html', context)
