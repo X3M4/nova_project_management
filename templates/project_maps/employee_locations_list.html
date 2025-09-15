@@ -1,5 +1,6 @@
 <!-- filepath: /home/p102/django_projects/nova_workers_management/templates/project_maps/employee_locations_list.html -->
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Ubicaciones de Empleados{% endblock %}
 
@@ -23,7 +24,7 @@
         <p>La gestión de ubicaciones requiere que el modelo Employee tenga los campos "latitude" y "longitude". Si estos campos no existen, debes añadirlos primero.</p>
     </div>
     
-    <!-- Resumen de estadísticas -->
+    <!-- Resumen de estadísticas generales -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <div class="bg-white shadow-md rounded-lg p-6 border-l-4 border-blue-500">
             <p class="text-sm text-gray-600">Total de Empleados</p>
@@ -38,20 +39,155 @@
             <p class="text-3xl font-bold text-gray-800">{{ employees_without_coords }}</p>
         </div>
     </div>
+
+    <!-- NUEVO: Resumen por provincias -->
+    <div class="bg-white shadow-md rounded-lg overflow-hidden mb-6">
+        <div class="px-6 py-4 border-b bg-gray-50">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-700">Distribución por Provincias</h2>
+                    <p class="text-sm text-gray-600">Empleados agrupados por ubicación administrativa</p>
+                </div>
+                <button onclick="toggleProvinceDetails()" 
+                        class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                    <span id="toggleText">Ver detalles</span>
+                    <i class="fas fa-chevron-down ml-1" id="toggleIcon"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Top 5 provincias (siempre visible) -->
+        <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {% for province in top_provinces %}
+                    <div class="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg p-4 border border-blue-200">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-semibold text-gray-800 text-sm">{{ province.name }}</h3>
+                            <span class="text-xs bg-blue-500 text-white px-2 py-1 rounded-full">
+                                {{ province.percentage }}%
+                            </span>
+                        </div>
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600">Total:</span>
+                                <span class="font-medium">{{ province.total_count }}</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-green-600">Con coordenadas:</span>
+                                <span class="font-medium text-green-700">{{ province.with_coords }}</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-red-600">Sin coordenadas:</span>
+                                <span class="font-medium text-red-700">{{ province.without_coords }}</span>
+                            </div>
+                        </div>
+                        <!-- Barra de progreso - CAMBIADO -->
+                        <div class="mt-3">
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                {% widthratio province.with_coords province.total_count 100 as progress_width %}
+                                <div class="bg-green-500 h-2 rounded-full" style="width: {{ progress_width }}%"></div>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">
+                                {{ progress_width }}% con ubicación
+                            </p>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="col-span-full text-center text-gray-500 py-8">
+                        <i class="fas fa-map-marked text-4xl mb-4"></i>
+                        <p>No hay datos de provincias disponibles</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Tabla detallada de todas las provincias (colapsible) -->
+        <div id="provinceDetails" class="hidden border-t bg-gray-50">
+            <div class="p-6">
+                <h3 class="text-md font-semibold text-gray-700 mb-4">Todas las Provincias</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white rounded-lg overflow-hidden shadow">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Provincia</th>
+                                <th class="py-3 px-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                                <th class="py-3 px-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Con Coordenadas</th>
+                                <th class="py-3 px-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Sin Coordenadas</th>
+                                <th class="py-3 px-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">% del Total</th>
+                                <th class="py-3 px-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">% Ubicados</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            {% for province in provinces_data %}
+                                <tr class="hover:bg-gray-50">
+                                    <td class="py-3 px-4 whitespace-nowrap">
+                                        <span class="font-medium text-gray-900">{{ province.name }}</span>
+                                    </td>
+                                    <td class="py-3 px-4 text-center whitespace-nowrap">
+                                        <span class="text-gray-900 font-semibold">{{ province.total_count }}</span>
+                                    </td>
+                                    <td class="py-3 px-4 text-center whitespace-nowrap">
+                                        <span class="inline-flex px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+                                            {{ province.with_coords }}
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-4 text-center whitespace-nowrap">
+                                        <span class="inline-flex px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">
+                                            {{ province.without_coords }}
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-4 text-center whitespace-nowrap">
+                                        <span class="text-gray-600">{{ province.percentage }}%</span>
+                                    </td>
+                                    <td class="py-3 px-4 text-center whitespace-nowrap">
+                                        <div class="flex items-center justify-center">
+                                            <div class="w-16 bg-gray-200 rounded-full h-2 mr-2">
+                                                {% widthratio province.with_coords province.total_count 100 as progress_percentage %}
+                                                <div class="bg-blue-500 h-2 rounded-full" style="width: {{ progress_percentage }}%"></div>
+                                            </div>
+                                            <span class="text-xs text-gray-600">{{ progress_percentage }}%</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
     
-    <!-- Tabla de empleados -->
+    <!-- Tabla de empleados (existente) -->
     <div class="bg-white shadow-md rounded-lg overflow-hidden">
         <div class="p-4 border-b bg-gray-50">
             <h2 class="text-lg font-semibold text-gray-700">Gestión de Ubicaciones</h2>
             <p class="text-sm text-gray-600">Añada o modifique las ubicaciones de los empleados.</p>
         </div>
         
-        <!-- Barra de búsqueda -->
+        <!-- Barra de búsqueda y filtros -->
         <div class="p-4 border-b">
-            <div class="relative">
-                <input type="text" id="searchInput" placeholder="Buscar empleado..." 
-                       class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <i class="fas fa-search absolute right-3 top-3 text-gray-400"></i>
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+                <div class="relative flex-1 max-w-md">
+                    <input type="text" id="searchInput" placeholder="Buscar empleado..." 
+                           class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <i class="fas fa-search absolute right-3 top-3 text-gray-400"></i>
+                </div>
+                
+                <!-- Filtro por provincia -->
+                <div class="flex space-x-3">
+                    <select id="provinceFilter" class="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Todas las provincias</option>
+                        {% for province in provinces_data %}
+                            <option value="{{ province.name }}">{{ province.name }} ({{ province.total_count }})</option>
+                        {% endfor %}
+                    </select>
+                    
+                    <select id="locationFilter" class="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Todos los empleados</option>
+                        <option value="with_coords">Con ubicación</option>
+                        <option value="without_coords">Sin ubicación</option>
+                    </select>
+                </div>
             </div>
         </div>
         
@@ -62,6 +198,7 @@
                     <tr>
                         <th class="py-3 px-4 border-b text-left">Nombre</th>
                         <th class="py-3 px-4 border-b text-left">Puesto</th>
+                        <th class="py-3 px-4 border-b text-left">Provincia</th>
                         <th class="py-3 px-4 border-b text-left">Ubicación</th>
                         <th class="py-3 px-4 border-b text-left">Dirección</th>
                         <th class="py-3 px-4 border-b text-center">Estado</th>
@@ -70,12 +207,17 @@
                 </thead>
                 <tbody>
                     {% for employee in employees %}
-                    <tr class="hover:bg-gray-50">
+                    <tr class="hover:bg-gray-50" data-province="{{ employee.state|default:'Sin provincia definida' }}">
                         <td class="py-2 px-4 border-b">
                             <div class="font-medium">{{ employee.name }}</div>
                         </td>
                         <td class="py-2 px-4 border-b">
                             {{ employee.job }}
+                        </td>
+                        <td class="py-2 px-4 border-b">
+                            <span class="inline-flex px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded">
+                                {{ employee.state|default:"No definida" }}
+                            </span>
                         </td>
                         <td class="py-2 px-4 border-b">
                             {% if employee.latitude and employee.longitude %}
@@ -100,11 +242,11 @@
                         </td>
                         <td class="py-2 px-4 border-b text-center">
                             {% if employee.latitude and employee.longitude %}
-                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800" data-status="with_coords">
                                     <i class="fas fa-check-circle mr-1"></i> Con Ubicación
                                 </span>
                             {% else %}
-                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800" data-status="without_coords">
                                     <i class="fas fa-times-circle mr-1"></i> Sin Ubicación
                                 </span>
                             {% endif %}
@@ -122,7 +264,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="6" class="py-4 text-center text-gray-500">No hay empleados registrados.</td>
+                        <td colspan="7" class="py-4 text-center text-gray-500">No hay empleados registrados.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -134,28 +276,77 @@
 
 {% block extra_js %}
 <script>
-    // Filtro de búsqueda
-    document.getElementById('searchInput').addEventListener('keyup', function() {
-        const input = this.value.toLowerCase();
+    function toggleProvinceDetails() {
+        const details = document.getElementById('provinceDetails');
+        const toggleText = document.getElementById('toggleText');
+        const toggleIcon = document.getElementById('toggleIcon');
+        
+        if (details.classList.contains('hidden')) {
+            details.classList.remove('hidden');
+            toggleText.textContent = 'Ocultar detalles';
+            toggleIcon.classList.remove('fa-chevron-down');
+            toggleIcon.classList.add('fa-chevron-up');
+        } else {
+            details.classList.add('hidden');
+            toggleText.textContent = 'Ver detalles';
+            toggleIcon.classList.remove('fa-chevron-up');
+            toggleIcon.classList.add('fa-chevron-down');
+        }
+    }
+
+    // Filtro de búsqueda mejorado
+    function filterTable() {
+        const searchInput = document.getElementById('searchInput').value.toLowerCase();
+        const provinceFilter = document.getElementById('provinceFilter').value;
+        const locationFilter = document.getElementById('locationFilter').value;
         const table = document.getElementById('employeesTable');
         const rows = table.getElementsByTagName('tr');
         
-        for (let i = 1; i < rows.length; i++) {  // Empezar desde 1 para saltarse la cabecera
-            const name = rows[i].getElementsByTagName('td')[0];
-            const position = rows[i].getElementsByTagName('td')[1];
+        let visibleRows = 0;
+        
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            const name = row.getElementsByTagName('td')[0];
+            const position = row.getElementsByTagName('td')[1];
+            const province = row.getAttribute('data-province');
+            const statusElement = row.querySelector('[data-status]');
+            const status = statusElement ? statusElement.getAttribute('data-status') : '';
             
             if (name && position) {
-                const nameText = name.textContent || name.innerText;
-                const positionText = position.textContent || position.innerText;
+                const nameText = (name.textContent || name.innerText).toLowerCase();
+                const positionText = (position.textContent || position.innerText).toLowerCase();
                 
-                if (nameText.toLowerCase().indexOf(input) > -1 || 
-                    positionText.toLowerCase().indexOf(input) > -1) {
-                    rows[i].style.display = "";
+                // Filtros
+                const matchesSearch = nameText.includes(searchInput) || positionText.includes(searchInput);
+                const matchesProvince = !provinceFilter || province === provinceFilter;
+                const matchesLocation = !locationFilter || status === locationFilter;
+                
+                if (matchesSearch && matchesProvince && matchesLocation) {
+                    row.style.display = "";
+                    visibleRows++;
                 } else {
-                    rows[i].style.display = "none";
+                    row.style.display = "none";
                 }
             }
         }
-    });
+        
+        // Mostrar mensaje si no hay resultados
+        const tbody = table.getElementsByTagName('tbody')[0];
+        let noResultsRow = document.getElementById('noResultsRow');
+        
+        if (visibleRows === 0 && !noResultsRow) {
+            noResultsRow = document.createElement('tr');
+            noResultsRow.id = 'noResultsRow';
+            noResultsRow.innerHTML = '<td colspan="7" class="py-4 text-center text-gray-500">No se encontraron empleados que coincidan con los filtros.</td>';
+            tbody.appendChild(noResultsRow);
+        } else if (visibleRows > 0 && noResultsRow) {
+            noResultsRow.remove();
+        }
+    }
+
+    // Event listeners para los filtros
+    document.getElementById('searchInput').addEventListener('keyup', filterTable);
+    document.getElementById('provinceFilter').addEventListener('change', filterTable);
+    document.getElementById('locationFilter').addEventListener('change', filterTable);
 </script>
 {% endblock %}

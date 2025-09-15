@@ -572,6 +572,8 @@ def edit_project_location(request, location_id):
     return render(request, 'project_maps/add_location.html', context)
 
 
+from django.db.models import Count
+
 @login_required
 def employee_locations_list(request):
     """Vista para mostrar una lista de empleados y gestionar sus ubicaciones."""
@@ -591,11 +593,58 @@ def employee_locations_list(request):
     total_employees = employees.count()
     employees_without_coords = total_employees - employees_with_coords
     
+    # NUEVO: Obtener resumen por provincias
+    employees_by_province = Employee.objects.values(
+        'state'
+    ).annotate(
+        count=Count('id')
+    ).filter(
+        count__gt=0  # Solo provincias con al menos 1 empleado
+    ).order_by('-count', 'state')
+    
+    # Procesar datos para mejor visualización
+    provinces_data = []
+    total_with_province = 0
+    
+    for province_data in employees_by_province:
+        province_name = province_data['state']
+        count = province_data['count']
+        
+        # Si la provincia está vacía o es None
+        if not province_name:
+            province_name = "Sin provincia definida"
+        else:
+            total_with_province += count
+        
+        # Calcular empleados con coordenadas en esta provincia
+        try:
+            with_coords_in_province = Employee.objects.filter(
+                state=province_data['state'],
+                latitude__isnull=False,
+                longitude__isnull=False
+            ).count()
+        except:
+            with_coords_in_province = 0
+        
+        provinces_data.append({
+            'name': province_name,
+            'total_count': count,
+            'with_coords': with_coords_in_province,
+            'without_coords': count - with_coords_in_province,
+            'percentage': round((count / total_employees) * 100, 1) if total_employees > 0 else 0
+        })
+    
+    # Obtener top 5 provincias con más empleados
+    top_provinces = provinces_data[:5]
+    
     return render(request, 'project_maps/employee_locations_list.html', {
         'employees': employees,
         'employees_with_coords': employees_with_coords,
         'employees_without_coords': employees_without_coords,
-        'total_employees': total_employees
+        'total_employees': total_employees,
+        'provinces_data': provinces_data,
+        'top_provinces': top_provinces,
+        'total_with_province': total_with_province
     })
 
 

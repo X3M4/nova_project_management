@@ -1104,7 +1104,10 @@ def get_employee_locked_fulfill(request, pk):
 
 @login_required
 def get_employee_locked_list(request):
-    future_assignments = GetEmployeeLocked.objects.filter(fulfilled=False)
+    future_assignments = GetEmployeeLocked.objects.filter(
+        fulfilled=False,
+        employee__isnull=False  # Solo los que tienen un empleado asignado
+    ).select_related('employee', 'next_project')  # Optimizar consultas
     
     return render(request, 'novacartografia_employee_management/future_assignment_list.html', {
         'future_assignments': future_assignments,
