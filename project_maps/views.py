@@ -1,3 +1,4 @@
+import math
 import folium
 from folium.plugins import MarkerCluster, Fullscreen
 from django.shortcuts import render, get_object_or_404, redirect
@@ -11,6 +12,7 @@ import time
 import random
 from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut, GeocoderUnavailable, GeocoderRateLimited
+from django.db.models import Q
 
 
 @login_required
@@ -19,16 +21,60 @@ def project_map(request):
     m = folium.Map(location=[38, -4.7038], zoom_start=7,
                    tiles='OpenStreetMap', min_zoom=6, max_zoom=14, prefer_canvas=True)
     
-    marker_cluster = MarkerCluster().add_to(m)
-    marker_cluster_projects = MarkerCluster(name='Trabajos').add_to(m)
+    # Crear clusters separados para diferentes tipos
+    # Crear clusters separados para diferentes tipos con configuración para mostrar marcadores al hacer clic
+    marker_cluster_projects = MarkerCluster(
+        name='Proyectos', 
+        overlay=True, 
+        control=True,
+        options={
+            'disableClusteringAtZoom': 15,  # Desactiva clustering a zoom alto
+            'maxClusterRadius': 50,  # Radio máximo del cluster
+            'spiderfyOnMaxZoom': True,  # Muestra marcadores individuales al máximo zoom
+            'showCoverageOnHover': True,  # Muestra área de cobertura al hover
+            'zoomToBoundsOnClick': True,  # Hace zoom al área del cluster al hacer clic
+            'spiderfyDistanceMultiplier': 1.5  # Distancia entre marcadores cuando se expanden
+        }
+    ).add_to(m)
     
-    # Añadir controles de pantalla completa
+    marker_cluster_external = MarkerCluster(
+        name='Externos', 
+        overlay=True, 
+        control=True,
+        options={
+            'disableClusteringAtZoom': 15,
+            'maxClusterRadius': 50,
+            'spiderfyOnMaxZoom': True,
+            'showCoverageOnHover': True,
+            'zoomToBoundsOnClick': True,
+            'spiderfyDistanceMultiplier': 1.5
+        }
+    ).add_to(m)
+    
+    marker_cluster_employees = MarkerCluster(
+        name='Empleados', 
+        overlay=True, 
+        control=True,
+        options={
+            'disableClusteringAtZoom': 16,  # Para empleados, desactivar clustering un poco antes
+            'maxClusterRadius': 40,  # Radio menor para empleados
+            'spiderfyOnMaxZoom': True,
+            'showCoverageOnHover': True,
+            'zoomToBoundsOnClick': True,
+            'spiderfyDistanceMultiplier': 2  # Mayor distancia para empleados
+        }
+    ).add_to(m)
+    
+    # Añadir controles de pantalla completa y capas
     Fullscreen(
         position='topleft',
         title='Ver pantalla completa',
         title_cancel='Salir de pantalla completa',
         force_separate_button=True
     ).add_to(m)
+    
+    # Añadir control de capas
+    folium.LayerControl(position="topleft").add_to(m)
     
     # Verificar cuántos proyectos tienen coordenadas
     project_locations = ProjectLocation.objects.filter(
@@ -37,6 +83,58 @@ def project_map(request):
     ).select_related('project')
     
     print(f"Proyectos con coordenadas: {project_locations.count()}")
+    
+    # Variables para contar empleados desplazados
+    displaced_employees = []
+    total_red_markers = 0
+    
+    def calculate_employee_positions(center_lat, center_lng, employee_count):
+        """
+        Calcula posiciones en círculo alrededor del proyecto
+        """
+        positions = []
+        if employee_count == 0:
+            return positions
+        
+        # Radio base en grados (aproximadamente 100-200 metros)
+        base_radius = 0.004
+        
+        # Si hay muchos empleados, usar múltiples círculos
+        if employee_count <= 8:
+            # Un solo círculo
+            radius = base_radius
+            for i in range(employee_count):
+                angle = (2 * math.pi * i) / employee_count
+                lat_offset = radius * math.cos(angle)
+                lng_offset = radius * math.sin(angle)
+                positions.append((
+                    center_lat + lat_offset,
+                    center_lng + lng_offset
+                ))
+        else:
+            # Múltiples círculos concéntricos
+            employees_per_circle = 8
+            circle_count = math.ceil(employee_count / employees_per_circle)
+            
+            employee_index = 0
+            for circle in range(circle_count):
+                current_radius = base_radius * (1 + circle * 0.5)  # Círculos cada vez más grandes
+                employees_in_this_circle = min(employees_per_circle, employee_count - employee_index)
+                
+                for i in range(employees_in_this_circle):
+                    angle = (2 * math.pi * i) / employees_in_this_circle
+                    # Añadir un pequeño offset angular para cada círculo
+                    angle += (circle * math.pi / 8)
+                    
+                    lat_offset = current_radius * math.cos(angle)
+                    lng_offset = current_radius * math.sin(angle)
+                    positions.append((
+                        center_lat + lat_offset,
+                        center_lng + lng_offset
+                    ))
+                    employee_index += 1
+        
+        return positions
     
     # Añadir marcadores para cada proyecto
     for location in project_locations:
@@ -47,287 +145,411 @@ def project_map(request):
             lat = float(location.latitude)
             lng = float(location.longitude)
             
-            # Verificar rangos válidos
-            if not (-90 <= lat <= 90) or not (-180 <= lng <= 180):
-                print(f"Coordenadas inválidas para {project.name}: [{lat}, {lng}]")
+            if not (-90 <= lat <= 90 and -180 <= lng <= 180):
+                print(f"Coordenadas inválidas para {project.name}: {lat}, {lng}")
                 continue
                 
-            print(f"Añadiendo marcador para {project.name} en [{lat}, {lng}]")
+        except (ValueError, TypeError):
+            print(f"Error convirtiendo coordenadas para {project.name}")
+            continue
+        
+        # Obtener empleados del proyecto
+        employees = Employee.objects.filter(project_id=project)
+        employee_count = employees.count()
+        
+        # Determinar el tipo de proyecto
+        project_type = getattr(project, 'type', 'project').lower()
+        is_external = 'external' in project_type or 'externo' in project_type
+        
+        # Determinar color del marcador del proyecto
+        if employee_count == 0:
+            project_marker_color = "orange"
+        elif is_external:
+            project_marker_color = "purple"
+        else:
+            project_marker_color = "green"
+        
+        # Determinar el icono según el tipo
+        if is_external:
+            project_icon = 'star'
+            project_cluster = marker_cluster_external
+        else:
+            project_icon = 'building'
+            project_cluster = marker_cluster_projects
+        
+        # Crear popup con información del proyecto
+        employees_info = []
+        displaced_count = 0
+        local_count = 0
+        
+        for employee in employees:
+            employee_province = getattr(employee, 'state', None) or 'Sin provincia'
+            project_province = location.province or 'Sin provincia'
             
-            # Color según tipo de proyecto
+            if (employee_province != project_province and 
+                employee_province != 'Sin provincia' and 
+                project_province != 'Sin provincia'):
+                displaced_count += 1
+                employees_info.append(f"🔴 {employee.name} (de {employee_province})")
+                
+                # Agregar a la lista global de empleados desplazados
+                displaced_employees.append({
+                    'employee': employee,
+                    'employee_province': employee_province,
+                    'project_province': project_province,
+                    'project_name': project.name,
+                    'project_id': project.id
+                })
+                total_red_markers += 1
+            else:
+                local_count += 1
+                employees_info.append(f"🔵 {employee.name}")
+        
+        employees_list = "<br>".join(employees_info) if employees_info else "Sin empleados asignados"
+        
+        popup_html = f"""
+        <div style="width: 250px; font-family: Arial, sans-serif;">
+            <h4 style="margin: 0 0 10px 0; color: #333;">
+                {'🌟' if is_external else '🏢'} {project.name}
+            </h4>
+            <div style="margin-bottom: 8px;">
+                <strong>Tipo:</strong> 
+                {'<span style="background: #C827F5; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.8em; margin-left: 5px;">OBRA</span>' if is_external else '<span style="background: #56B32B; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.8em; margin-left: 5px;">PROYECTO</span>'}
+            </div>
+            <div style="margin-bottom: 8px;"><strong>Manager:</strong> {getattr(project, 'manager', 'No asignado')}</div>
+            <div style="margin-bottom: 8px;"><strong>Provincia:</strong> {location.province or 'No especificada'}</div>
+            <div style="margin-bottom: 8px;">
+                <strong>Empleados:</strong> {employee_count} 
+                ({local_count} locales, {displaced_count} desplazados)
+            </div>
+            <div style="margin-bottom: 8px;"><strong>Dirección:</strong> {location.address or 'No especificada'}</div>
+            {f'<div style="margin-top: 10px; font-size: 0.9em;"><strong>Personal:</strong><br>{employees_list}</div>' if employees_info else ''}
+        </div>
+        """
+        
+        # Añadir marcador del proyecto
+        folium.Marker(
+            location=[lat, lng],
+            popup=folium.Popup(popup_html, max_width=350),
+            tooltip=f"{'🌟' if is_external else '🏢'} {project.name} ({employee_count} empleados)",
+            icon=folium.Icon(
+            color=project_marker_color, 
+            icon=project_icon,
+            prefix='fa'  # Usar Font Awesome en lugar de glyphicon
+            )
+        ).add_to(project_cluster)
+        
+        # Calcular posiciones para los empleados en círculo
+        employee_positions = calculate_employee_positions(lat, lng, employee_count)
+        
+        # Añadir marcadores individuales para cada empleado
+        for i, employee in enumerate(employees):
+            employee_province = getattr(employee, 'state', None) or 'Sin provincia'
+            project_province = location.province or 'Sin provincia'
             
-            if hasattr(project, 'type'):
-                project_type = project.type.lower() if hasattr(project.type, 'lower') else ''
-                if 'project' in project_type:
-                    color = 'green'
-                elif 'external' in project_type:
-                    color = 'purple'
+            # Determinar color del empleado
+            if (employee_province != project_province and 
+                employee_province != 'Sin provincia' and 
+                project_province != 'Sin provincia'):
+                employee_color = "red"
+                employee_icon = "exclamation-sign"
+                status_text = f"Desplazado de {employee_province}"
+            elif employee_province in project_province and employee_province != 'Sin provincia':
+                employee_color = "blue"
+                employee_icon = "user"
+                status_text = "Trabajando localmente"
+            else:
+                employee_color = "blue"
+                employee_icon = "user"
+                status_text = "Trabajando localmente"
             
-            # Popup básico para pruebas
-            popup_text = f"""
-                <div style="width:200px">
-                    <h4>{project.name}</h4>
-                    <p>Tipo: {project.type if hasattr(project, 'type') else 'No especificado'}</p>
-                    <p>Ubicación: {location.city if hasattr(location, 'city') else ''}, 
-                                {location.province if hasattr(location, 'province') else ''}</p>
-                    <p>Manager: {project.manager if hasattr(project, 'manager') else 'No asignado'}</p>
-                    <p>Empleados: {project.employee_set.count() if hasattr(project, 'employee_set') else 0}</p>
-                    <p><a href="/projects/{project.id}/" target="_blank">Ver proyecto</a></p>
+            # Usar la posición calculada o posición por defecto si hay error
+            if i < len(employee_positions):
+                emp_lat, emp_lng = employee_positions[i]
+            else:
+                # Fallback: posición ligeramente desplazada
+                emp_lat = lat + (random.uniform(-0.001, 0.001))
+                emp_lng = lng + (random.uniform(-0.001, 0.001))
+            
+            # Popup del empleado
+            employee_popup_html = f"""
+            <div style="width: 200px; font-family: Arial, sans-serif;">
+                <h4 style="margin: 0 0 10px 0; color: #333;">👤 {employee.name}</h4>
+                <div style="margin-bottom: 6px;"><strong>Proyecto:</strong> {project.name}</div>
+                <div style="margin-bottom: 6px;"><strong>Provincia origen:</strong> {employee_province}</div>
+                <div style="margin-bottom: 6px;"><strong>Provincia trabajo:</strong> {project_province}</div>
+                <div style="margin-bottom: 6px;">
+                    <strong>Estado:</strong> 
+                    <span style="color: {'#dc3545' if employee_color == 'red' else '#007bff'};">
+                        {status_text}
+                    </span>
                 </div>
+                {f'<div style="margin-bottom: 6px;"><strong>Teléfono:</strong> {employee.phone}</div>' if hasattr(employee, 'phone') and employee.phone else ''}
+                {f'<div style="margin-bottom: 6px;"><strong>Email:</strong> {employee.email}</div>' if hasattr(employee, 'email') and employee.email else ''}
+            </div>
             """
             
-            # Añadir marcador directamente al mapa
+            # Añadir marcador del empleado con línea de conexión al proyecto
             folium.Marker(
-                location=[lat, lng],
-                popup=folium.Popup(popup_text, max_width=300),
-                tooltip=project.name,
-                icon=folium.Icon(color=color, icon="building", prefix="fa"),
-            ).add_to(m)
+                location=[emp_lat, emp_lng],
+                popup=folium.Popup(employee_popup_html, max_width=300),
+                tooltip=f"👤 {employee.name} ({'Desplazado' if employee_color == 'red' else 'Local'})",
+                icon=folium.Icon(
+                    color=employee_color, 
+                    icon=employee_icon,
+                    prefix='glyphicon'
+                )
+            ).add_to(marker_cluster_employees)
             
-        except (ValueError, TypeError) as e:
-            print(f"Error con coordenadas de {project.name}: {e}")
+            # Opcional: Añadir línea de conexión entre empleado y proyecto (solo si no hay muchos)
+            if employee_count <= 10:  # Solo mostrar líneas si no hay demasiados empleados
+                folium.PolyLine(
+                    locations=[[lat, lng], [emp_lat, emp_lng]],
+                    color='gray',
+                    weight=1,
+                    opacity=0.5,
+                    dash_array='5, 5'
+                ).add_to(m)
     
-    # Añadir empleados al mapa
+    # Continuar con el resto del código de estadísticas...
+    # NUEVO: Obtener distribución de proyectos por provincias
+    from django.db.models import Count
     
-    # Intenta obtener empleados con coordenadas almacenadas
-    employees_with_coords = Employee.objects.filter(
+    projects_by_province = ProjectLocation.objects.values(
+        'province'
+    ).annotate(
+        count=Count('id')
+    ).filter(
+        count__gt=0,
+        province__isnull=False
+    ).exclude(
+        province=''
+    ).order_by('-count', 'province')
+    
+    # Procesar datos de proyectos por provincia
+    provinces_project_data = []
+    total_projects_with_location = ProjectLocation.objects.filter(
         latitude__isnull=False,
-        longitude__isnull=False
-    )
+        longitude__isnull=False,
+        province__isnull=False
+    ).exclude(province='').count()
     
-    print(f"Empleados con coordenadas almacenadas: {employees_with_coords.count()}")
+    for province_data in projects_by_province:
+        province_name = province_data['province']
+        count = province_data['count']
+        
+        # Calcular proyectos con coordenadas en esta provincia
+        with_coords_in_province = ProjectLocation.objects.filter(
+            province=province_name,
+            latitude__isnull=False,
+            longitude__isnull=False
+        ).count()
+        
+        # Obtener proyectos de esta provincia
+        projects_in_province = ProjectLocation.objects.filter(
+            province=province_name
+        ).select_related('project')
+        
+        # Contar empleados asignados a proyectos de esta provincia
+        total_employees_in_province = 0
+        for project_location in projects_in_province:
+            employee_count = Employee.objects.filter(project_id=project_location.project).count()
+            total_employees_in_province += employee_count
+        
+        provinces_project_data.append({
+            'name': province_name,
+            'project_count': count,
+            'projects_with_coords': with_coords_in_province,
+            'projects_without_coords': count - with_coords_in_province,
+            'percentage': round((count / total_projects_with_location) * 100, 1) if total_projects_with_location > 0 else 0,
+            'total_employees': total_employees_in_province,
+            'projects': [pl.project for pl in projects_in_province]
+        })
     
-    employees_with_project = Employee.objects.filter(
+    # Top 5 provincias con más proyectos
+    top_project_provinces = provinces_project_data[:5]
+    remaining_project_provinces = provinces_project_data[5:] if len(provinces_project_data) > 5 else []
+    
+    # NUEVO: Distribución de empleados por provincia de PROYECTOS (no por su residencia)
+    employees_by_project_province = {}
+    total_employees_in_projects = 0
+    
+    # Obtener todos los empleados con proyecto asignado
+    employees_with_projects = Employee.objects.filter(
         project_id__isnull=False
     ).select_related('project_id')
     
-    try:
-        # Añadir marcadores para empleados con coordenadas
-        # Usaremos la ubicación de sus proyectos como alternativa
-        for employee in employees_with_project:
+    for employee in employees_with_projects:
+        project = employee.project_id
+        
+        # Buscar la ubicación del proyecto
+        try:
+            project_location = ProjectLocation.objects.get(project=project)
+            project_province = project_location.province or 'Sin provincia'
+        except ProjectLocation.DoesNotExist:
+            project_province = 'Sin ubicación'
+        
+        # Contar empleados por provincia de proyecto
+        if project_province not in employees_by_project_province:
+            employees_by_project_province[project_province] = {
+                'name': project_province,
+                'employee_count': 0,
+                'employees': []
+            }
+        
+        employees_by_project_province[project_province]['employee_count'] += 1
+        employees_by_project_province[project_province]['employees'].append(employee)
+        total_employees_in_projects += 1
+    
+    # Convertir a lista y ordenar
+    provinces_employee_by_projects_data = list(employees_by_project_province.values())
+    provinces_employee_by_projects_data.sort(key=lambda x: x['employee_count'], reverse=True)
+    
+    # Calcular porcentajes
+    for province_data in provinces_employee_by_projects_data:
+        province_data['percentage'] = round(
+            (province_data['employee_count'] / total_employees_in_projects) * 100, 1
+        ) if total_employees_in_projects > 0 else 0
+    
+    # Top 5 provincias con más empleados trabajando
+    top_employee_project_provinces = provinces_employee_by_projects_data[:5]
+    remaining_employee_project_provinces = provinces_employee_by_projects_data[5:] if len(provinces_employee_by_projects_data) > 5 else []
+    
+    # NUEVO: Distribución de empleados por provincia de RESIDENCIA (para comparar)
+    employees_by_residence_province = Employee.objects.values(
+        'state'
+    ).annotate(
+        count=Count('id')
+    ).filter(
+        count__gt=0,
+        state__isnull=False
+    ).exclude(
+        state=''
+    ).order_by('-count', 'state')
+    
+    provinces_employee_residence_data = []
+    total_employees_with_residence = Employee.objects.filter(
+        state__isnull=False
+    ).exclude(state='').count()
+    
+    for province_data in employees_by_residence_province:
+        province_name = province_data['state']
+        count = province_data['count']
+        
+        # Empleados con coordenadas en esta provincia
+        try:
+            with_coords_in_province = Employee.objects.filter(
+                state=province_name,
+                latitude__isnull=False,
+                longitude__isnull=False
+            ).count()
+        except:
+            with_coords_in_province = 0
+        
+        # Empleados de esta provincia que trabajan en proyectos de la misma provincia
+        local_workers = 0
+        displaced_from_here = 0
+        
+        for employee in Employee.objects.filter(state=province_name, project_id__isnull=False):
             try:
-                # Solo obtener la ubicación del proyecto una vez por empleado
-                try:
-                    project_location = ProjectLocation.objects.get(
-                        project=employee.project_id,
-                        latitude__isnull=False,
-                        longitude__isnull=False
-                    )
-                except ProjectLocation.DoesNotExist:
-                    # Si el proyecto no tiene ubicación, saltamos este empleado
-                    continue
-                    
-                # Obtener coordenadas del proyecto
-                lat = float(project_location.latitude)
-                lon = float(project_location.longitude)
-                
-                # Añadir un pequeño desplazamiento aleatorio para evitar solapamiento
-                lat += (random.random() + 0.8) * 0.01
-                lon += (random.random() - 0.8) * 0.01
-                
-                # Obtener provincia del empleado y del proyecto para comparar
-                employee_state = employee.get_state_display() if hasattr(employee, 'get_state_display') else None
-                if employee_state is None and hasattr(employee, 'state'):
-                    employee_state = employee.state
-                
-                project_state = employee.project_id.state if hasattr(employee.project_id, 'state') else None
-                
-                # Determinar el color basado en si las provincias coinciden
-                if employee_state and project_state and employee_state != project_state:
-                    color = "red"  # Provincias diferentes
-                    location_mismatch = True
-                    mismatch_text = f"<p class='text-red-600'>¡Ubicación diferente! (Empleado: {employee_state}, Proyecto: {project_state})</p>"
+                project_location = ProjectLocation.objects.get(project=employee.project_id)
+                if project_location.province == province_name:
+                    local_workers += 1
                 else:
-                    color = "blue"  # Provincias iguales o falta información
-                    location_mismatch = False
-                    mismatch_text = ""
-                
-                # Logging para debugging
-                print(f"Empleado: {employee.name}, Estado empleado: {employee_state}, Estado proyecto: {project_state}, Color: {color}")
-                
-                # Popup para el empleado
-                popup_text = f"""
-                    <div style="width:200px">
-                        <h4>{employee.name if hasattr(employee, 'name') else 'Empleado'}</h4>
-                        <p>Puesto: {employee.job if hasattr(employee, 'job') and employee.job else 'No especificado'}</p>
-                        <p>Ubicación: {
-                            f"{employee.city}, " if hasattr(employee, 'city') and employee.city else ''
-                        }{employee_state or 'No especificado'}</p>
-                        <p>Proyecto: {
-                            employee.project_id.name if hasattr(employee, 'project_id') and employee.project_id else 'Sin proyecto'
-                        }</p>
-                        {mismatch_text}
-                    </div>
-                """
-                
-                # Crear y añadir el marcador
-                folium.Marker(
-                    location=[lat, lon],
-                    popup=folium.Popup(popup_text, max_width=300),
-                    tooltip=employee.name,
-                    icon=folium.Icon(color=color, icon="user", prefix="fa"),
-                ).add_to(m)
-                
-            except Exception as e:
-                # Capturar cualquier error y loggear para debugging
-                print(f"Error procesando empleado {employee.name}: {str(e)}")
-                continue
-                
-            except (ValueError, TypeError, AttributeError) as e:
-                print(f"Error con coordenadas de empleado {employee.name}: {e}")
+                    displaced_from_here += 1
+            except ProjectLocation.DoesNotExist:
+                pass
+        
+        provinces_employee_residence_data.append({
+            'name': province_name,
+            'employee_count': count,
+            'employees_with_coords': with_coords_in_province,
+            'employees_without_coords': count - with_coords_in_province,
+            'percentage': round((count / total_employees_with_residence) * 100, 1) if total_employees_with_residence > 0 else 0,
+            'local_workers': local_workers,
+            'displaced_from_here': displaced_from_here
+        })
     
-    except Exception as e:
-        # Si los campos latitude/longitude no existen en Employee, usaremos geocodificación
-        print(f"No se pueden mostrar empleados con coordenadas: {str(e)}")
-        print("Intentando geocodificar empleados usando su ubicación...")
-        
-        # Usaremos la ubicación de sus proyectos como alternativa
-        employees_by_project = Employee.objects.filter(
-            project_id__isnull=False
-        ).select_related('project_id')
-        
-        # Diccionario para almacenar empleados por proyecto
-        employees_by_project_dict = {}
-        
-        # Agrupar empleados por proyecto
-        for employee in employees_by_project:
-            project_id = employee.project_id.id
-            if project_id not in employees_by_project_dict:
-                employees_by_project_dict[project_id] = []
-            employees_by_project_dict[project_id].append(employee)
-        
-        # Añadir empleados usando las coordenadas de sus proyectos
-        for project_id, employees in employees_by_project_dict.items():
-            try:
-                # Obtener ubicación del proyecto
-                project_location = ProjectLocation.objects.get(
-                    project_id=project_id,
-                    latitude__isnull=False,
-                    longitude__isnull=False
-                )
-                
-                # Obtener la provincia del proyecto
-                project_province = project_location.province
-                
-                lat = float(project_location.latitude)
-                lng = float(project_location.longitude)
-                
-                # Para múltiples empleados en el mismo proyecto, agregar ligera dispersión
-                for i, employee in enumerate(employees):
-                    # Obtener la provincia del empleado (si tiene)
-                    employee_province = employee.state if hasattr(employee, 'province') and employee.province else None
-                    employee_job = employee.job if hasattr(employee, 'job') else "No especificado"
-                    
-                    # Determinar color del marcador basado en coincidencia de provincias
-                    marker_color = ""  # Color por defecto
-                    icon_color = "green"
-                    if "TOPÓGRAFO" in employee_job:
-                        # Si el empleado es topógrafo, cambiar el color del icono
-                        icon_color = " #20f00b"
-                    elif "Auxiliar" in employee_job:
-                        icon_color = " #f0e20b "  # Amarillo para auxiliares
-                    elif "Piloto" in employee_job:
-                        icon_color = " #0b99f0 "
-                    else: 
-                        icon_color = "orange"
-                    
-                    # Si las provincias no coinciden, usar rojo
-                    if project_province and employee_province and project_province.lower() != employee_province.lower():
-                        marker_color = "red"
-                        province_match_text = f"<p class='text-red-600'>¡Provincia diferente! Empleado: {employee_province}, Proyecto: {project_province}</p>"
-                    else:
-                        marker_color = "blue"
-                        
-                    # Añadir una pequeña variación para evitar solapamiento
-                    employee_lat = lat + (random.random() - 0.5) * 0.01
-                    employee_lng = lng + (random.random() - 0.5) * 0.01
-                    
-                    # Popup para el empleado con información de provincias
-                    popup_text = f"""
-                    <div style="width:250px">
-                        <h4>{employee.name}</h4>
-                        <p>Puesto: {employee.job}</p>
-                        <p>Proyecto: {employee.project_id.name}</p>
-                        <p>Ubicación: {project_province}</p>
-                        {province_match_text}
-                    </div>
-                    """
-                    
-                    # Añadir marcador usando las coordenadas del proyecto
-                    folium.Marker(
-                        location=[employee_lat, employee_lng],
-                        popup=folium.Popup(popup_text, max_width=300),
-                        tooltip=employee.name,
-                        icon=folium.Icon(color=marker_color,icon_color=icon_color, icon="user", prefix="fa"),
-                    ).add_to(marker_cluster)  # Añade al cluster de marcadores
-                    
-            except (ProjectLocation.DoesNotExist, ValueError, TypeError) as e:
-                # Proyecto sin ubicación o coordenadas inválidas
-                continue
+    # Top 5 provincias por residencia
+    top_employee_residence_provinces = provinces_employee_residence_data[:5]
+    remaining_employee_residence_provinces = provinces_employee_residence_data[5:] if len(provinces_employee_residence_data) > 5 else []
     
-    # Filtramos solo los empleados sin proyecto asignado o aquellos que queremos mostrar en su ubicación real
-    employees_with_coords = Employee.objects.filter(
+    # NUEVO: Proyectos sin empleados asignados
+    projects_without_employees = []
+    all_projects_with_location = ProjectLocation.objects.filter(
         latitude__isnull=False,
-        longitude__isnull=False,
-        project_id__isnull=True  # Solo mostrar empleados sin proyecto en sus propias coordenadas
+        longitude__isnull=False
+    ).select_related('project')
+    
+    for project_location in all_projects_with_location:
+        project = project_location.project
+        employee_count = Employee.objects.filter(project_id=project).count()
+        
+        if employee_count == 0:
+            projects_without_employees.append({
+                'project': project,
+                'location': project_location,
+                'province': project_location.province or 'Sin provincia'
+            })
+    
+    # Proyectos sin ubicación definida
+    projects_without_location = {}
+    projects_without_coordinates = ProjectLocation.objects.filter(
+        Q(latitude__isnull=True) | Q(longitude__isnull=True)
+    ).select_related('project')
+    
+    for project_location in projects_without_coordinates:
+        project = project_location.project
+        employee_count = Employee.objects.filter(project_id=project).count()
+        projects_without_location[project.id] = {
+            'name': project.name,
+            'manager': project.manager if hasattr(project, 'manager') else "No asignado",
+            'type': project.type if hasattr(project, 'type') else "No especificado",
+            'province': project_location.province or "Sin provincia",
+            'employee_count': employee_count
+        }
+    
+    # También incluir proyectos que no tienen entrada en ProjectLocation
+    projects_no_location_entry = Project.objects.exclude(
+        id__in=ProjectLocation.objects.values_list('project_id', flat=True)
     )
     
-    for employee in employees_with_coords:
-        # Crear popup para el empleado
-        popup_html = f"""
-        <div style="width:200px">
-            <h4>{employee.name}</h4>
-            <p>Puesto: {employee.job if employee.job else 'No especificado'}</p>
-            <p>Ubicación: {employee.province if hasattr(employee, 'province') and employee.province else 'No especificada'}</p>
-            <p class="text-green-600">Disponible para asignación</p>
-        </div>
-        """
-        icon_color = "green"
-        if "TOPÓGRAFO" in employee.job:
-            # Si el empleado es topógrafo, cambiar el color del icono
-            icon_color = " #20f00b"
-        elif "Auxiliar" in employee.job:
-            icon_color = " #f0e20b "  # Amarillo para auxiliares
-        elif "Piloto" in employee.job:
-            icon_color = " #0b99f0 "
-        else: 
-            icon_color = "orange"
-        
-        # Añadir marcador con la ubicación real del empleado
-        folium.Marker(
-            location=[employee.latitude, employee.longitude],
-            popup=folium.Popup(popup_html, max_width=300),
-            tooltip=employee.name,
-            icon=folium.Icon(color="gray",icon_color=icon_color, icon="user", prefix="fa"),  # Verde para empleados disponibles
-        ).add_to(marker_cluster)
-        
-    # Recopilar proyectos sin ubicación
-    projects_without_location = {}
-    for project in Project.objects.all():
-        try:
-            location = ProjectLocation.objects.get(project=project)
-            if location.latitude is None or location.longitude is None:
-                projects_without_location[project.id] = {
-                    'name': project.name,
-                    'manager': project.manager if hasattr(project, 'manager') else "No asignado",
-                    'type': project.type if hasattr(project, 'type') else "No especificado"
-                }
-        except ProjectLocation.DoesNotExist:
-            projects_without_location[project.id] = {
-                'name': project.name,
-                'manager': project.manager if hasattr(project, 'manager') else "No asignado",
-                'type': project.type if hasattr(project, 'type') else "No especificado"
-            }
+    for project in projects_no_location_entry:
+        employee_count = Employee.objects.filter(project_id=project).count()
+        projects_without_location[project.id] = {
+            'name': project.name,
+            'manager': project.manager if hasattr(project, 'manager') else "No asignado",
+            'type': project.type if hasattr(project, 'type') else "No especificado",
+            'province': "Sin definir",
+            'employee_count': employee_count
+        }
     
     # Renderizar el mapa
     map_html = m._repr_html_()
     
-    # Renderizar la plantilla con datos adicionales para debugging
     return render(request, 'project_maps/map.html', {
         'map': map_html,
         'projects_without_location': projects_without_location,
-        'project_count': project_locations.count()
+        'project_count': project_locations.count(),
+        'provinces_project_data': provinces_project_data,
+        'top_project_provinces': top_project_provinces,
+        'remaining_project_provinces': remaining_project_provinces,
+        'provinces_employee_project_data': provinces_employee_by_projects_data,
+        'top_employee_project_provinces': top_employee_project_provinces,
+        'remaining_employee_project_provinces': remaining_employee_project_provinces,
+        'provinces_employee_residence_data': provinces_employee_residence_data,
+        'top_employee_residence_provinces': top_employee_residence_provinces,
+        'remaining_employee_residence_provinces': remaining_employee_residence_provinces,
+        'projects_without_employees': projects_without_employees,
+        'displaced_employees': displaced_employees,  # Lista de empleados desplazados
+        'total_projects_with_location': total_projects_with_location,
+        'total_projects_without_location': len(projects_without_location),
+        'total_employees_with_residence': total_employees_with_residence,
+        'total_employees_in_projects': total_employees_in_projects,
+        'total_displaced_employees': len(displaced_employees),  # Número correcto de empleados desplazados
+        'total_red_markers': total_red_markers,  # Número de marcadores rojos
     })
+
 
 
 def get_project_popup_html(project, num_employees, location, request=None):
