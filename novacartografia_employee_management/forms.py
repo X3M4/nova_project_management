@@ -351,7 +351,8 @@ class GetEmployeeLockedForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         
         # Filtrar empleados para mostrar solo los que tienen "TOPÓGRAFO" en el campo job
-        self.fields['employee'].queryset = Employee.objects.filter(job__icontains='TOPÓGRAFO').exclude(locked=True)
+        # self.fields['employee'].queryset = Employee.objects.filter(job__icontains='TOPÓGRAFO').exclude(locked=True)
+        self.fields['employee'].queryset = Employee.objects.all()
         
         # Añadir clases de Tailwind a los campos
         for field_name, field in self.fields.items():

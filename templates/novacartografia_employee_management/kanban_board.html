@@ -11,6 +11,15 @@
   <link rel="stylesheet" href="{% static 'css/kanban.css' %}" />
 {% endblock %}
 
+{% block extra_js %}
+  {% load static %}
+  <script src="{% static 'js/kanban.js' %}"></script>
+  <!-- Añade SortableJS antes de tus scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <!-- Reemplaza el script original por el nuevo -->
+  <script src="{% static 'js/touch_kanban.js' %}"></script>
+{% endblock %}
+
 {% block content %}
   <div class="kanban-header">
     <div class="flex justify-between items-center">
@@ -62,7 +71,7 @@
           </div>
           <div class="p-3 kanban-column" id="project-{{ project.id }}-column" data-project-id="{{ project.id }}" style="max-height: calc(100vh - 240px); overflow-y: auto; overflow-x: hidden;">
             {% for employee in employees %}
-              {% if employee.project_id == project and 'TOPÓGRAFO' in employee.job or 'Topógrafo' in employee.job %}
+              {% if employee.project_id == project and 'TOPÓGRAFO' in employee.job or employee.project_id == project and 'Topógrafo' in employee.job %}
                 <div class="employee-card p-2 {% if employee.locked == False %}
                     
                      bg-green-200
@@ -1782,13 +1791,4 @@ document.getElementById('vacation-form').addEventListener('submit', function(e) 
       }
     })
   </script>
-{% endblock %}
-
-{% block extra_js %}
-  {% load static %}
-  <script src="{% static 'js/kanban.js' %}"></script>
-  <!-- Añade SortableJS antes de tus scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-  <!-- Reemplaza el script original por el nuevo -->
-  <script src="{% static 'js/touch_kanban.js' %}"></script>
 {% endblock %}
