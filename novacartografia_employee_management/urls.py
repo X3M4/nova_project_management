@@ -22,6 +22,7 @@ urlpatterns = [
     path('projects/<int:pk>/delete/', views.project_delete, name='project_delete'),
     path('projects/import/', views.import_projects_csv, name='import_projects_csv'),
     path('projects/export/', views.export_projects_csv, name='export_projects_csv'),
+    path('projects/<int:project_id>/assign-employees/', views.project_assign_employees, name='project_assign_employees'),
     
     path('movements/', views.movement_list, name='movement_list'),
     path('kanban/', views.kanban_board, name='kanban_board'),

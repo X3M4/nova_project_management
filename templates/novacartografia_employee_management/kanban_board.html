@@ -173,7 +173,16 @@
               {% endif %}
 
               {% if employee.project_id == project and 'Auxiliar' in employee.job or employee.project_id == project and 'Técnico GIS' in employee.job %}
-                <div class="employee-card p-2 bg-yellow-200 border border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
+                <div class="employee-card p-2 {% if employee.locked == False %}
+                    
+                     bg-yellow-200
+
+                  {% else %}
+                    
+                     bg-gray-300
+
+                  {% endif %} 
+                 border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
                   <div class="flex justify-between items-start">
                     <div>
                       <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
@@ -264,7 +273,17 @@
               {% endif %}
 
               {% if employee.project_id == project and 'Piloto' in employee.job %}
-                <div class="employee-card p-2 bg-blue-200 border border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
+                <div class="employee-card p-2 
+                {% if employee.locked == False %}
+                    
+                     bg-blue-200
+
+                  {% else %}
+                    
+                     bg-gray-300
+
+                  {% endif %} 
+                border border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
                   <div class="flex justify-between items-start">
                     <div>
                       <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
@@ -355,7 +374,15 @@
               {% endif %}
 
               {% if employee.project_id == project and 'Proyectos' in employee.job %}
-                <div class="employee-card p-2 bg-orange-300 border border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
+                <div class="employee-card p-2  {% if employee.locked == False %}
+                    
+                     bg-orange-300
+
+                  {% else %}
+                    
+                     bg-gray-300
+
+                  {% endif %}  border border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
                   <div class="flex justify-between items-start">
                     <div>
                       <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
@@ -502,14 +529,24 @@
                       <a href="{% url 'project_detail' project.id %}" class="text-rose-500 hover:text-rose-700"><i class="fas fa-eye text-base"></i></a>
                       <a href="{% url 'employee_needed_create_from_project' project.id %}" class="text-rose-500 hover:text-rose-700"><i class="fas fa-triangle-exclamation text-base"></i></a>
                       <a href="{% url 'get_employee_locked_create_from_project' project.id %}" class="text-rose-500 hover:text-rose-700" title="Lock employee for future assignment"><i class="fas fa-user-lock text-base"></i></a>
+                      <a href="{% url 'project_assign_employees' project.id %}" class="text-rose-500 hover:text-rose-700" title="Assign multiple employees"><i class="fas fa-users-cog mr-1"></i></a>
                       <a href="{% url 'project_delete' project.id %}" class="text-rose-500 hover:text-rose-700" title="Delete project"><i class="fas fa-trash-alt text-base"></i></a>
                     </div>
                   </div>
                 </div>
                 <div class="p-3 kanban-column" id="project-{{ project.id }}-column" data-project-id="{{ project.id }}" style="max-height: calc(100vh - 240px); overflow-y: auto; overflow-x: hidden;">
                   {% for employee in employees %}
+
                     {% if employee.project_id == project and 'TOPÓGRAFO' in employee.job or employee.project_id == project and 'Topógrafo' in employee.job %}
-                      <div class="employee-card p-2 bg-green-200 border border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
+                      <div class="employee-card p-2  {% if employee.locked == False %}
+                    
+                     bg-green-200
+
+                  {% else %}
+                    
+                     bg-gray-300
+
+                  {% endif %} border  border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
                         <div class="flex justify-between items-start">
                           <div>
                             <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
@@ -600,7 +637,15 @@
                     {% endif %}
 
                     {% if employee.project_id == project and 'Auxiliar' in employee.job or employee.project_id == project and 'Técnico GIS' in employee.job %}
-                      <div class="employee-card p-2 bg-yellow-200 border border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
+                      <div class="employee-card p-2 {% if employee.locked == False %}
+                    
+                     bg-yellow-200
+
+                  {% else %}
+                    
+                     bg-gray-300
+
+                  {% endif %} border border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
                         <div class="flex justify-between items-start">
                           <div>
                             <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
@@ -691,7 +736,15 @@
                     {% endif %}
 
                     {% if employee.project_id == project and 'Piloto' in employee.job %}
-                      <div class="employee-card p-2 bg-blue-200 border border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
+                      <div class="employee-card p-2 {% if employee.locked == False %}
+                    
+                     bg-blue-200
+
+                  {% else %}
+                    
+                     bg-gray-300
+
+                  {% endif %} border border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
                         <div class="flex justify-between items-start">
                           <div>
                             <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
@@ -782,7 +835,15 @@
                     {% endif %}
 
                     {% if employee.project_id == project and 'Proyectos' in employee.job %}
-                      <div class="employee-card p-2 bg-orange-300 border border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
+                      <div class="employee-card p-2 {% if employee.locked == False %}
+                    
+                     bg-orange-300
+
+                  {% else %}
+                    
+                     bg-gray-300
+
+                  {% endif %} border border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
                         <div class="flex justify-between items-start">
                           <div>
                             <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
@@ -982,8 +1043,17 @@
                 </div>
                 <div class="p-3 kanban-column" id="project-{{ project.id }}-column" data-project-id="{{ project.id }}" style="max-height: calc(100vh - 240px); overflow-y: auto; overflow-x: hidden;">
                   {% for employee in employees %}
+
                     {% if employee.project_id == project and 'TOPÓGRAFO' in employee.job or employee.project_id == project and 'Topógrafo' in employee.job %}
-                      <div class="employee-card p-2 bg-green-200 border border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
+                      <div class="employee-card p-2 {% if employee.locked == False %}
+                    
+                     bg-green-200
+
+                  {% else %}
+                    
+                     bg-gray-300
+
+                  {% endif %} border border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
                         <div class="flex justify-between items-start">
                           <div>
                             <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
@@ -1074,7 +1144,15 @@
                     {% endif %}
 
                     {% if employee.project_id == project and 'Auxiliar' in employee.job or employee.project_id == project and 'Técnico GIS' in employee.job %}
-                      <div class="employee-card p-2 bg-yellow-200 border border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
+                      <div class="employee-card p-2 {% if employee.locked == False %}
+                    
+                     bg-yellow-200
+
+                  {% else %}
+                    
+                     bg-gray-300
+
+                  {% endif %} border border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
                         <div class="flex justify-between items-start">
                           <div>
                             <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
@@ -1165,7 +1243,15 @@
                     {% endif %}
 
                     {% if employee.project_id == project and 'Piloto' in employee.job %}
-                      <div class="employee-card p-2 bg-blue-200 border border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
+                      <div class="employee-card p-2 {% if employee.locked == False %}
+                    
+                     bg-blue-200
+
+                  {% else %}
+                    
+                     bg-gray-300
+
+                  {% endif %} border border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
                         <div class="flex justify-between items-start">
                           <div>
                             <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
@@ -1256,7 +1342,15 @@
                     {% endif %}
 
                     {% if employee.project_id == project and 'Proyectos' in employee.job %}
-                      <div class="employee-card p-2 bg-orange-300 border border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
+                      <div class="employee-card p-2 {% if employee.locked == False %}
+                    
+                     bg-orange-300
+
+                  {% else %}
+                    
+                     bg-gray-300
+
+                  {% endif %} border border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
                         <div class="flex justify-between items-start">
                           <div>
                             <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>

@@ -1497,3 +1497,121 @@ def cleanup_expired_vacations(request):
     }
     
     return render(request, 'novacartografia_employee_management/cleanup_expired_vacations.html', context)
+
+# Añadir esta nueva vista al final del archivo views.py:
+
+@login_required
+@require_edit_permission
+def project_assign_employees(request, project_id):
+    """Vista para asignar múltiples empleados a un proyecto"""
+    project = get_object_or_404(Project, pk=project_id)
+    
+    # Obtener empleados no asignados y empleados del proyecto actual
+    unassigned_employees = Employee.objects.filter(active=True)
+    current_employees = Employee.objects.filter(project_id=project, active=True)
+    
+    # Calcular habilidades del proyecto para mostrar compatibilidad
+    required_skill_fields = [skill for skill in [
+        'twenty_hours', 'sixty_hours', 'confine', 'height', 'mining',
+        'railway_carriage', 'railway_mounting', 'building', 
+        'office_work', 'scanner', 'leveling', 'static', 'drag'
+    ] if getattr(project, skill, False)]
+    
+    required_skills_count = len(required_skill_fields)
+    
+    # Calcular compatibilidad para empleados no asignados
+    if required_skills_count > 0:
+        for emp in unassigned_employees:
+            matches = sum(1 for skill in required_skill_fields if getattr(emp, skill, False))
+            emp.match_percentage = (matches / required_skills_count) * 100
+            emp.match_count = matches
+            emp.required_count = required_skills_count
+    else:
+        for emp in unassigned_employees:
+            emp.match_percentage = 100
+            emp.match_count = 0
+            emp.required_count = 0
+    
+    # Ordenar por compatibilidad
+    unassigned_employees = sorted(unassigned_employees, key=lambda e: (-e.match_percentage, e.name))
+    
+    # Aplicar filtros de búsqueda
+    search_query = request.GET.get('search', '')
+    if search_query:
+        unassigned_employees = [emp for emp in unassigned_employees 
+                             if search_query.lower() in emp.name.lower() or 
+                                search_query.lower() in emp.job.lower() or
+                                search_query.lower() in (emp.state or '').lower()]
+    
+    # Filtro por habilidades
+    skill_filter = request.GET.get('skill_filter', '')
+    if skill_filter and skill_filter in required_skill_fields:
+        unassigned_employees = [emp for emp in unassigned_employees 
+                             if getattr(emp, skill_filter, False)]
+    
+    # Filtro por compatibilidad
+    compatibility_filter = request.GET.get('compatibility', '')
+    if compatibility_filter:
+        min_percentage = int(compatibility_filter)
+        unassigned_employees = [emp for emp in unassigned_employees 
+                             if emp.match_percentage >= min_percentage]
+    
+    if request.method == 'POST':
+        selected_employee_ids = request.POST.getlist('selected_employees')
+        action = request.POST.get('action')
+        
+        if action == 'assign' and selected_employee_ids:
+            # Asignar empleados seleccionados al proyecto
+            assigned_count = 0
+            for employee_id in selected_employee_ids:
+                try:
+                    employee = Employee.objects.get(id=employee_id, project_id__isnull=True)
+                    employee.project_id = project
+                    employee.save()
+                    assigned_count += 1
+                except Employee.DoesNotExist:
+                    pass
+            
+            if assigned_count > 0:
+                messages.success(
+                    request, 
+                    f'{assigned_count} employees have been successfully assigned to {project.name}.'
+                )
+            else:
+                messages.warning(request, 'No employees were assigned.')
+                
+        elif action == 'unassign' and selected_employee_ids:
+            # Desasignar empleados seleccionados del proyecto
+            unassigned_count = 0
+            for employee_id in selected_employee_ids:
+                try:
+                    employee = Employee.objects.get(id=employee_id, project_id=project)
+                    employee.project_id = None
+                    employee.save()
+                    unassigned_count += 1
+                except Employee.DoesNotExist:
+                    pass
+            
+            if unassigned_count > 0:
+                messages.success(
+                    request, 
+                    f'{unassigned_count} employees have been unassigned from {project.name}.'
+                )
+            else:
+                messages.warning(request, 'No employees were unassigned.')
+        
+        return redirect('project_assign_employees', project_id=project.id)
+    
+    context = {
+        'project': project,
+        'unassigned_employees': unassigned_employees,
+        'current_employees': current_employees,
+        'required_skills': required_skill_fields,
+        'required_skills_count': required_skills_count,
+        'search_query': search_query,
+        'skill_filter': skill_filter,
+        'compatibility_filter': compatibility_filter,
+        'can_edit': can_edit(request.user),
+    }
+    
+    return render(request, 'novacartografia_employee_management/project_assign_employees.html', context)

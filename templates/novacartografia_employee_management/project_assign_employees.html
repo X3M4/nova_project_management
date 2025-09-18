@@ -1,0 +1,434 @@
+<!-- filepath: /home/p102/django_projects/nova_workers_management/templates/novacartografia_employee_management/project_assign_employees.html -->
+
+{% extends 'base.html' %}
+{% load employee_filters %}
+
+{% block title %}
+Asignar Empleados - {{ project.name }}
+{% endblock %}
+
+{% block extra_css %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/kanban.css' %}">
+<style>
+    .compatibilidad-empleado {
+        background: linear-gradient(90deg, 
+            #10b981 0%, #10b981 var(--porcentaje, 0%), 
+            #e5e7eb var(--porcentaje, 0%), #e5e7eb 100%);
+        border-radius: 4px;
+        padding: 2px 8px;
+        color: white;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    }
+    
+    .insignia-habilidad {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 6px;
+        border-radius: 12px;
+        font-size: 0.625rem;
+        font-weight: 500;
+    }
+    
+    .habilidad-coincide { background: #dcfce7; color: #166534; }
+    .habilidad-falta { background: #fee2e2; color: #991b1b; }
+    
+    .tarjeta-empleado-seleccionable {
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 2px solid transparent;
+    }
+    
+    .tarjeta-empleado-seleccionable:hover {
+        border-color: #3b82f6;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .tarjeta-empleado-seleccionable.selected {
+        border-color: #10b981;
+        background-color: #f0fdf4;
+    }
+    
+    .seccion-filtros {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 20px;
+        border: 1px solid #e2e8f0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <!-- Encabezado -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <div class="flex justify-between items-start">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">Asignar Empleados</h1>
+                <p class="text-sm text-gray-600 mt-1">{{ project.name }}</p>
+                <div class="flex items-center mt-2 space-x-4">
+                    <span class="text-sm text-gray-500">
+                        <i class="fas fa-users mr-1"></i>
+                        {{ current_employees|length }} actualmente asignados
+                    </span>
+                    <span class="text-sm text-gray-500">
+                        <i class="fas fa-user-plus mr-1"></i>
+                        {{ unassigned_employees|length }} disponibles
+                    </span>
+                </div>
+            </div>
+            <div class="flex space-x-3">
+                <a href="{% url 'project_detail' project.id %}" 
+                   class="btn-secondary">
+                    <i class="fas fa-arrow-left mr-2"></i>Volver al Proyecto
+                </a>
+                <a href="{% url 'kanban_board' %}" 
+                   class="btn-primary">
+                    <i class="fas fa-columns mr-2"></i>Tablero Kanban
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Habilidades Requeridas del Proyecto -->
+    {% if required_skills %}
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <h3 class="text-sm font-medium text-blue-900 mb-2">
+            <i class="fas fa-tools mr-1"></i>Habilidades Requeridas para este Proyecto
+        </h3>
+        <div class="flex flex-wrap gap-2">
+            {% for skill in required_skills %}
+                <span class="insignia-habilidad bg-blue-100 text-blue-800">
+                    <i class="fas fa-check-circle mr-1"></i>{{ skill|formato_habilidad }}
+                </span>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Sección de Filtros -->
+    <div class="seccion-filtros">
+        <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Buscar</label>
+                <input type="text" name="search" value="{{ search_query }}" 
+                       placeholder="Nombre, trabajo, ubicación..." 
+                       class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200">
+            </div>
+            
+            {% if required_skills %}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Filtrar por Habilidad</label>
+                <select name="skill_filter" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200">
+                    <option value="">Todas las Habilidades</option>
+                    {% for skill in required_skills %}
+                        <option value="{{ skill }}" {% if skill_filter == skill %}selected{% endif %}>
+                            {{ skill|formato_habilidad }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Compatibilidad Mínima</label>
+                <select name="compatibility" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200">
+                    <option value="">Cualquier Compatibilidad</option>
+                    <option value="100" {% if compatibility_filter == "100" %}selected{% endif %}>100% Coincidencia</option>
+                    <option value="75" {% if compatibility_filter == "75" %}selected{% endif %}>75%+ Coincidencia</option>
+                    <option value="50" {% if compatibility_filter == "50" %}selected{% endif %}>50%+ Coincidencia</option>
+                    <option value="25" {% if compatibility_filter == "25" %}selected{% endif %}>25%+ Coincidencia</option>
+                </select>
+            </div>
+            {% endif %}
+            
+            <div class="flex items-end">
+                <button type="submit" class="w-full btn-primary">
+                    <i class="fas fa-filter mr-2"></i>Aplicar Filtros
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Empleados Disponibles -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 rounded-t-lg">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-lg font-semibold text-gray-900">
+                        <i class="fas fa-user-plus mr-2 text-green-600"></i>
+                        Empleados Disponibles ({{ unassigned_employees|length }})
+                    </h2>
+                    <div class="flex space-x-2">
+                        <button type="button" id="seleccionar-todos-disponibles" class="text-sm text-blue-600 hover:text-blue-800">
+                            Seleccionar Todos
+                        </button>
+                        <button type="button" id="limpiar-todos-disponibles" class="text-sm text-gray-600 hover:text-gray-800">
+                            Limpiar Todos
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <form method="POST" id="formulario-asignar">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="assign">
+                
+                <div class="p-4 max-h-96 overflow-y-auto space-y-3">
+                    {% for employee in unassigned_employees %}
+                        <div class="tarjeta-empleado-seleccionable bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200"
+                             data-employee-id="{{ employee.id }}">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center mb-2">
+                                        <input type="checkbox" name="selected_employees" value="{{ employee.id }}" 
+                                               class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded mr-3">
+                                        <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
+                                    </div>
+                                    
+                                    <div class="text-xs text-gray-600 mb-2">
+                                        <i class="fas fa-briefcase mr-1"></i>{{ employee.job }}
+                                        {% if employee.state %}
+                                            <span class="ml-2"><i class="fas fa-map-marker-alt mr-1"></i>{{ employee.state }}</span>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    {% if required_skills_count > 0 %}
+                                        <div class="mb-2">
+                                            <div class="compatibilidad-empleado" style="--porcentaje: {{ employee.match_percentage }}%;">
+                                                {{ employee.match_percentage|floatformat:0 }}% Coincidencia ({{ employee.match_count }}/{{ employee.required_count }})
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Indicadores de habilidades -->
+                                        <div class="flex flex-wrap gap-1">
+                                            {% for skill in required_skills %}
+                                                <span class="insignia-habilidad {% if employee|obtener_atributo_empleado:skill %}habilidad-coincide{% else %}habilidad-falta{% endif %}">
+                                                    {% if employee|obtener_atributo_empleado:skill %}
+                                                        <i class="fas fa-check mr-1"></i>
+                                                    {% else %}
+                                                        <i class="fas fa-times mr-1"></i>
+                                                    {% endif %}
+                                                    {{ skill|formato_habilidad }}
+                                                </span>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="ml-3">
+                                    <a href="{% url 'employee_detail' employee.id %}" 
+                                       class="text-gray-400 hover:text-gray-600 p-1"
+                                       title="Ver Detalles">
+                                        <i class="fas fa-external-link-alt text-sm"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="text-center py-8 text-gray-500">
+                            <i class="fas fa-users text-3xl mb-3"></i>
+                            <p>No se encontraron empleados disponibles</p>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                {% if unassigned_employees %}
+                <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-lg">
+                    <button type="submit" class="w-full btn-success" id="btn-asignar" disabled>
+                        <i class="fas fa-user-plus mr-2"></i>
+                        Asignar Empleados Seleccionados
+                    </button>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+
+        <!-- Empleados Actualmente Asignados -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 rounded-t-lg">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-lg font-semibold text-gray-900">
+                        <i class="fas fa-users mr-2 text-blue-600"></i>
+                        Actualmente Asignados ({{ current_employees|length }})
+                    </h2>
+                    <div class="flex space-x-2">
+                        <button type="button" id="seleccionar-todos-actuales" class="text-sm text-blue-600 hover:text-blue-800">
+                            Seleccionar Todos
+                        </button>
+                        <button type="button" id="limpiar-todos-actuales" class="text-sm text-gray-600 hover:text-gray-800">
+                            Limpiar Todos
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <form method="POST" id="formulario-desasignar">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="unassign">
+                
+                <div class="p-4 max-h-96 overflow-y-auto space-y-3">
+                    {% for employee in current_employees %}
+                        <div class="tarjeta-empleado-seleccionable bg-blue-50 border border-blue-200 rounded-lg p-4 hover:shadow-md transition-all duration-200"
+                             data-employee-id="{{ employee.id }}">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center mb-2">
+                                        <input type="checkbox" name="selected_employees" value="{{ employee.id }}" 
+                                               class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded mr-3">
+                                        <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
+                                    </div>
+                                    
+                                    <div class="text-xs text-gray-600 mb-2">
+                                        <i class="fas fa-briefcase mr-1"></i>{{ employee.job }}
+                                        {% if employee.state %}
+                                            <span class="ml-2"><i class="fas fa-map-marker-alt mr-1"></i>{{ employee.state }}</span>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <!-- Mostrar fecha de asignación si está disponible -->
+                                    <div class="text-xs text-blue-600">
+                                        <i class="fas fa-calendar-plus mr-1"></i>
+                                        Asignado al proyecto
+                                    </div>
+                                </div>
+                                
+                                <div class="ml-3">
+                                    <a href="{% url 'employee_detail' employee.id %}" 
+                                       class="text-gray-400 hover:text-gray-600 p-1"
+                                       title="Ver Detalles">
+                                        <i class="fas fa-external-link-alt text-sm"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="text-center py-8 text-gray-500">
+                            <i class="fas fa-user-slash text-3xl mb-3"></i>
+                            <p>No hay empleados asignados actualmente</p>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                {% if current_employees %}
+                <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-lg">
+                    <button type="submit" class="w-full btn-danger" id="btn-desasignar" disabled>
+                        <i class="fas fa-user-minus mr-2"></i>
+                        Desasignar Empleados Seleccionados
+                    </button>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Configuración de selección múltiple de empleados
+    function configurarSeleccionEmpleados(idFormulario, idSeleccionarTodos, idLimpiarTodos, idBotonEnviar) {
+        const formulario = document.getElementById(idFormulario);
+        const btnSeleccionarTodos = document.getElementById(idSeleccionarTodos);
+        const btnLimpiarTodos = document.getElementById(idLimpiarTodos);
+        const btnEnviar = document.getElementById(idBotonEnviar);
+        const checkboxes = formulario.querySelectorAll('input[type="checkbox"][name="selected_employees"]');
+        const tarjetas = formulario.querySelectorAll('.tarjeta-empleado-seleccionable');
+        
+        // Función para actualizar el estado del botón
+        function actualizarBotonEnviar() {
+            const checkboxesMarcados = formulario.querySelectorAll('input[type="checkbox"][name="selected_employees"]:checked');
+            if (btnEnviar) {
+                btnEnviar.disabled = checkboxesMarcados.length === 0;
+            }
+        }
+        
+        // Manejar clicks en las tarjetas
+        tarjetas.forEach(tarjeta => {
+            tarjeta.addEventListener('click', function(e) {
+                if (e.target.type === 'checkbox') return; // No procesar si se hizo click en el checkbox
+                
+                const checkbox = tarjeta.querySelector('input[type="checkbox"]');
+                checkbox.checked = !checkbox.checked;
+                tarjeta.classList.toggle('selected', checkbox.checked);
+                actualizarBotonEnviar();
+            });
+        });
+        
+        // Manejar cambios en checkboxes
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const tarjeta = this.closest('.tarjeta-empleado-seleccionable');
+                tarjeta.classList.toggle('selected', this.checked);
+                actualizarBotonEnviar();
+            });
+        });
+        
+        // Seleccionar todos
+        if (btnSeleccionarTodos) {
+            btnSeleccionarTodos.addEventListener('click', function() {
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = true;
+                    const tarjeta = checkbox.closest('.tarjeta-empleado-seleccionable');
+                    tarjeta.classList.add('selected');
+                });
+                actualizarBotonEnviar();
+            });
+        }
+        
+        // Limpiar todos
+        if (btnLimpiarTodos) {
+            btnLimpiarTodos.addEventListener('click', function() {
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = false;
+                    const tarjeta = checkbox.closest('.tarjeta-empleado-seleccionable');
+                    tarjeta.classList.remove('selected');
+                });
+                actualizarBotonEnviar();
+            });
+        }
+        
+        // Confirmación antes de enviar
+        if (formulario) {
+            formulario.addEventListener('submit', function(e) {
+                const checkboxesMarcados = formulario.querySelectorAll('input[type="checkbox"][name="selected_employees"]:checked');
+                const accion = formulario.querySelector('input[name="action"]').value;
+                
+                if (checkboxesMarcados.length === 0) {
+                    e.preventDefault();
+                    alert('Por favor selecciona al menos un empleado.');
+                    return;
+                }
+                
+                const textoAccion = accion === 'assign' ? 'asignar' : 'desasignar';
+                const mensajeConfirmacion = `¿Estás seguro que quieres ${textoAccion} ${checkboxesMarcados.length} empleado(s)?`;
+                
+                if (!confirm(mensajeConfirmacion)) {
+                    e.preventDefault();
+                }
+            });
+        }
+    }
+    
+    // Configurar ambos formularios
+    configurarSeleccionEmpleados('formulario-asignar', 'seleccionar-todos-disponibles', 'limpiar-todos-disponibles', 'btn-asignar');
+    configurarSeleccionEmpleados('formulario-desasignar', 'seleccionar-todos-actuales', 'limpiar-todos-actuales', 'btn-desasignar');
+    
+    // Filtro de búsqueda en tiempo real
+    const inputBusqueda = document.querySelector('input[name="search"]');
+    if (inputBusqueda) {
+        inputBusqueda.addEventListener('input', function() {
+            // Auto-enviar después de 500ms de inactividad
+            clearTimeout(this.timeoutBusqueda);
+            this.timeoutBusqueda = setTimeout(() => {
+                this.closest('form').submit();
+            }, 500);
+        });
+    }
+});
+</script>
+{% endblock %}

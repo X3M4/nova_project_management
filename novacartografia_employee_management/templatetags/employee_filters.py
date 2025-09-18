@@ -289,3 +289,42 @@ def vacation_status(employee):
         return 'none'
     except:
         return 'unknown'
+    
+# Añadir esta función a tu archivo de filtros existente:
+
+@register.filter
+def get_employee_attr(skill_name, employee):
+    """Obtiene el valor de un atributo del empleado por nombre"""
+    return getattr(employee, skill_name, False)
+
+@register.filter  
+def replace(value, args):
+    """Reemplaza texto en un string"""
+    old, new = args.split(',') if ',' in args else (args, ' ')
+    return value.replace(old, new)
+
+@register.filter
+def formato_habilidad(skill_name):
+    """Convierte nombres de habilidades de código a texto legible en español"""
+    traducciones = {
+        'twenty_hours': '20 horas',
+        'sixty_hours': '60 horas',
+        'confine': 'Espacios confinados',
+        'height': 'Trabajos en altura',
+        'mining': 'Minería',
+        'railway_carriage': 'Carruaje ferroviario',
+        'railway_mounting': 'Montaje ferroviario',
+        'building': 'Construcción',
+        'office_work': 'Trabajo de oficina',
+        'scanner': 'Escáner',
+        'leveling': 'Nivelación',
+        'static': 'Estático',
+        'drag': 'Arrastre',
+        'driver_license': 'Carnet de conducir'
+    }
+    return traducciones.get(skill_name, skill_name.replace('_', ' ').title())
+
+@register.filter
+def obtener_atributo_empleado(empleado, nombre_habilidad):
+    """Obtiene el valor de un atributo del empleado por nombre"""
+    return getattr(empleado, nombre_habilidad, False)
