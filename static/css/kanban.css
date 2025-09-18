@@ -128,6 +128,10 @@ html {
     overscroll-behavior: contain; /* Prevenir scroll de rebote */
     position: relative;
     padding-bottom: 30px !important; /* Asegurar espacio al final */
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 .kanban-column > *:last-child {
@@ -548,6 +552,51 @@ div[x-show="open"],
 /* Optimización de rendimiento en dispositivos lentos como pizarras Smart */
 .employee-card {
     will-change: transform; /* Mejora el rendimiento de drag & drop */
+}
+
+/* Añadir estos estilos para mejorar el drag & drop: */
+
+.sortable-ghost {
+    opacity: 0.4;
+    background: #e3f2fd !important;
+    border: 2px dashed #2196f3 !important;
+}
+
+.sortable-chosen {
+    background: #fff3e0 !important;
+    border: 2px solid #ff9800 !important;
+    transform: scale(1.02);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.sortable-drag {
+    opacity: 0.8;
+    transform: rotate(2deg);
+    z-index: 9999 !important;
+}
+
+.drop-zone-highlight {
+    background: #f0f9ff !important;
+    border: 2px dashed #0ea5e9 !important;
+    border-radius: 8px;
+}
+
+.employee-card[data-being-dragged="true"] {
+    pointer-events: none;
+    user-select: none;
+}
+
+/* Prevenir selección de texto durante drag */
+.kanban-column {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+/* Smooth transitions */
+.employee-card {
+    transition: all 0.2s ease;
 }
 
 .employee-card.dragging {
