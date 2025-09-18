@@ -728,7 +728,8 @@ def project_update(request, pk):
         'project': project,
         'title': 'Update Project',
         'button_text': 'Save Changes',
-        'is_new': False
+        'is_new': False,
+        'redirect_to': 'kanban_board'  # Cambiado para redirigir al kanban_board
     })
 
 @login_required
