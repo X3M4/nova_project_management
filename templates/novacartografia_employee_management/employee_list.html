@@ -110,9 +110,12 @@
                             {% if employee.end_date %}{{ employee.end_date|date:"d/m/Y" }}{% else %}-{% endif %}
                         </td>
                         <td class="px-6 py-4 text-sm text-gray-500 fit-content"><div class="ml-5 {% if employee.twenty_hours %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-8 h-8 flex items-center justify-center">
-                            <i class="fa-solid fa-id-card text-xl"></i>
+                            <i class="fa-solid fa-star text-xl"></i>
                         </div></td>
                         <td class="px-6 py-4 text-sm text-gray-500 fit-content"><div class="ml-5 {% if employee.sixty_hours %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-8 h-8 flex items-center justify-center">
+                            <i class="fa-solid fa-star text-xl"></i>
+                        </div></td>
+                        <td class="px-6 py-4 text-sm text-gray-500 fit-content"><div class="ml-5 {% if employee.driver_license %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-8 h-8 flex items-center justify-center">
                             <i class="fa-solid fa-id-card text-xl"></i>
                         </div></td>
                         <td class="px-10 py-4 text-sm font-medium actions-column">

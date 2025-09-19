@@ -1,0 +1,411 @@
+<!-- filepath: /home/p102/django_projects/nova_workers_management/templates/project_maps/big_project_form.html -->
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border: 1px solid #e2e8f0;
+    }
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1rem;
+    }
+    .map-container {
+        height: 400px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        margin-top: 1rem;
+    }
+    .geocode-btn {
+        background: #10b981;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-top: 0.5rem;
+    }
+    .geocode-btn:hover {
+        background: #059669;
+    }
+    .coordinates-display {
+        background: #f0f9ff;
+        border: 1px solid #0ea5e9;
+        border-radius: 4px;
+        padding: 0.75rem;
+        margin-top: 0.5rem;
+        font-family: monospace;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        border-radius: 0.375rem;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        border: 1px solid transparent;
+    }
+    
+    .btn-primary {
+        background-color: #4f46e5;
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        background-color: #4338ca;
+    }
+    
+    .btn-secondary {
+        background-color: #6b7280;
+        color: white;
+    }
+    
+    .btn-secondary:hover {
+        background-color: #4b5563;
+    }
+    
+    .btn-outline {
+        background-color: transparent;
+        color: #4f46e5;
+        border-color: #4f46e5;
+    }
+    
+    .btn-outline:hover {
+        background-color: #4f46e5;
+        color: white;
+    }
+    
+    .btn-sm {
+        padding: 0.25rem 0.75rem;
+        font-size: 0.875rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <!-- Encabezado -->
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">{{ title }}</h1>
+            <p class="text-gray-600">Complete la información del gran proyecto</p>
+        </div>
+        <div class="flex space-x-3">
+            <a href="{% url 'big_project_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left mr-2"></i>Volver a Lista
+            </a>
+            {% if big_project %}
+                <a href="{% url 'big_project_detail' big_project.pk %}" class="btn btn-outline">
+                    <i class="fas fa-eye mr-2"></i>Ver Proyecto
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <form method="post" id="project-form">
+        {% csrf_token %}
+        
+        <!-- Información Básica -->
+        <div class="form-section">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">
+                <i class="fas fa-info-circle mr-2"></i>Información Básica
+            </h2>
+            
+            <div class="form-grid">
+                <div>
+                    <label for="id_name" class="block text-sm font-medium text-gray-700 mb-1">
+                        {{ form.name.label }} <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                        <div class="text-red-500 text-sm mt-1">{{ form.name.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label for="id_amount" class="block text-sm font-medium text-gray-700 mb-1">
+                        {{ form.amount.label }} <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.amount }}
+                    {% if form.amount.errors %}
+                        <div class="text-red-500 text-sm mt-1">{{ form.amount.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label for="id_developer" class="block text-sm font-medium text-gray-700 mb-1">
+                        {{ form.developer.label }}
+                    </label>
+                    {{ form.developer }}
+                    {% if form.developer.errors %}
+                        <div class="text-red-500 text-sm mt-1">{{ form.developer.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label for="id_start_date" class="block text-sm font-medium text-gray-700 mb-1">
+                        {{ form.start_date.label }}
+                    </label>
+                    {{ form.start_date }}
+                    {% if form.start_date.errors %}
+                        <div class="text-red-500 text-sm mt-1">{{ form.start_date.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div style="grid-column: 1 / -1;">
+                    <label for="id_description" class="block text-sm font-medium text-gray-700 mb-1">
+                        {{ form.description.label }}
+                    </label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                        <div class="text-red-500 text-sm mt-1">{{ form.description.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Ubicación -->
+        <div class="form-section">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">
+                <i class="fas fa-map-marker-alt mr-2"></i>Ubicación
+            </h2>
+            
+            <div class="form-grid">
+                <div>
+                    <label for="id_address" class="block text-sm font-medium text-gray-700 mb-1">
+                        {{ form.address.label }}
+                    </label>
+                    {{ form.address }}
+                    <button type="button" class="geocode-btn" onclick="geocodeAddress()">
+                        <i class="fas fa-search-location mr-1"></i>Buscar Coordenadas
+                    </button>
+                    {% if form.address.errors %}
+                        <div class="text-red-500 text-sm mt-1">{{ form.address.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label for="id_city" class="block text-sm font-medium text-gray-700 mb-1">
+                        {{ form.city.label }}
+                    </label>
+                    {{ form.city }}
+                    {% if form.city.errors %}
+                        <div class="text-red-500 text-sm mt-1">{{ form.city.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label for="id_province" class="block text-sm font-medium text-gray-700 mb-1">
+                        {{ form.province.label }}
+                    </label>
+                    {{ form.province }}
+                    {% if form.province.errors %}
+                        <div class="text-red-500 text-sm mt-1">{{ form.province.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label for="id_country" class="block text-sm font-medium text-gray-700 mb-1">
+                        {{ form.country.label }}
+                    </label>
+                    {{ form.country }}
+                    {% if form.country.errors %}
+                        <div class="text-red-500 text-sm mt-1">{{ form.country.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Coordenadas -->
+            <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="id_latitude" class="block text-sm font-medium text-gray-700 mb-1">
+                        {{ form.latitude.label }} <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.latitude }}
+                    {% if form.latitude.errors %}
+                        <div class="text-red-500 text-sm mt-1">{{ form.latitude.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label for="id_longitude" class="block text-sm font-medium text-gray-700 mb-1">
+                        {{ form.longitude.label }} <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.longitude }}
+                    {% if form.longitude.errors %}
+                        <div class="text-red-500 text-sm mt-1">{{ form.longitude.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Display de coordenadas -->
+            <div id="coordinates-display" class="coordinates-display hidden">
+                <strong>Coordenadas encontradas:</strong>
+                <div id="coords-text"></div>
+            </div>
+            
+            <!-- Mapa -->
+            <div id="map" class="map-container"></div>
+        </div>
+
+        <!-- Botones de acción -->
+        <div class="flex justify-between">
+            <a href="{% url 'big_project_list' %}" class="btn btn-secondary">
+                <i class="fas fa-times mr-2"></i>Cancelar
+            </a>
+            
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save mr-2"></i>{{ button_text }}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Leaflet CSS y JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+<script>
+let map;
+let marker;
+
+document.addEventListener('DOMContentLoaded', function() {
+    initializeMap();
+    
+    // Actualizar mapa cuando cambien las coordenadas
+    document.getElementById('id_latitude').addEventListener('input', updateMapFromCoords);
+    document.getElementById('id_longitude').addEventListener('input', updateMapFromCoords);
+});
+
+function initializeMap() {
+    // Coordenadas iniciales (España o coordenadas del proyecto existente)
+    const initialLat = parseFloat(document.getElementById('id_latitude').value) || 40.4168;
+    const initialLng = parseFloat(document.getElementById('id_longitude').value) || -3.7038;
+    
+    map = L.map('map').setView([initialLat, initialLng], 10);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    
+    // Añadir marcador si hay coordenadas
+    if (document.getElementById('id_latitude').value && document.getElementById('id_longitude').value) {
+        marker = L.marker([initialLat, initialLng]).addTo(map);
+    }
+    
+    // Permitir click en el mapa para seleccionar ubicación
+    map.on('click', function(e) {
+        const lat = e.latlng.lat;
+        const lng = e.latlng.lng;
+        
+        document.getElementById('id_latitude').value = lat.toFixed(6);
+        document.getElementById('id_longitude').value = lng.toFixed(6);
+        
+        if (marker) {
+            marker.setLatLng(e.latlng);
+        } else {
+            marker = L.marker(e.latlng).addTo(map);
+        }
+    });
+}
+
+function updateMapFromCoords() {
+    const lat = parseFloat(document.getElementById('id_latitude').value);
+    const lng = parseFloat(document.getElementById('id_longitude').value);
+    
+    if (!isNaN(lat) && !isNaN(lng)) {
+        map.setView([lat, lng], map.getZoom());
+        
+        if (marker) {
+            marker.setLatLng([lat, lng]);
+        } else {
+            marker = L.marker([lat, lng]).addTo(map);
+        }
+    }
+}
+
+async function geocodeAddress() {
+    const address = document.getElementById('id_address').value;
+    const city = document.getElementById('id_city').value;
+    const province = document.getElementById('id_province').value;
+    
+    if (!address && !city) {
+        alert('Por favor ingrese una dirección o ciudad para buscar.');
+        return;
+    }
+    
+    const fullAddress = [address, city, province, 'España'].filter(Boolean).join(', ');
+    
+    try {
+        const response = await fetch('{% url "geocode_address" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({ address: fullAddress })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            document.getElementById('id_latitude').value = data.latitude;
+            document.getElementById('id_longitude').value = data.longitude;
+            
+            // Mostrar coordenadas encontradas
+            const coordsDisplay = document.getElementById('coordinates-display');
+            const coordsText = document.getElementById('coords-text');
+            coordsText.innerHTML = `Lat: ${data.latitude}, Lng: ${data.longitude}<br>Dirección: ${data.display_name}`;
+            coordsDisplay.classList.remove('hidden');
+            
+            // Actualizar mapa
+            updateMapFromCoords();
+            
+        } else {
+            alert('Error: ' + data.error);
+        }
+    } catch (error) {
+        alert('Error al buscar la dirección: ' + error.message);
+    }
+}
+
+// Validación del formulario
+document.getElementById('project-form').addEventListener('submit', function(e) {
+    const name = document.getElementById('id_name').value.trim();
+    const amount = document.getElementById('id_amount').value;
+    const lat = document.getElementById('id_latitude').value;
+    const lng = document.getElementById('id_longitude').value;
+    
+    if (!name) {
+        alert('El nombre del proyecto es obligatorio.');
+        e.preventDefault();
+        return;
+    }
+    
+    if (!amount || parseFloat(amount) <= 0) {
+        alert('El monto debe ser mayor a 0.');
+        e.preventDefault();
+        return;
+    }
+    
+    if (!lat || !lng) {
+        alert('Las coordenadas son obligatorias. Use el mapa o el botón de geocodificación.');
+        e.preventDefault();
+        return;
+    }
+});
+</script>
+{% endblock %}

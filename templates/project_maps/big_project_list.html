@@ -1,0 +1,236 @@
+<!-- filepath: /home/p102/django_projects/nova_workers_management/templates/project_maps/big_project_list.html -->
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Grandes Proyectos{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 10px;
+        text-align: center;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .stat-number { font-size: 2rem; font-weight: bold; margin-bottom: 0.5rem; }
+    .stat-label { font-size: 0.9rem; opacity: 0.9; }
+    .project-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        transition: all 0.2s ease;
+    }
+    .project-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        border-color: #8b5cf6;
+    }
+    .amount-badge {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    .filter-section {
+        background: #f8fafc;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+        border: 1px solid #e2e8f0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <!-- Encabezado -->
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Grandes Proyectos</h1>
+            <p class="text-gray-600">Gestión de proyectos de gran inversión</p>
+        </div>
+        <div class="flex space-x-3">
+            <a href="{% url 'project_map' %}" class="btn btn-secondary">
+                <i class="fas fa-map mr-2"></i>Ver en Mapa
+            </a>
+            <a href="{% url 'big_project_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus mr-2"></i>Nuevo Proyecto
+            </a>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number">{{ stats.total_projects|default:0 }}</div>
+            <div class="stat-label">Total Proyectos</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">€{{ stats.total_amount|floatformat:0|default:"0" }}</div>
+            <div class="stat-label">Inversión Total</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">€{{ stats.avg_amount|floatformat:0|default:"0" }}</div>
+            <div class="stat-label">Inversión Promedio</div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filter-section">
+        <form method="GET" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Buscar</label>
+                <input type="text" name="search" value="{{ search_query }}" 
+                       placeholder="Nombre, dirección, desarrollador..."
+                       class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Ciudad</label>
+                <select name="city" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200">
+                    <option value="">Todas las ciudades</option>
+                    {% for city in cities %}
+                        <option value="{{ city }}" {% if city_filter == city %}selected{% endif %}>{{ city }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Provincia</label>
+                <select name="province" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200">
+                    <option value="">Todas las provincias</option>
+                    {% for province in provinces %}
+                        <option value="{{ province }}" {% if province_filter == province %}selected{% endif %}>{{ province }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Desarrollador</label>
+                <select name="developer" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200">
+                    <option value="">Todos los promotores</option>
+                    {% for developer in developers %}
+                        <option value="{{ developer }}" {% if developer_filter == developer %}selected{% endif %}>{{ developer }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Monto Mínimo</label>
+                <input type="number" name="min_amount" value="{{ min_amount }}" step="1000"
+                       placeholder="€ 0"
+                       class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200">
+            </div>
+            
+            <div class="flex items-end">
+                <button type="submit" class="w-full btn btn-primary">
+                    <i class="fas fa-filter mr-2"></i>Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Lista de Proyectos -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {% for project in big_projects %}
+            <div class="project-card bg-white">
+                <div class="flex justify-between items-start mb-3">
+                    <h3 class="text-lg font-semibold text-gray-900">
+                        <a href="{% url 'big_project_detail' project.pk %}" class="hover:text-indigo-600">
+                            {{ project.name }}
+                        </a>
+                    </h3>
+                    <span class="amount-badge">€{{ project.amount|floatformat:0 }}</span>
+                </div>
+                
+                <div class="space-y-2 text-sm text-gray-600">
+                    {% if project.developer %}
+                        <div><i class="fas fa-building mr-2"></i>{{ project.developer }}</div>
+                    {% endif %}
+                    
+                    {% if project.city or project.province %}
+                        <div><i class="fas fa-map-marker-alt mr-2"></i>{{ project.city|default:"" }}{% if project.city and project.province %}, {% endif %}{{ project.province|default:"" }}</div>
+                    {% endif %}
+                    
+                    {% if project.start_date %}
+                        <div><i class="fas fa-calendar mr-2"></i>Inicio: {{ project.start_date|date:"d/m/Y" }}</div>
+                    {% endif %}
+                    
+                    <div><i class="fas fa-clock mr-2"></i>Creado: {{ project.created_at|date:"d/m/Y" }}</div>
+                </div>
+                
+                <div class="mt-4 flex justify-end space-x-2">
+                    <a href="{% url 'big_project_detail' project.pk %}" class="btn btn-sm btn-secondary">
+                        <i class="fas fa-eye mr-1"></i>Ver
+                    </a>
+                    <a href="{% url 'big_project_edit' project.pk %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-edit mr-1"></i>Editar
+                    </a>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-span-full text-center py-12">
+                <i class="fas fa-search text-4xl text-gray-400 mb-4"></i>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">No se encontraron proyectos</h3>
+                <p class="text-gray-500 mb-4">No hay grandes proyectos que coincidan con los filtros aplicados.</p>
+                <a href="{% url 'big_project_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus mr-2"></i>Crear Primer Proyecto
+                </a>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Paginación -->
+    {% if page_obj.has_other_pages %}
+        <div class="mt-8 flex justify-center">
+            <nav class="flex items-center space-x-2">
+                {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode }}" 
+                       class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                        Anterior
+                    </a>
+                {% endif %}
+                
+                <span class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md">
+                    Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                </span>
+                
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode }}" 
+                       class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                        Siguiente
+                    </a>
+                {% endif %}
+            </nav>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit filtros después de 500ms de inactividad
+    const searchInput = document.querySelector('input[name="search"]');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(this.searchTimeout);
+            this.searchTimeout = setTimeout(() => {
+                this.closest('form').submit();
+            }, 500);
+        });
+    }
+});
+</script>
+{% endblock %}

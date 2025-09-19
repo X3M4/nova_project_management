@@ -1,0 +1,613 @@
+<!-- filepath: /home/p102/django_projects/nova_workers_management/templates/project_maps/big_project_detail.html -->
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ big_project.name }} - Detalles del Proyecto{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detail-card {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+    
+    .project-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .project-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 100%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        transform: rotate(45deg);
+    }
+    
+    .amount-display {
+        font-size: 3rem;
+        font-weight: bold;
+        color: #10b981;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+    }
+    
+    .info-section {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 1.5rem;
+        border-left: 4px solid #8b5cf6;
+    }
+    
+    .info-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding: 0.75rem;
+        background: white;
+        border-radius: 6px;
+        border: 1px solid #e2e8f0;
+        transition: all 0.2s ease;
+    }
+    
+    .info-item:hover {
+        border-color: #8b5cf6;
+        box-shadow: 0 2px 8px rgba(139, 92, 246, 0.1);
+    }
+    
+    .info-icon {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        flex-shrink: 0;
+    }
+    
+    .info-content {
+        flex: 1;
+    }
+    
+    .info-label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #6b7280;
+        margin-bottom: 0.25rem;
+    }
+    
+    .info-value {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1f2937;
+    }
+    
+    .map-container {
+        height: 400px;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+    
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        border: 1px solid transparent;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        color: white;
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
+    }
+    
+    .btn-secondary {
+        background: white;
+        color: #6b7280;
+        border-color: #d1d5db;
+    }
+    
+    .btn-secondary:hover {
+        background: #f9fafb;
+        border-color: #9ca3af;
+    }
+    
+    .btn-success {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+    
+    .btn-success:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+    }
+    
+    .btn-danger {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: white;
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    }
+    
+    .btn-danger:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+    }
+    
+    .coordinates-box {
+        background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+        border: 1px solid #0ea5e9;
+        border-radius: 8px;
+        padding: 1rem;
+        font-family: 'Courier New', monospace;
+        color: #0c4a6e;
+    }
+    
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+    }
+    
+    .timeline {
+        position: relative;
+        padding-left: 2rem;
+    }
+    
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 0.75rem;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(to bottom, #8b5cf6, #ec4899);
+    }
+    
+    .timeline-item {
+        position: relative;
+        margin-bottom: 1.5rem;
+        background: white;
+        border-radius: 8px;
+        padding: 1rem;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -1.875rem;
+        top: 1rem;
+        width: 12px;
+        height: 12px;
+        background: #8b5cf6;
+        border-radius: 50%;
+        border: 3px solid white;
+        box-shadow: 0 0 0 3px #8b5cf6;
+    }
+    
+    @media (max-width: 768px) {
+        .detail-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+        }
+        
+        .project-header {
+            padding: 1.5rem;
+        }
+        
+        .amount-display {
+            font-size: 2rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <!-- Encabezado del Proyecto -->
+    <div class="project-header">
+        <div class="relative z-10">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                <div class="mb-4 md:mb-0">
+                    <h1 class="text-4xl font-bold mb-2">{{ big_project.name }}</h1>
+                    <div class="status-badge">
+                        <i class="fas fa-diamond mr-2"></i>Gran Proyecto de Inversión
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-sm opacity-90 mb-2">Inversión Total</div>
+                    <div class="amount-display">€{{ big_project.amount|floatformat:0 }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botones de Acción -->
+    <div class="action-buttons mb-6">
+        <a href="{% url 'big_project_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left mr-2"></i>Volver a Lista
+        </a>
+        <a href="{% url 'big_project_edit' big_project.pk %}" class="btn btn-primary">
+            <i class="fas fa-edit mr-2"></i>Editar Proyecto
+        </a>
+        <a href="{% url 'project_map' %}" class="btn btn-success">
+            <i class="fas fa-map-marked-alt mr-2"></i>Ver en Mapa
+        </a>
+        <a href="{% url 'big_project_delete' big_project.pk %}" class="btn btn-danger" 
+           onclick="return confirm('¿Estás seguro de que quieres eliminar este proyecto? Esta acción no se puede deshacer.')">
+            <i class="fas fa-trash mr-2"></i>Eliminar
+        </a>
+    </div>
+
+    <div class="detail-grid">
+        <!-- Información del Proyecto -->
+        <div class="detail-card">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                <i class="fas fa-info-circle mr-2 text-blue-500"></i>Información del Proyecto
+            </h2>
+            
+            <div class="space-y-4">
+                <div class="info-item">
+                    <div class="info-icon">
+                        <i class="fas fa-tag"></i>
+                    </div>
+                    <div class="info-content">
+                        <div class="info-label">Nombre del Proyecto</div>
+                        <div class="info-value">{{ big_project.name }}</div>
+                    </div>
+                </div>
+
+                <div class="info-item">
+                    <div class="info-icon">
+                        <i class="fas fa-euro-sign"></i>
+                    </div>
+                    <div class="info-content">
+                        <div class="info-label">Monto de Inversión</div>
+                        <div class="info-value">€{{ big_project.amount|floatformat:2 }}</div>
+                    </div>
+                </div>
+
+                {% if big_project.developer %}
+                <div class="info-item">
+                    <div class="info-icon">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <div class="info-content">
+                        <div class="info-label">Desarrollador</div>
+                        <div class="info-value">{{ big_project.developer }}</div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if big_project.start_date %}
+                <div class="info-item">
+                    <div class="info-icon">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <div class="info-content">
+                        <div class="info-label">Fecha de Inicio</div>
+                        <div class="info-value">{{ big_project.start_date|date:"d/m/Y" }}</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Información de Ubicación -->
+        <div class="detail-card">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                <i class="fas fa-map-marker-alt mr-2 text-green-500"></i>Ubicación
+            </h2>
+            
+            <div class="space-y-4">
+                {% if big_project.address %}
+                <div class="info-item">
+                    <div class="info-icon">
+                        <i class="fas fa-road"></i>
+                    </div>
+                    <div class="info-content">
+                        <div class="info-label">Dirección</div>
+                        <div class="info-value">{{ big_project.address }}</div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if big_project.city %}
+                <div class="info-item">
+                    <div class="info-icon">
+                        <i class="fas fa-city"></i>
+                    </div>
+                    <div class="info-content">
+                        <div class="info-label">Ciudad</div>
+                        <div class="info-value">{{ big_project.city }}</div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if big_project.province %}
+                <div class="info-item">
+                    <div class="info-icon">
+                        <i class="fas fa-map"></i>
+                    </div>
+                    <div class="info-content">
+                        <div class="info-label">Provincia</div>
+                        <div class="info-value">{{ big_project.province }}</div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="info-item">
+                    <div class="info-icon">
+                        <i class="fas fa-globe"></i>
+                    </div>
+                    <div class="info-content">
+                        <div class="info-label">País</div>
+                        <div class="info-value">{{ big_project.country }}</div>
+                    </div>
+                </div>
+
+                <div class="coordinates-box">
+                    <div class="font-semibold text-sm mb-2">
+                        <i class="fas fa-crosshairs mr-2"></i>Coordenadas GPS
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <span class="font-medium">Latitud:</span><br>
+                            {{ big_project.latitude|floatformat:6 }}°
+                        </div>
+                        <div>
+                            <span class="font-medium">Longitud:</span><br>
+                            {{ big_project.longitude|floatformat:6 }}°
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mapa -->
+    <div class="detail-card">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">
+            <i class="fas fa-map mr-2 text-purple-500"></i>Ubicación en el Mapa
+        </h2>
+        <div id="project-map" class="map-container"></div>
+    </div>
+
+    <!-- Timeline de Actividad -->
+    <div class="detail-card">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">
+            <i class="fas fa-history mr-2 text-indigo-500"></i>Historial del Proyecto
+        </h2>
+        
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="flex items-center justify-between mb-2">
+                    <h4 class="font-semibold text-gray-900">Proyecto Creado</h4>
+                    <span class="text-sm text-gray-500">{{ big_project.created_at|date:"d/m/Y H:i" }}</span>
+                </div>
+                <p class="text-gray-600 text-sm">El gran proyecto "{{ big_project.name }}" fue registrado en el sistema.</p>
+            </div>
+
+            {% if big_project.updated_at != big_project.created_at %}
+            <div class="timeline-item">
+                <div class="flex items-center justify-between mb-2">
+                    <h4 class="font-semibold text-gray-900">Última Actualización</h4>
+                    <span class="text-sm text-gray-500">{{ big_project.updated_at|date:"d/m/Y H:i" }}</span>
+                </div>
+                <p class="text-gray-600 text-sm">La información del proyecto fue actualizada.</p>
+            </div>
+            {% endif %}
+
+            {% if big_project.start_date %}
+            <div class="timeline-item">
+                <div class="flex items-center justify-between mb-2">
+                    <h4 class="font-semibold text-gray-900">Inicio Programado</h4>
+                    <span class="text-sm text-gray-500">{{ big_project.start_date|date:"d/m/Y" }}</span>
+                </div>
+                <p class="text-gray-600 text-sm">Fecha programada para el inicio del proyecto.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Información Adicional -->
+    <div class="detail-card">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">
+            <i class="fas fa-chart-line mr-2 text-green-500"></i>Estadísticas del Proyecto
+        </h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="info-section">
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-green-600 mb-2">€{{ big_project.amount|floatformat:0 }}</div>
+                    <div class="text-sm text-gray-600">Inversión Total</div>
+                </div>
+            </div>
+            
+            <div class="info-section">
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-blue-600 mb-2">
+                        {{ big_project.created_at|timesince }}
+                    </div>
+                    <div class="text-sm text-gray-600">En Sistema</div>
+                </div>
+            </div>
+            
+            <div class="info-section">
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-purple-600 mb-2">
+                        {% if big_project.start_date %}
+                            {% now "Y-m-d" as today %}
+                            {% if big_project.start_date|date:"Y-m-d" > today %}
+                                <i class="fas fa-clock"></i>
+                            {% else %}
+                                <i class="fas fa-play"></i>
+                            {% endif %}
+                        {% else %}
+                            <i class="fas fa-question"></i>
+                        {% endif %}
+                    </div>
+                    <div class="text-sm text-gray-600">
+                        {% if big_project.start_date %}
+                            {% now "Y-m-d" as today %}
+                            {% if big_project.start_date|date:"Y-m-d" > today %}
+                                Por Iniciar
+                            {% else %}
+                                En Curso
+                            {% endif %}
+                        {% else %}
+                            Sin Fecha
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Leaflet CSS y JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar mapa
+    const lat = {{ big_project.latitude }};
+    const lng = {{ big_project.longitude }};
+    
+    const map = L.map('project-map').setView([lat, lng], 15);
+    
+    // Añadir tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    
+    // Crear popup HTML
+    const popupContent = `
+        <div style="text-align: center; font-family: Arial, sans-serif;">
+            <h4 style="margin: 0 0 10px 0; color: #8B5CF6;">
+                💎 {{ big_project.name }}
+            </h4>
+            <div style="margin-bottom: 5px;">
+                <strong>Inversión:</strong> €{{ big_project.amount|floatformat:0 }}
+            </div>
+            {% if big_project.developer %}
+            <div style="margin-bottom: 5px;">
+                <strong>Desarrollador:</strong> {{ big_project.developer }}
+            </div>
+            {% endif %}
+            {% if big_project.city %}
+            <div style="margin-bottom: 5px;">
+                <strong>Ubicación:</strong> {{ big_project.city }}{% if big_project.province %}, {{ big_project.province }}{% endif %}
+            </div>
+            {% endif %}
+        </div>
+    `;
+    
+    // Añadir marcador
+    L.marker([lat, lng])
+        .addTo(map)
+        .bindPopup(popupContent)
+        .openPopup();
+    
+    // Añadir círculo para mostrar área de influencia
+    L.circle([lat, lng], {
+        color: '#8B5CF6',
+        fillColor: '#8B5CF6',
+        fillOpacity: 0.1,
+        radius: 1000 // 1km de radio
+    }).addTo(map);
+    
+    // Botón para centrar el mapa
+    const centerButton = document.createElement('button');
+    centerButton.innerHTML = '<i class="fas fa-crosshairs"></i>';
+    centerButton.style.cssText = `
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 1000;
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 8px;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    `;
+    centerButton.title = 'Centrar en el proyecto';
+    centerButton.onclick = () => map.setView([lat, lng], 15);
+    
+    document.getElementById('project-map').appendChild(centerButton);
+});
+
+// Función para copiar coordenadas
+function copyCoordinates() {
+    const coords = `{{ big_project.latitude|floatformat:6 }}, {{ big_project.longitude|floatformat:6 }}`;
+    navigator.clipboard.writeText(coords).then(() => {
+        alert('Coordenadas copiadas al portapapeles: ' + coords);
+    });
+}
+
+// Añadir botón para copiar coordenadas
+document.addEventListener('DOMContentLoaded', function() {
+    const coordsBox = document.querySelector('.coordinates-box');
+    if (coordsBox) {
+        const copyBtn = document.createElement('button');
+        copyBtn.innerHTML = '<i class="fas fa-copy mr-1"></i>Copiar';
+        copyBtn.className = 'mt-2 px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs';
+        copyBtn.onclick = copyCoordinates;
+        coordsBox.appendChild(copyBtn);
+    }
+});
+</script>
+{% endblock %}

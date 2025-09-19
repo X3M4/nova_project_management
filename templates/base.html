@@ -64,6 +64,7 @@
                             <div @click.away="navProjectsOpen = false" x-show="navProjectsOpen" class="origin-top-left absolute left-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
                                 <a href="{% url 'project_list' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">All Projects</a>
                                 <a href="{% url 'project_create' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Add Project</a>
+                                <a href="{% url 'big_project_list' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Manage Big Project Locations</a>
                                 <a href="{% url 'import_projects_csv' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Import CSV</a>
                                 <a href="{% url 'export_projects_csv' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Export CSV</a>
                             </div>

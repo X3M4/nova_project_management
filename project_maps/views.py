@@ -1,4 +1,5 @@
 import math
+from django.http import JsonResponse
 import folium
 from folium.plugins import MarkerCluster, Fullscreen
 from django.shortcuts import render, get_object_or_404, redirect
@@ -6,13 +7,16 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.urls import reverse, NoReverseMatch
 from django.core.cache import cache
-from .models import ProjectLocation
+from .models import ProjectLocation, BigProjectLocation
 from novacartografia_employee_management.models import Employee, Project
 import time
 import random
 from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut, GeocoderUnavailable, GeocoderRateLimited
 from django.db.models import Q
+from django.core.paginator import Paginator
+from .forms import ProjectLocationForm, BigProjectLocationForm
+from django.db.models import Sum, Avg, Count
 
 
 @login_required
@@ -65,6 +69,20 @@ def project_map(request):
         }
     ).add_to(m)
     
+    marker_cluster_big_projects = MarkerCluster(
+        name='Interesantes', 
+        overlay=True, 
+        control=True,
+        options={
+            'disableClusteringAtZoom': 16,  # Para empleados, desactivar clustering un poco antes
+            'maxClusterRadius': 40,  # Radio menor para empleados
+            'spiderfyOnMaxZoom': True,
+            'showCoverageOnHover': True,
+            'zoomToBoundsOnClick': True,
+            'spiderfyDistanceMultiplier': 2  # Mayor distancia para empleados
+        }
+    ).add_to(m)
+    
     # Añadir controles de pantalla completa y capas
     Fullscreen(
         position='topleft',
@@ -83,6 +101,7 @@ def project_map(request):
     ).select_related('project')
     
     print(f"Proyectos con coordenadas: {project_locations.count()}")
+
     
     # Variables para contar empleados desplazados
     displaced_employees = []
@@ -310,6 +329,60 @@ def project_map(request):
                     opacity=0.5,
                     dash_array='5, 5'
                 ).add_to(m)
+                
+    # Añadir marcadores para proyectos interesantes
+    big_project_locations = BigProjectLocation.objects.filter(
+        latitude__isnull=False,
+        longitude__isnull=False
+    )
+    
+    for big_location in big_project_locations:
+        try:
+            lat = float(big_location.latitude)
+            lng = float(big_location.longitude)
+            
+            if not (-90 <= lat <= 90 and -180 <= lng <= 180):
+                print(f"Coordenadas inválidas para proyecto interesante {big_location.name}: {lat}, {lng}")
+                continue
+                
+        except (ValueError, TypeError):
+            print(f"Error convirtiendo coordenadas para proyecto interesante {big_location.name}")
+            continue
+        
+        popup_html = f"""
+        <div style="width: 300px; font-family: Arial, sans-serif;">
+            <h4 style="margin: 0 0 10px 0; color: #8B5CF6;">
+                💎 {big_location.name}
+            </h4>
+            <div style="margin-bottom: 8px;">
+                <strong>Monto:</strong> €{big_location.amount:,.2f}
+            </div>
+            <div style="margin-bottom: 8px;">
+                <strong>Desarrollador:</strong> {big_location.developer or 'No especificado'}
+            </div>
+            {f'<div style="margin-bottom: 8px;"><strong>Inicio:</strong> {big_location.start_date.strftime("%d/%m/%Y")}</div>' if big_location.start_date else ''}
+            <div style="margin-bottom: 8px;">
+                <strong>Ubicación:</strong> {big_location.city or 'No especificada'}, {big_location.province or 'Sin provincia'}
+            </div>
+            <div style="margin-bottom: 8px;">
+                <strong>Dirección:</strong> {big_location.address or 'No especificada'}
+            </div>
+            <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #e2e8f0; font-size: 0.8em; color: #666;">
+                Creado: {big_location.created_at.strftime("%d/%m/%Y")}
+            </div>
+        </div>
+        """
+        
+        folium.Marker(
+            location=[lat, lng],
+            popup=folium.Popup(popup_html, max_width=350),
+            tooltip=f"🏗️ {big_location.name}",
+            icon=folium.Icon(
+                color="darkblue", 
+                icon="euro",
+                prefix='glyphicon'
+            )
+        ).add_to(marker_cluster_big_projects)
     
     # Continuar con el resto del código de estadísticas...
     # NUEVO: Obtener distribución de proyectos por provincias
@@ -548,6 +621,7 @@ def project_map(request):
         'total_employees_in_projects': total_employees_in_projects,
         'total_displaced_employees': len(displaced_employees),  # Número correcto de empleados desplazados
         'total_red_markers': total_red_markers,  # Número de marcadores rojos
+        'big_projects_count': big_project_locations.count()
     })
 
 
@@ -909,3 +983,222 @@ def edit_employee_location(request, employee_id):
     }
     
     return render(request, 'project_maps/add_employee_location.html', context)
+
+# Añadir estas vistas al final del archivo
+
+@login_required
+def big_project_list(request):
+    """Vista para listar todos los grandes proyectos con filtros y paginación"""
+    
+    # Obtener parámetros de búsqueda y filtros
+    search_query = request.GET.get('search', '')
+    city_filter = request.GET.get('city', '')
+    province_filter = request.GET.get('province', '')
+    developer_filter = request.GET.get('developer', '')
+    min_amount = request.GET.get('min_amount', '')
+    max_amount = request.GET.get('max_amount', '')
+    
+    # Consulta base
+    queryset = BigProjectLocation.objects.all().order_by('-created_at')
+    
+    # Aplicar filtros
+    if search_query:
+        queryset = queryset.filter(
+            Q(name__icontains=search_query) |
+            Q(address__icontains=search_query) |
+            Q(developer__icontains=search_query)
+        )
+    
+    if city_filter:
+        queryset = queryset.filter(city__icontains=city_filter)
+    
+    if province_filter:
+        queryset = queryset.filter(province__icontains=province_filter)
+    
+    if developer_filter:
+        queryset = queryset.filter(developer__icontains=developer_filter)
+    
+    if min_amount:
+        try:
+            queryset = queryset.filter(amount__gte=float(min_amount))
+        except ValueError:
+            pass
+    
+    if max_amount:
+        try:
+            queryset = queryset.filter(amount__lte=float(max_amount))
+        except ValueError:
+            pass
+    
+    # Estadísticas
+    stats = queryset.aggregate(
+        total_projects=Count('id'),
+        total_amount=Sum('amount'),
+        avg_amount=Avg('amount'),
+    )
+    
+    # Paginación
+    paginator = Paginator(queryset, 12)  # 12 proyectos por página
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Obtener valores únicos para los filtros
+    cities = BigProjectLocation.objects.values_list('city', flat=True).distinct().exclude(city__isnull=True).exclude(city='')
+    provinces = BigProjectLocation.objects.values_list('province', flat=True).distinct().exclude(province__isnull=True).exclude(province='')
+    developers = BigProjectLocation.objects.values_list('developer', flat=True).distinct().exclude(developer__isnull=True).exclude(developer='')
+    
+    context = {
+        'big_projects': page_obj,
+        'stats': stats,
+        'search_query': search_query,
+        'city_filter': city_filter,
+        'province_filter': province_filter,
+        'developer_filter': developer_filter,
+        'min_amount': min_amount,
+        'max_amount': max_amount,
+        'cities': sorted([city for city in cities if city]),
+        'provinces': sorted([province for province in provinces if province]),
+        'developers': sorted([developer for developer in developers if developer]),
+        'page_obj': page_obj,
+    }
+    
+    return render(request, 'project_maps/big_project_list.html', context)
+
+
+@login_required
+def big_project_detail(request, pk):
+    """Vista para ver detalles de un gran proyecto"""
+    big_project = get_object_or_404(BigProjectLocation, pk=pk)
+    
+    context = {
+        'big_project': big_project,
+    }
+    
+    return render(request, 'project_maps/big_project_detail.html', context)
+
+
+@login_required
+def big_project_create(request):
+    """Vista para crear un nuevo gran proyecto"""
+    if request.method == 'POST':
+        form = BigProjectLocationForm(request.POST)
+        if form.is_valid():
+            big_project = form.save()
+            messages.success(request, f'Gran proyecto "{big_project.name}" creado exitosamente.')
+            return redirect('big_project_detail', pk=big_project.pk)
+        else:
+            messages.error(request, 'Por favor corrige los errores en el formulario.')
+    else:
+        form = BigProjectLocationForm()
+    
+    context = {
+        'form': form,
+        'title': 'Crear Gran Proyecto',
+        'button_text': 'Crear Proyecto',
+    }
+    
+    return render(request, 'project_maps/big_project_form.html', context)
+
+
+@login_required
+def big_project_edit(request, pk):
+    """Vista para editar un gran proyecto existente"""
+    big_project = get_object_or_404(BigProjectLocation, pk=pk)
+    
+    if request.method == 'POST':
+        form = BigProjectLocationForm(request.POST, instance=big_project)
+        if form.is_valid():
+            big_project = form.save()
+            messages.success(request, f'Gran proyecto "{big_project.name}" actualizado exitosamente.')
+            return redirect('big_project_detail', pk=big_project.pk)
+        else:
+            messages.error(request, 'Por favor corrige los errores en el formulario.')
+    else:
+        form = BigProjectLocationForm(instance=big_project)
+    
+    context = {
+        'form': form,
+        'big_project': big_project,
+        'title': f'Editar - {big_project.name}',
+        'button_text': 'Actualizar Proyecto',
+    }
+    
+    return render(request, 'project_maps/big_project_form.html', context)
+
+
+@login_required
+def big_project_delete(request, pk):
+    """Vista para eliminar un gran proyecto"""
+    big_project = get_object_or_404(BigProjectLocation, pk=pk)
+    
+    if request.method == 'POST':
+        project_name = big_project.name
+        big_project.delete()
+        messages.success(request, f'Gran proyecto "{project_name}" eliminado exitosamente.')
+        return redirect('big_project_list')
+    
+    context = {
+        'big_project': big_project,
+    }
+    
+    return render(request, 'project_maps/big_project_confirm_delete.html', context)
+
+
+@login_required
+def geocode_address(request):
+    """Vista AJAX para geocodificar una dirección"""
+    if request.method == 'POST':
+        import json
+        data = json.loads(request.body)
+        address = data.get('address', '').strip()
+        
+        if not address:
+            return JsonResponse({'error': 'Dirección no proporcionada'})
+        
+        try:
+            # Usar el geocodificador con retry
+            geolocator = Nominatim(
+                user_agent="nova_workers_map",
+                timeout=15  # Aumentar timeout
+            )
+            
+            # Añadir país si no está incluido
+            if 'españa' not in address.lower() and 'spain' not in address.lower():
+                address += ', España'
+            
+            location = geolocator.geocode(address, exactly_one=True, limit=1)
+            
+            if location:
+                # Validar que las coordenadas están en rangos válidos
+                lat = float(location.latitude)
+                lng = float(location.longitude)
+                
+                # Verificar rangos válidos
+                if not (-90 <= lat <= 90):
+                    return JsonResponse({'error': f'Latitud fuera de rango válido: {lat}'})
+                
+                if not (-180 <= lng <= 180):
+                    return JsonResponse({'error': f'Longitud fuera de rango válido: {lng}'})
+                
+                # Redondear a 6 decimales para evitar problemas de precisión
+                lat = round(lat, 6)
+                lng = round(lng, 6)
+                
+                return JsonResponse({
+                    'success': True,
+                    'latitude': lat,
+                    'longitude': lng,
+                    'display_name': location.address,
+                    'formatted_coords': f"{lat}, {lng}"
+                })
+            else:
+                return JsonResponse({'error': 'No se pudo encontrar la ubicación. Intenta con una dirección más específica.'})
+                
+        except GeocoderTimedOut:
+            return JsonResponse({'error': 'Tiempo de espera agotado. Inténtalo de nuevo.'})
+        except GeocoderUnavailable:
+            return JsonResponse({'error': 'Servicio de geocodificación no disponible.'})
+        except Exception as e:
+            return JsonResponse({'error': f'Error de geocodificación: {str(e)}'})
+    
+    return JsonResponse({'error': 'Método no permitido'})
