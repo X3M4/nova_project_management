@@ -17,7 +17,10 @@ urlpatterns = [
     # URLs existentes para ProjectLocation
     path('add-location/<int:project_id>/', views.add_project_location, name='add_project_location'),
     path('edit-location/<int:location_id>/', views.edit_project_location, name='edit_project_location'),
-    path('edit-location/<int:location_id>/', views.edit_project_location, name='edit_project_location'),
     path('employees/locations/', views.employee_locations_list, name='employee_locations_list'),
     path('employee/<int:employee_id>/location/', views.edit_employee_location, name='edit_employee_location'),
+    
+    # Import adjudicaciones URLs - fix the name to match what template expects
+    path('import-adjudicaciones/', views.import_adjudicaciones_html, name='import_adjudicaciones'),
+    path('import/summary/', views.import_summary, name='import_summary'),
 ]

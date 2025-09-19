@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from django.urls import reverse
-from .models import ProjectLocation
+from .models import ProjectLocation, BigProjectLocation
 
 @admin.register(ProjectLocation)
 class ProjectLocationAdmin(admin.ModelAdmin):
@@ -158,3 +158,55 @@ class ProjectLocationAdmin(admin.ModelAdmin):
 
 # Si no quieres usar el decorador @admin.register, puedes usar:
 # admin.site.register(ProjectLocation, ProjectLocationAdmin)
+
+@admin.register(BigProjectLocation)
+class BigProjectLocationAdmin(admin.ModelAdmin):
+    # Lista simple sin métodos personalizados complejos
+    list_display = [
+        'name',
+        'amount',
+        'developer',
+        'city',
+        'province',
+        'start_date',
+        'created_at'
+    ]
+    
+    search_fields = [
+        'name',
+        'developer',
+        'city',
+        'province'
+    ]
+    
+    list_filter = [
+        'developer',
+        'province',
+        'start_date',
+        'created_at'
+    ]
+    
+    readonly_fields = [
+        'created_at',
+        'updated_at'
+    ]
+    
+    fieldsets = (
+        ('Información del Proyecto', {
+            'fields': ('name', 'amount', 'developer', 'start_date')
+        }),
+        ('Ubicación', {
+            'fields': ('latitude', 'longitude', 'city', 'province', 'country', 'address')
+        }),
+        ('Descripción', {
+            'fields': ('description',),
+            'classes': ('collapse',)
+        }),
+        ('Metadatos', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        })
+    )
+    
+    ordering = ['-amount', 'name']
+    list_per_page = 25

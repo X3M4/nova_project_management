@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Importación Completada{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto">
+        <div class="bg-white rounded-lg shadow-lg p-8">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 mx-auto mb-4 flex items-center justify-center bg-green-100 rounded-full">
+                    <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                </div>
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">✅ Importación Completada</h1>
+                <p class="text-gray-600">Los datos han sido procesados exitosamente</p>
+            </div>
+            
+            <!-- Statistics -->
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+                <div class="bg-gray-50 p-4 rounded-lg text-center">
+                    <div class="text-2xl font-bold text-gray-900">{{ summary.processed }}</div>
+                    <div class="text-sm text-gray-600">Procesados</div>
+                </div>
+                <div class="bg-green-50 p-4 rounded-lg text-center">
+                    <div class="text-2xl font-bold text-green-600">{{ summary.imported }}</div>
+                    <div class="text-sm text-gray-600">Importados</div>
+                </div>
+                <div class="bg-yellow-50 p-4 rounded-lg text-center">
+                    <div class="text-2xl font-bold text-yellow-600">{{ summary.skipped }}</div>
+                    <div class="text-sm text-gray-600">Omitidos</div>
+                </div>
+                <div class="bg-blue-50 p-4 rounded-lg text-center">
+                    <div class="text-2xl font-bold text-blue-600">{{ summary.duplicates }}</div>
+                    <div class="text-sm text-gray-600">Duplicados</div>
+                </div>
+                <div class="bg-red-50 p-4 rounded-lg text-center">
+                    <div class="text-2xl font-bold text-red-600">{{ summary.errors }}</div>
+                    <div class="text-sm text-gray-600">Errores</div>
+                </div>
+            </div>
+            
+            <!-- Details table -->
+            {% if details %}
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold mb-4">Detalle de Registros</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full border-collapse border border-gray-200">
+                        <thead>
+                            <tr class="bg-gray-50">
+                                <th class="border border-gray-200 px-4 py-2 text-left">#</th>
+                                <th class="border border-gray-200 px-4 py-2 text-left">Expediente</th>
+                                <th class="border border-gray-200 px-4 py-2 text-left">Descripción</th>
+                                <th class="border border-gray-200 px-4 py-2 text-left">Estado</th>
+                                <th class="border border-gray-200 px-4 py-2 text-left">Motivo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for detail in details %}
+                            <tr class="{% cycle 'bg-white' 'bg-gray-50' %}">
+                                <td class="border border-gray-200 px-4 py-2">{{ detail.numero }}</td>
+                                <td class="border border-gray-200 px-4 py-2 text-sm">{{ detail.expediente }}</td>
+                                <td class="border border-gray-200 px-4 py-2 text-sm">{{ detail.descripcion }}</td>
+                                <td class="border border-gray-200 px-4 py-2">
+                                    {% if detail.status == 'imported' %}
+                                        <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded">✅ Importado</span>
+                                    {% elif detail.status == 'skipped' %}
+                                        <span class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">⚠️ Omitido</span>
+                                    {% elif detail.status == 'duplicate' %}
+                                        <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">🔄 Duplicado</span>
+                                    {% elif detail.status == 'error' %}
+                                        <span class="px-2 py-1 bg-red-100 text-red-800 text-xs rounded">🚫 Error</span>
+                                    {% endif %}
+                                </td>
+                                <td class="border border-gray-200 px-4 py-2 text-sm text-gray-600">{{ detail.reason }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Action buttons -->
+            <div class="text-center">
+                <a href="{% url 'import_adjudicaciones_html' %}" class="inline-flex items-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 mr-4">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
+                    </svg>
+                    Nueva Importación
+                </a>
+                
+                <a href="/admin/project_maps/bigprojectlocation/" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                    </svg>
+                    Ver Proyectos
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

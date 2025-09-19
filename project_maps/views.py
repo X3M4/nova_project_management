@@ -1,4 +1,8 @@
+from datetime import datetime, timedelta
+from decimal import Decimal
 import math
+import re
+from bs4 import BeautifulSoup
 from django.http import JsonResponse
 import folium
 from folium.plugins import MarkerCluster, Fullscreen
@@ -366,6 +370,9 @@ def project_map(request):
             </div>
             <div style="margin-bottom: 8px;">
                 <strong>Dirección:</strong> {big_location.address or 'No especificada'}
+            </div>
+            <div style="margin-bottom: 8px;">
+                <strong>Desc:</strong> {big_location.description or ''}
             </div>
             <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #e2e8f0; font-size: 0.8em; color: #666;">
                 Creado: {big_location.created_at.strftime("%d/%m/%Y")}
@@ -1202,3 +1209,821 @@ def geocode_address(request):
             return JsonResponse({'error': f'Error de geocodificación: {str(e)}'})
     
     return JsonResponse({'error': 'Método no permitido'})
+
+@login_required
+def import_adjudicaciones_html(request):
+    """Vista para importar adjudicaciones desde archivo HTML de Gestboes"""
+    if request.method == 'POST':
+        uploaded_file = request.FILES.get('html_file')
+        
+        if not uploaded_file:
+            messages.error(request, 'Por favor selecciona un archivo HTML.')
+            return render(request, 'project_maps/import_adjudicaciones.html')
+        
+        if not uploaded_file.name.endswith(('.html', '.htm')):
+            messages.error(request, 'Por favor selecciona un archivo HTML válido.')
+            return render(request, 'project_maps/import_adjudicaciones.html')
+        
+        try:
+            # Read file content
+            file_content = uploaded_file.read()
+            
+            # Try different encodings
+            content_str = None
+            for encoding in ['utf-8', 'latin-1', 'cp1252', 'iso-8859-1']:
+                try:
+                    content_str = file_content.decode(encoding)
+                    break
+                except UnicodeDecodeError:
+                    continue
+            
+            if not content_str:
+                messages.error(request, 'No se pudo leer el archivo. Encoding no soportado.')
+                return render(request, 'project_maps/import_adjudicaciones.html')
+            
+            # Process the HTML file
+            result = extract_from_gestboes_html(content_str)
+            
+            if result['success']:
+                # Store details in session for summary page
+                request.session['import_details'] = result['details']
+                request.session['import_summary'] = {
+                    'processed': result['processed'],
+                    'imported': result['imported'],
+                    'skipped': result['skipped'],
+                    'duplicates': result['duplicates'],
+                    'errors': result['errors']
+                }
+                
+                # Show success message
+                messages.success(request, f"""
+                📊 Importación completada:
+                • {result['processed']} registros procesados
+                • {result['imported']} proyectos importados
+                • {result['skipped']} omitidos por filtros
+                • {result['duplicates']} duplicados encontrados
+                • {result['errors']} errores
+                """)
+                
+                return redirect('big_project_list')
+            else:
+                messages.error(request, f"Error en la importación: {result.get('error', 'Error desconocido')}")
+                
+        except Exception as e:
+            messages.error(request, f"Error procesando el archivo: {str(e)}")
+            import traceback
+            print(f"Error details: {traceback.format_exc()}")
+        
+        # Return to form if there was an error
+        return render(request, 'project_maps/import_adjudicaciones.html')
+    
+    # Show upload form for GET requests
+    return render(request, 'project_maps/import_adjudicaciones.html')
+
+@login_required
+def import_summary(request):
+    """Vista para mostrar resumen detallado de la importación"""
+    details = request.session.get('import_details', [])
+    summary = request.session.get('import_summary', {})
+    
+    # Clear session after showing
+    if 'import_details' in request.session:
+        del request.session['import_details']
+    if 'import_summary' in request.session:
+        del request.session['import_summary']
+    
+    return render(request, 'project_maps/import_summary.html', {
+        'details': details,
+        'summary': summary
+    })
+
+
+def extract_adjudication_data(table):
+    """Extract data from main adjudication table"""
+    data = {}
+    rows = table.find_all('tr')[1:]  # Skip header row with ID and gestboes
+    
+    for row in rows:
+        cells = row.find_all('td')
+        if len(cells) >= 2:
+            field_name = clean_html_text(cells[0].get_text()).lower()
+            field_value = clean_html_text(cells[1].get_text())
+            
+            # Map fields based on Gestboes structure
+            if 'descripción' in field_name or 'descripcion' in field_name:
+                data['descripcion'] = field_value
+                # Extract amount from description
+                data['importe_from_desc'] = extract_amount_from_text(field_value)
+                
+            elif 'expediente' in field_name:
+                data['expediente'] = field_value
+                
+            elif 'clase' in field_name and 'contrato' in field_name:
+                data['clase_contrato'] = field_value
+                
+            elif 'importe' in field_name:
+                data['importe'] = field_value
+                data['importe_display'] = field_value
+                
+            elif 'area geográfica' in field_name or 'area geografica' in field_name:
+                data['area_geografica'] = field_value
+                
+            elif 'fecha' in field_name and ('adjudicación' in field_name or 'adjudicacion' in field_name):
+                data['fecha_adjudicacion'] = field_value
+                
+            elif 'organismo' in field_name:
+                data['organismo'] = field_value
+    
+    return data
+
+def extract_empresa_data(table):
+    """Extract empresa data from empresa table"""
+    try:
+        rows = table.find_all('tr')
+        if len(rows) < 2:
+            return None
+            
+        # Get data from first data row (skip header)
+        data_row = rows[1]
+        cells = data_row.find_all('td')
+        
+        if len(cells) >= 2:
+            empresa = clean_html_text(cells[0].get_text())
+            euros = clean_html_text(cells[1].get_text())
+            
+            return {
+                'empresa': empresa,
+                'euros_empresa': euros,
+                'importe_display': euros + ' €'
+            }
+    except Exception as e:
+        print(f"Error extracting empresa data: {e}")
+    
+    return None
+
+def clean_html_text(text):
+    """Clean HTML text from spaces, tags and special characters"""
+    if not text:
+        return ""
+    
+    # Remove HTML tags
+    text = re.sub(r'<[^>]+>', '', text)
+    
+    # Normalize spaces and line breaks
+    text = re.sub(r'\s+', ' ', text)
+    
+    # Remove control characters except basic ones
+    text = ''.join(char for char in text if ord(char) >= 32 or char in '\n\r\t')
+    
+    return text.strip()
+
+def extract_amount_from_text(text):
+    """Extract amounts from text using multiple patterns"""
+    if not text:
+        return ""
+    
+    patterns = [
+        r'Importe de licitación \(SIN IVA\):\s*([\d.,]+)\s*EUR',
+        r'Valor estimado del contrato:\s*([\d.,]+)\s*EUR',
+        r'Importe de licitación \(CON IVA\):\s*([\d.,]+)\s*EUR',
+        r'([\d]{1,3}(?:\.\d{3})*(?:,\d{2})?)\s*EUR',
+        r'([\d]{1,3}(?:\.\d{3})*(?:,\d{2})?)\s*€'
+    ]
+    
+    for pattern in patterns:
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            return match.group(1).strip()
+    
+    return ""
+
+def parse_amount_string(amount_str):
+    """Convert amount string to float"""
+    if not amount_str:
+        return None
+    
+    try:
+        # Clean: keep only numbers, dots and commas
+        clean_amount = re.sub(r'[^\d,.]', '', amount_str)
+        
+        # Spanish format: 1.234.567,89 -> 1234567.89
+        if ',' in clean_amount:
+            parts = clean_amount.split(',')
+            if len(parts) == 2 and len(parts[1]) <= 2:
+                # It's Spanish format
+                integer_part = parts[0].replace('.', '')
+                decimal_part = parts[1]
+                clean_amount = f"{integer_part}.{decimal_part}"
+        
+        return float(clean_amount)
+    except (ValueError, TypeError):
+        return None
+
+def extract_project_name(description):
+    """Extract project name from description"""
+    if not description:
+        return "Proyecto sin descripción"
+    
+    # Take until first period, line break or 100 characters
+    lines = description.split('\n')
+    first_line = lines[0].strip()
+    
+    # Look for first period that ends sentence
+    sentences = re.split(r'\.\s+[A-Z]', first_line)
+    if sentences:
+        name = sentences[0].strip()
+        if name and len(name) > 10:
+            return name
+    
+    # Fallback: first 100 characters of first line
+    if len(first_line) > 10:
+        return first_line[:100] if len(first_line) > 100 else first_line
+    
+    return "Proyecto de construcción"
+
+def extract_city_from_area(area_geografica):
+    """Extract city from geographic area"""
+    if not area_geografica:
+        return ""
+    
+    # Split by comma and take first part
+    parts = area_geografica.split(',')
+    if parts:
+        city = parts[0].strip()
+        return city.title()
+    
+    return area_geografica.strip()
+
+def extract_province_from_area(area_geografica):
+    """Extract province from geographic area"""
+    if not area_geografica:
+        return ""
+    
+    parts = area_geografica.split(',')
+    if len(parts) >= 2:
+        return parts[1].strip().title()
+    
+    return area_geografica.strip().title()
+
+def parse_spanish_date(date_str):
+    """Parse Spanish dates from Gestboes format"""
+    if not date_str:
+        return None
+    
+    try:
+        from datetime import datetime
+        
+        # Clean weekday
+        clean_date = re.sub(r'^(lunes|martes|miércoles|jueves|viernes|sábado|domingo),?\s*', '', date_str.lower())
+        
+        # Try different formats
+        formats = [
+            '%d/%m/%Y',
+            '%d/%m/%y',
+            '%Y-%m-%d'
+        ]
+        
+        for fmt in formats:
+            try:
+                return datetime.strptime(clean_date.strip(), fmt).date()
+            except ValueError:
+                continue
+        
+        # Extract numbers if standard format doesn't work
+        numbers = re.findall(r'\d+', date_str)
+        if len(numbers) >= 3:
+            day, month, year = int(numbers[0]), int(numbers[1]), int(numbers[2])
+            if year < 100:
+                year += 2000
+            return datetime(year, month, day).date()
+            
+    except Exception:
+        pass
+    
+    return None
+
+def truncate_text(text, max_length):
+    """Truncate text keeping complete words"""
+    if not text or len(text) <= max_length:
+        return text
+    
+    truncated = text[:max_length]
+    # Find last space to not cut words
+    last_space = truncated.rfind(' ')
+    if last_space > max_length * 0.8:
+        truncated = truncated[:last_space]
+    
+    return truncated + '...'
+
+@login_required
+def import_summary(request):
+    """View to show detailed import summary"""
+    details = request.session.get('import_details', [])
+    summary = request.session.get('import_summary', {})
+    
+    # Clear session after showing
+    if 'import_details' in request.session:
+        del request.session['import_details']
+    if 'import_summary' in request.session:
+        del request.session['import_summary']
+    
+    return render(request, 'project_maps/import_summary.html', {
+        'details': details,
+        'summary': summary
+    })
+    
+# Add these functions to your views.py file
+
+def extract_from_gestboes_html(html_content):
+    """
+    Extracts adjudications from Gestboes HTML using <P></P><P></P> separators
+    """
+    processed = 0
+    imported = 0
+    skipped = 0
+    duplicates = 0
+    errors = 0
+    details = []
+    
+    try:
+        print("Starting HTML extraction...")
+        
+        # Split content by record separators
+        record_sections = html_content.split('<P></P><P></P>')
+        
+        print(f"Found {len(record_sections)} sections after splitting")
+        
+        for i, section in enumerate(record_sections):
+            if i == 0:  # Skip header section
+                continue
+            
+            if not section.strip():  # Skip empty sections
+                continue
+                
+            try:
+                # Parse section with BeautifulSoup
+                soup = BeautifulSoup(section, 'html.parser')
+                
+                # Find all tables in this section
+                tables = soup.find_all('table', {'border': '1', 'width': '100%'})
+                
+                if not tables:
+                    continue
+                
+                # Look for main table (with gestboes header)
+                main_table = None
+                empresa_table = None
+                
+                for table in tables:
+                    rows = table.find_all('tr')
+                    if not rows:
+                        continue
+                        
+                    first_row = rows[0]
+                    cells = first_row.find_all('td')
+                    
+                    # Check if this is the main record table (ID + "gestboes")
+                    if (len(cells) >= 2 and 
+                        'gestboes' in cells[1].get_text().lower()):
+                        main_table = table
+                        processed += 1
+                        
+                        # Extract record ID
+                        record_id = clean_html_text(cells[0].get_text())
+                        print(f"Processing record {processed}: ID {record_id}")
+                        break
+                    
+                    # Check if this is empresa table (has "Empresa" and "Euros" headers)
+                    elif table.find('th'):
+                        headers = [th.get_text().lower() for th in table.find_all('th')]
+                        if 'empresa' in ' '.join(headers) and 'euros' in ' '.join(headers):
+                            empresa_table = table
+                
+                if main_table:
+                    # Extract data from main table
+                    record_data = extract_adjudication_data(main_table)
+                    record_data['record_id'] = record_id
+                    
+                    # Extract empresa data if available
+                    if empresa_table:
+                        empresa_data = extract_empresa_data(empresa_table)
+                        if empresa_data:
+                            record_data.update(empresa_data)
+                    
+                    # Process the record
+                    result = process_adjudication_record(record_data)
+                    
+                    # Add to details
+                    detail_entry = {
+                        'numero': processed,
+                        'expediente': record_data.get('expediente', 'Sin expediente'),
+                        'descripcion': truncate_text(record_data.get('descripcion', ''), 60),
+                        'importe': record_data.get('importe_display', 'No especificado'),
+                        'empresa': record_data.get('empresa', 'No especificada'),
+                        'status': result['status'],
+                        'reason': result.get('reason', ''),
+                        'area': record_data.get('area_geografica', 'No especificada')
+                    }
+                    details.append(detail_entry)
+                    
+                    # Count results
+                    if result['status'] == 'imported':
+                        imported += 1
+                    elif result['status'] == 'duplicate':
+                        duplicates += 1
+                    elif result['status'] == 'error':
+                        errors += 1
+                    else:
+                        skipped += 1
+                        
+            except Exception as e:
+                print(f"Error processing section {i}: {str(e)}")
+                if processed > 0:  # Only count as error if we were processing a record
+                    errors += 1
+                    details.append({
+                        'numero': processed,
+                        'expediente': 'Error',
+                        'descripcion': 'Error en procesamiento',
+                        'importe': 'N/A',
+                        'empresa': 'N/A',
+                        'status': 'error',
+                        'reason': f'Error: {str(e)[:50]}...',
+                        'area': 'N/A'
+                    })
+    
+    except Exception as e:
+        print(f"General error in extraction: {str(e)}")
+        return {
+            'success': False,
+            'error': str(e),
+            'processed': 0,
+            'imported': 0,
+            'skipped': 0,
+            'duplicates': 0,
+            'errors': 1,
+            'details': []
+        }
+    
+    return {
+        'success': True,
+        'processed': processed,
+        'imported': imported,
+        'skipped': skipped,
+        'duplicates': duplicates,
+        'errors': errors,
+        'details': details
+    }
+
+def extract_adjudication_data(table):
+    """Extract data from main adjudication table"""
+    data = {}
+    rows = table.find_all('tr')[1:]  # Skip header row with ID and gestboes
+    
+    for row in rows:
+        cells = row.find_all('td')
+        if len(cells) >= 2:
+            field_name = clean_html_text(cells[0].get_text()).lower()
+            field_value = clean_html_text(cells[1].get_text())
+            
+            # Map fields based on Gestboes structure
+            if 'descripción' in field_name or 'descripcion' in field_name:
+                data['descripcion'] = field_value
+                # Extract amount from description
+                data['importe_from_desc'] = extract_amount_from_text(field_value)
+                
+            elif 'expediente' in field_name:
+                data['expediente'] = field_value
+                
+            elif 'clase' in field_name and 'contrato' in field_name:
+                data['clase_contrato'] = field_value
+                
+            elif 'importe' in field_name:
+                data['importe'] = field_value
+                data['importe_display'] = field_value
+                
+            elif 'area geográfica' in field_name or 'area geografica' in field_name:
+                data['area_geografica'] = field_value
+                
+            elif 'fecha' in field_name and ('adjudicación' in field_name or 'adjudicacion' in field_name):
+                data['fecha_adjudicacion'] = field_value
+                
+            elif 'organismo' in field_name:
+                data['organismo'] = field_value
+    
+    return data
+
+def extract_empresa_data(table):
+    """Extract empresa data from empresa table"""
+    try:
+        rows = table.find_all('tr')
+        if len(rows) < 2:
+            return None
+            
+        # Get data from first data row (skip header)
+        data_row = rows[1]
+        cells = data_row.find_all('td')
+        
+        if len(cells) >= 2:
+            empresa = clean_html_text(cells[0].get_text())
+            euros = clean_html_text(cells[1].get_text())
+            
+            return {
+                'empresa': empresa,
+                'euros_empresa': euros,
+                'importe_display': euros + ' €'
+            }
+    except Exception as e:
+        print(f"Error extracting empresa data: {e}")
+    
+    return None
+
+def process_adjudication_record(data):
+    """Process individual adjudication record with filters"""
+    try:
+        # Get basic fields
+        descripcion = data.get('descripcion', '')
+        expediente = data.get('expediente', '')
+        clase_contrato = data.get('clase_contrato', '')
+        area_geografica = data.get('area_geografica', '')
+        empresa = data.get('empresa', '')
+        fecha_adjudicacion = data.get('fecha_adjudicacion', '')
+        
+        # Determine amount (prioritize euros_empresa > importe > importe_from_desc)
+        importe_str = (data.get('euros_empresa') or 
+                      data.get('importe') or 
+                      data.get('importe_from_desc', ''))
+        
+        if not importe_str:
+            return {'status': 'skipped', 'reason': 'Sin importe especificado'}
+        
+        # Clean and convert amount
+        amount = parse_amount_string(importe_str)
+        if amount is None:
+            return {'status': 'skipped', 'reason': f'Importe inválido: {importe_str}'}
+        
+        print(f"Processing record with amount: €{amount:,.2f}")
+        
+        # FILTER 1: Amount must be over 20 million EUR
+        if amount < 20000000:
+            return {
+                'status': 'skipped',
+                'reason': f'Importe bajo: €{amount:,.0f} < €20M'
+            }
+        
+        # FILTER 2: Must contain "Obras" in contract class
+        if clase_contrato and 'obras' not in clase_contrato.lower():
+            return {
+                'status': 'skipped',
+                'reason': f'No es obra: {clase_contrato[:30]}...'
+            }
+        
+                # Extract project name
+        name = extract_project_name(descripcion)
+        if len(name) > 255:
+            name = name[:255]
+        
+        # Extract location
+        city = extract_city_from_area(area_geografica)
+        province = extract_province_from_area(area_geografica)
+        
+        # Process date - ESTO FALTABA
+        start_date = parse_spanish_date(fecha_adjudicacion)
+        if start_date:
+            start_date = start_date + timedelta(days=60)  # +2 months
+        
+        # Geocode location if available
+        latitude, longitude = 40.4168, -3.7038  # Default: Madrid
+        
+        if city or province:
+            try:
+                from geopy.geocoders import Nominatim
+                import time
+                
+                geolocator = Nominatim(user_agent="nova_construction_app")
+                location_query = f"{city}, {province}, España" if city and province else f"{city or province}, España"
+                
+                # Add delay to avoid rate limiting
+                time.sleep(1)
+                location = geolocator.geocode(location_query, timeout=5)
+                
+                if location:
+                    latitude = float(location.latitude)
+                    longitude = float(location.longitude)
+                    print(f"Geocoded {location_query}: {latitude}, {longitude}")
+                else:
+                    print(f"Could not geocode: {location_query}")
+                    
+            except Exception as e:
+                print(f"Geocoding error for {city}, {province}: {e}")
+                # Keep default coordinates
+        
+        # Check for duplicates
+        existing = BigProjectLocation.objects.filter(
+            name__icontains=name[:50] if len(name) > 50 else name,
+            amount=amount
+        ).first()
+        
+        if existing:
+            return {
+                'status': 'duplicate',
+                'reason': f'Similar a: {existing.name[:40]}...'
+            }
+        
+        # Create record
+        big_project = BigProjectLocation.objects.create(
+            name=name,
+            amount=amount,
+            developer=empresa[:255] if empresa else 'No especificado',
+            start_date=start_date,  # Ahora está definido
+            city=city[:100] if city else '',
+            province=province[:100] if province else '',
+            description=descripcion[:1000] if descripcion else '',
+            latitude=latitude,
+            longitude=longitude
+        )
+        
+        return {
+            'status': 'imported',
+            'reason': f'Creado: {name[:30]}... (€{amount:,.0f})',
+            'project_id': big_project.id
+        }
+        
+    except Exception as e:
+        import traceback
+        print(f"Error processing record: {traceback.format_exc()}")
+        return {
+            'status': 'error',
+            'reason': f'Error: {str(e)[:40]}...'
+        }
+
+def clean_html_text(text):
+    """Clean HTML text from spaces, tags and special characters"""
+    if not text:
+        return ""
+    
+    # Remove HTML tags
+    text = re.sub(r'<[^>]+>', '', text)
+    
+    # Normalize spaces and line breaks
+    text = re.sub(r'\s+', ' ', text)
+    
+    # Remove control characters except basic ones
+    text = ''.join(char for char in text if ord(char) >= 32 or char in '\n\r\t')
+    
+    return text.strip()
+
+def extract_amount_from_text(text):
+    """Extract amounts from text using multiple patterns"""
+    if not text:
+        return ""
+    
+    patterns = [
+        r'PBL:\s*([\d.,]+)\s*EUROS',
+        r'Valor estimado[^:]*:\s*([\d.,]+)\s*EUR',
+        r'Importe[^:]*:\s*([\d.,]+)\s*EUR',
+        r'Importe[^:]*:\s*([\d.,]+)\s*€',
+        r'([\d]{1,3}(?:\.\d{3})*(?:,\d{2})?)\s*EUR',
+        r'([\d]{1,3}(?:\.\d{3})*(?:,\d{2})?)\s*€'
+    ]
+    
+    for pattern in patterns:
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            return match.group(1).strip()
+    
+    return ""
+
+def parse_amount_string(amount_str):
+    """Convert amount string to float"""
+    if not amount_str:
+        return None
+    
+    try:
+        # Clean: keep only numbers, dots and commas
+        clean_amount = re.sub(r'[^\d,.]', '', amount_str)
+        
+        # Spanish format: 1.234.567,89 -> 1234567.89
+        if ',' in clean_amount:
+            parts = clean_amount.split(',')
+            if len(parts) == 2 and len(parts[1]) <= 2:
+                # It's Spanish format
+                integer_part = parts[0].replace('.', '')
+                decimal_part = parts[1]
+                clean_amount = f"{integer_part}.{decimal_part}"
+        
+        return float(clean_amount)
+    except (ValueError, TypeError):
+        return None
+
+def extract_project_name(description):
+    """Extract project name from description"""
+    if not description:
+        return "Proyecto sin descripción"
+    
+    # Take until first period, line break or 100 characters
+    lines = description.split('\n')
+    first_line = lines[0].strip()
+    
+    # Look for first period that ends sentence
+    sentences = re.split(r'\.\s+[A-Z]', first_line)
+    if sentences:
+        name = sentences[0].strip()
+        if name and len(name) > 10:
+            return name
+    
+    # Fallback: first 100 characters of first line
+    if len(first_line) > 10:
+        return first_line[:100] if len(first_line) > 100 else first_line
+    
+    return "Proyecto de construcción"
+
+def extract_city_from_area(area_geografica):
+    """Extract city from geographic area"""
+    if not area_geografica:
+        return ""
+    
+    # Split by comma and take first part
+    parts = area_geografica.split(',')
+    if parts:
+        city = parts[0].strip()
+        return city.title()
+    
+    return area_geografica.strip()
+
+def extract_province_from_area(area_geografica):
+    """Extract province from geographic area"""
+    if not area_geografica:
+        return ""
+    
+    parts = area_geografica.split(',')
+    if len(parts) >= 2:
+        return parts[1].strip().title()
+    
+    return area_geografica.strip().title()
+
+def parse_spanish_date(date_str):
+    """Parse Spanish dates from Gestboes format"""
+    if not date_str:
+        return None
+    
+    try:
+        from datetime import datetime
+        
+        # Clean weekday
+        clean_date = re.sub(r'^(lunes|martes|miércoles|jueves|viernes|sábado|domingo),?\s*', '', date_str.lower())
+        
+        # Try different formats
+        formats = [
+            '%d/%m/%Y',
+            '%d/%m/%y',
+            '%Y-%m-%d'
+        ]
+        
+        for fmt in formats:
+            try:
+                return datetime.strptime(clean_date.strip(), fmt).date()
+            except ValueError:
+                continue
+        
+        # Extract numbers if standard format doesn't work
+        numbers = re.findall(r'\d+', date_str)
+        if len(numbers) >= 3:
+            day, month, year = int(numbers[0]), int(numbers[1]), int(numbers[2])
+            if year < 100:
+                year += 2000
+            return datetime(year, month, day).date()
+            
+    except Exception:
+        pass
+    
+    return None
+
+def truncate_text(text, max_length):
+    """Truncate text keeping complete words"""
+    if not text or len(text) <= max_length:
+        return text
+    
+    truncated = text[:max_length]
+    # Find last space to not cut words
+    last_space = truncated.rfind(' ')
+    if last_space > max_length * 0.8:
+        truncated = truncated[:last_space]
+    
+    return truncated + '...'
+
+@login_required
+def import_summary(request):
+    """View to show detailed import summary"""
+    details = request.session.get('import_details', [])
+    summary = request.session.get('import_summary', {})
+    
+    # Clear session after showing
+    if 'import_details' in request.session:
+        del request.session['import_details']
+    if 'import_summary' in request.session:
+        del request.session['import_summary']
+    
+    return render(request, 'project_maps/import_summary.html', {
+        'details': details,
+        'summary': summary
+    })

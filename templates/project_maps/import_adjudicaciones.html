@@ -1,0 +1,252 @@
+<!-- filepath: /home/p102/django_projects/nova_workers_management/templates/project_maps/import_adjudicaciones.html -->
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Importar Adjudicaciones{% endblock %}
+
+{% block extra_css %}
+<style>
+    .import-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+    
+    .upload-area {
+        border: 2px dashed #cbd5e1;
+        border-radius: 12px;
+        padding: 3rem;
+        text-align: center;
+        background: #f8fafc;
+        transition: all 0.3s ease;
+    }
+    
+    .upload-area:hover {
+        border-color: #8b5cf6;
+        background: #f5f3ff;
+    }
+    
+    .upload-area.dragover {
+        border-color: #8b5cf6;
+        background: #ede9fe;
+    }
+    
+    .criteria-box {
+        background: #fffbeb;
+        border: 1px solid #fed7aa;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin: 2rem 0;
+    }
+    
+    .criteria-title {
+        font-weight: 600;
+        color: #92400e;
+        margin-bottom: 1rem;
+    }
+    
+    .criteria-list {
+        list-style: none;
+        padding: 0;
+    }
+    
+    .criteria-list li {
+        margin-bottom: 0.5rem;
+        padding-left: 1.5rem;
+        position: relative;
+    }
+    
+    .criteria-list li:before {
+        content: "✓";
+        position: absolute;
+        left: 0;
+        color: #059669;
+        font-weight: bold;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        color: white;
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 8px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+    }
+    
+    .btn-secondary {
+        background: white;
+        color: #6b7280;
+        border: 1px solid #d1d5db;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        text-decoration: none;
+        display: inline-block;
+        margin-right: 1rem;
+    }
+    
+    .file-info {
+        display: none;
+        margin-top: 1rem;
+        padding: 1rem;
+        background: #ecfdf5;
+        border: 1px solid #a7f3d0;
+        border-radius: 6px;
+        color: #065f46;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="import-container">
+    <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Importar Adjudicaciones</h1>
+        <p class="text-gray-600">Importa grandes proyectos desde archivos HTML de Gestboes</p>
+    </div>
+    
+    <!-- Criterios de importación -->
+    <div class="criteria-box">
+        <div class="criteria-title">
+            <i class="fas fa-filter mr-2"></i>Criterios de Importación
+        </div>
+        <ul class="criteria-list">
+            <li>Importe superior a <strong>20.000.000 €</strong></li>
+            <li>Clase de Contrato debe contener <strong>"Obras"</strong></li>
+            <li>Se extraerá la ciudad del Área Geográfica</li>
+            <li>Fecha de inicio = Fecha de adjudicación + 2 meses</li>
+        </ul>
+    </div>
+    
+    <!-- Formulario de carga -->
+    <form method="post" enctype="multipart/form-data" id="upload-form">
+        {% csrf_token %}
+        
+        <div class="upload-area" id="upload-area">
+            <div class="upload-content">
+                <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">
+                    Arrastra tu archivo HTML aquí
+                </h3>
+                <p class="text-gray-500 mb-4">
+                    O haz clic para seleccionar un archivo
+                </p>
+                <input type="file" 
+                       name="html_file" 
+                       id="file-input" 
+                       accept=".html,.htm" 
+                       required 
+                       style="display: none;">
+                <button type="button" class="btn-primary" onclick="document.getElementById('file-input').click()">
+                    <i class="fas fa-file-upload mr-2"></i>Seleccionar Archivo
+                </button>
+            </div>
+            
+            <div class="file-info" id="file-info">
+                <i class="fas fa-file-alt mr-2"></i>
+                <span id="file-name"></span>
+                <span id="file-size" class="text-sm"></span>
+            </div>
+        </div>
+        
+        <!-- Botones de acción -->
+        <div class="flex justify-between mt-6">
+            <a href="{% url 'big_project_list' %}" class="btn-secondary">
+                <i class="fas fa-arrow-left mr-2"></i>Volver a Lista
+            </a>
+            
+            <button type="submit" class="btn-primary" id="import-btn" disabled>
+                <i class="fas fa-download mr-2"></i>Importar Adjudicaciones
+            </button>
+        </div>
+    </form>
+    
+    <!-- Información adicional -->
+    <div class="mt-8 text-sm text-gray-600">
+        <h4 class="font-medium mb-2">Campos que se extraerán:</h4>
+        <ul class="list-disc list-inside space-y-1">
+            <li><strong>Nombre:</strong> Descripción hasta el primer punto</li>
+            <li><strong>Desarrollador:</strong> Campo Empresa/Adjudicatario</li>
+            <li><strong>Importe:</strong> Campo Euros</li>
+            <li><strong>Fecha inicio:</strong> Fecha de adjudicación + 2 meses</li>
+            <li><strong>Ciudad:</strong> Extraída del Área Geográfica</li>
+            <li><strong>Descripción:</strong> Descripción completa</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadArea = document.getElementById('upload-area');
+    const fileInput = document.getElementById('file-input');
+    const fileInfo = document.getElementById('file-info');
+    const fileName = document.getElementById('file-name');
+    const fileSize = document.getElementById('file-size');
+    const importBtn = document.getElementById('import-btn');
+    
+    // Drag and drop
+    uploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+    
+    uploadArea.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+    });
+    
+    uploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            const file = files[0];
+            if (file.name.endsWith('.html') || file.name.endsWith('.htm')) {
+                fileInput.files = files;
+                showFileInfo(file);
+            } else {
+                alert('Por favor selecciona un archivo HTML (.html o .htm)');
+            }
+        }
+    });
+    
+    // File input change
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            showFileInfo(file);
+        }
+    });
+    
+    function showFileInfo(file) {
+        fileName.textContent = file.name;
+        fileSize.textContent = `(${formatFileSize(file.size)})`;
+        fileInfo.style.display = 'block';
+        importBtn.disabled = false;
+    }
+    
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    
+    // Submit form with loading
+    document.getElementById('upload-form').addEventListener('submit', function(e) {
+        importBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Procesando...';
+        importBtn.disabled = true;
+    });
+});
+</script>
+{% endblock %}
