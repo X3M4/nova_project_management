@@ -582,6 +582,7 @@ def project_map(request):
         project = project_location.project
         employee_count = Employee.objects.filter(project_id=project).count()
         projects_without_location[project.id] = {
+            'id': project.id,
             'name': project.name,
             'manager': project.manager if hasattr(project, 'manager') else "No asignado",
             'type': project.type if hasattr(project, 'type') else "No especificado",

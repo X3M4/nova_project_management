@@ -101,6 +101,50 @@
         border-radius: 6px;
         color: #065f46;
     }
+
+    .details-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 2rem;
+    }
+
+    .details-table th, .details-table td {
+        border: 1px solid #e5e7eb;
+        padding: 0.75rem;
+        text-align: left;
+    }
+
+    .details-table th {
+        background-color: #f3f4f6;
+        font-weight: 600;
+    }
+
+    .status-badge {
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .status-imported {
+        background-color: #d1fae5;
+        color: #065f46;
+    }
+
+    .status-skipped {
+        background-color: #fef3c7;
+        color: #92400e;
+    }
+
+    .status-duplicate {
+        background-color: #e0f2fe;
+        color: #0369a1;
+    }
+
+    .status-error {
+        background-color: #fee2e2;
+        color: #b91c1c;
+    }
 </style>
 {% endblock %}
 
@@ -179,6 +223,48 @@
             <li><strong>Descripción:</strong> Descripción completa</li>
         </ul>
     </div>
+
+    <!-- Tabla de detalles -->
+    <table class="details-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Expediente</th>
+                <th>Descripción</th>
+                <th>Importe</th>
+                <th>Empresa</th>
+                <th>Área</th>
+                <th>Estado</th>
+                <th>Motivo</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for detail in details %}
+            <tr>
+                <td>{{ detail.numero }}</td>
+                <td class="text-sm">{{ detail.expediente|default:"-" }}</td>
+                <td>{{ detail.descripcion }}</td>
+                <td class="text-sm">{{ detail.importe }}</td>
+                <td class="text-sm">{{ detail.empresa|default:"-" }}</td>
+                <td class="text-sm">{{ detail.area|default:"-" }}</td>
+                <td>
+                    <span class="status-badge status-{{ detail.status }}">
+                        {% if detail.status == 'imported' %}
+                            ✅ Importado
+                        {% elif detail.status == 'skipped' %}
+                            ⚠️ Omitido
+                        {% elif detail.status == 'duplicate' %}
+                            🔄 Duplicado
+                        {% elif detail.status == 'error' %}
+                            🚫 Error
+                        {% endif %}
+                    </span>
+                </td>
+                <td class="text-sm text-gray-600">{{ detail.reason }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
 {% endblock %}
 

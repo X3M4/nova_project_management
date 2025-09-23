@@ -103,6 +103,8 @@ class EmployeeForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
+        self.fields['project_id'].queryset = Project.objects.all().order_by('name')
+        
         # Añadir Tailwind classes a los campos de texto, select, etc.
         text_fields = ['name', 'job', 'project_id', 'state', 'academic_training']
         for field_name in text_fields:

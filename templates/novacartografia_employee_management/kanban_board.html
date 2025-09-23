@@ -88,7 +88,7 @@
                       <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
                       <p class="text-xs text-gray-500">{{ employee.get_state_display }}</p>
                     </div>
-                    <a href="{% url 'employee_detail' employee.id %}" class="text-green-500 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
+                    <a href="{% url 'employee_update' employee.id %}" class="text-green-500 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
                   </div>
                   <div class="flex justify-between">
                     <div class="{% if employee.driver_license == False %}
@@ -188,7 +188,7 @@
                       <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
                       <p class="text-xs text-gray-500">{{ employee.get_state_display }}</p>
                     </div>
-                    <a href="{% url 'employee_detail' employee.id %}" class="text-yellow-500 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
+                    <a href="{% url 'employee_update' employee.id %}" class="text-yellow-500 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
                   </div>
                   <div class="flex justify-between">
                     <div class="{% if employee.driver_license == False %}
@@ -289,7 +289,7 @@
                       <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
                       <p class="text-xs text-gray-500">{{ employee.get_state_display }}</p>
                     </div>
-                    <a href="{% url 'employee_detail' employee.id %}" class="text-blue-600 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
+                    <a href="{% url 'employee_update' employee.id %}" class="text-blue-600 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
                   </div>
                   <div class="flex justify-between">
                     <div class="{% if employee.driver_license == False %}
@@ -388,7 +388,7 @@
                       <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
                       <p class="text-xs text-gray-500">{{ employee.get_state_display }}</p>
                     </div>
-                    <a href="{% url 'employee_detail' employee.id %}" class="text-orange-600 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
+                    <a href="{% url 'employee_update' employee.id %}" class="text-orange-600 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
                   </div>
                   <div class="flex justify-between">
                     <div class="{% if employee.driver_license == False %}
@@ -558,7 +558,7 @@
                             <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
                             <p class="text-xs text-gray-500">{{ employee.get_state_display }}</p>
                           </div>
-                          <a href="{% url 'employee_detail' employee.id %}" class="text-green-500 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
+                          <a href="{% url 'employee_update' employee.id %}" class="text-green-500 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
                         </div>
                         <div class="flex justify-between">
                           <div class="{% if employee.driver_license == False %}
@@ -657,7 +657,7 @@
                             <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
                             <p class="text-xs text-gray-500">{{ employee.get_state_display }}</p>
                           </div>
-                          <a href="{% url 'employee_detail' employee.id %}" class="text-yellow-500 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
+                          <a href="{% url 'employee_update' employee.id %}" class="text-yellow-500 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
                         </div>
                         <div class="flex justify-between">
                           <div class="{% if employee.driver_license == False %}
@@ -756,7 +756,7 @@
                             <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
                             <p class="text-xs text-gray-500">{{ employee.get_state_display }}</p>
                           </div>
-                          <a href="{% url 'employee_detail' employee.id %}" class="text-blue-600 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
+                          <a href="{% url 'employee_update' employee.id %}" class="text-blue-600 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
                         </div>
                         <div class="flex justify-between">
                           <div class="{% if employee.driver_license == False %}
@@ -855,7 +855,7 @@
                             <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
                             <p class="text-xs text-gray-500">{{ employee.get_state_display }}</p>
                           </div>
-                          <a href="{% url 'employee_detail' employee.id %}" class="text-orange-600 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
+                          <a href="{% url 'employee_update' employee.id %}" class="text-orange-600 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
                         </div>
                         <div class="flex justify-between">
                           <div class="{% if employee.driver_license == False %}
@@ -1046,7 +1046,7 @@
                       </p>
                     </div>
                     <div class="flex space-x-3">
-                      <a href="{% url 'project_detail' project.id %}" class="text-green-500 hover:text-green-700"><i class="fas fa-eye text-base"></i></a>
+                      <a href="{% url 'project_update' project.id %}" class="text-green-500 hover:text-green-700"><i class="fas fa-eye text-base"></i></a>
                       <a href="{% url 'employee_needed_create_from_project' project.id %}" class="text-green-500 hover:text-green-700"><i class="fas fa-triangle-exclamation text-base"></i></a>
                       <a href="{% url 'get_employee_locked_create_from_project' project.id %}" class="text-green-500 hover:text-green-700" title="Lock employee for future assignment"><i class="fas fa-user-lock text-base"></i></a>
                       <a href="{% url 'project_assign_employees' project.id %}" class="text-green-500 hover:text-rose-700" title="Assign multiple employees"><i class="fas fa-users-cog mr-1"></i></a>
@@ -1072,7 +1072,7 @@
                             <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
                             <p class="text-xs text-gray-500">{{ employee.get_state_display }}</p>
                           </div>
-                          <a href="{% url 'employee_detail' employee.id %}" class="text-green-500 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
+                          <a href="{% url 'employee_update' employee.id %}" class="text-green-500 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
                         </div>
                         <div class="flex justify-between">
                           <div class="{% if employee.driver_license == False %}
@@ -1171,7 +1171,7 @@
                             <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
                             <p class="text-xs text-gray-500">{{ employee.get_state_display }}</p>
                           </div>
-                          <a href="{% url 'employee_detail' employee.id %}" class="text-yellow-500 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
+                          <a href="{% url 'employee_update' employee.id %}" class="text-yellow-500 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
                         </div>
                         <div class="flex justify-between">
                           <div class="{% if employee.driver_license == False %}
@@ -1270,7 +1270,7 @@
                             <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
                             <p class="text-xs text-gray-500">{{ employee.get_state_display }}</p>
                           </div>
-                          <a href="{% url 'employee_detail' employee.id %}" class="text-blue-600 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
+                          <a href="{% url 'employee_update' employee.id %}" class="text-blue-600 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
                         </div>
                         <div class="flex justify-between">
                           <div class="{% if employee.driver_license == False %}
@@ -1369,7 +1369,7 @@
                             <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
                             <p class="text-xs text-gray-500">{{ employee.get_state_display }}</p>
                           </div>
-                          <a href="{% url 'employee_detail' employee.id %}" class="text-orange-600 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
+                          <a href="{% url 'employee_update' employee.id %}" class="text-orange-600 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
                         </div>
                         <div class="flex justify-between">
                           <div class="{% if employee.driver_license == False %}
@@ -1568,7 +1568,7 @@
                     {% endif %}
                   </div>
                   <div class="flex flex-col items-end">
-                    <a href="{% url 'employee_detail' employee.id %}" class="text-purple-600 hover:text-gray-600">
+                    <a href="{% url 'employee_update' employee.id %}" class="text-purple-600 hover:text-gray-600">
                       <i class="fas fa-external-link-alt text-xs"></i>
                     </a>
                     {% if can_edit %}
@@ -1679,7 +1679,7 @@
                     {% endif %}
                   </div>
                   <div class="flex flex-col items-end space-y-1 ml-2">
-                    <a href="{% url 'employee_detail' employee.id %}" 
+                    <a href="{% url 'employee_update' employee.id %}" 
                        class="text-orange-600 hover:text-gray-600 p-1 rounded hover:bg-orange-100" 
                        title="Ver detalles">
                       <i class="fas fa-external-link-alt text-sm"></i>

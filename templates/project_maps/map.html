@@ -610,35 +610,48 @@
           </div>
 
           <!-- Sección: Proyectos sin ubicación -->
-          <div class="collapsible-section">
-            <div class="section-header" onclick="toggleSection(this)">
-              <span><i class="fas fa-map-marker-alt mr-1"></i>Sin Ubicación ({{ total_projects_without_location }})</span>
-              <i class="fas fa-chevron-right section-icon"></i>
-            </div>
-            <div class="section-content">
-              {% if projects_without_location %}
-                {% for project_id, project in projects_without_location.items %}
-                  <div class="project-item">
-                    <div class="project-name">{{ project.name }}</div>
-                    <div class="project-details">
-                      <div>🏗️ Tipo: {{ project.type }}</div>
-                      <div>👨‍💼 Manager: {{ project.manager }}</div>
-                      <div>📍 Provincia: {{ project.province }}</div>
-                      <div>👥 Empleados: {{ project.employee_count }}</div>
-                    </div>
-                  </div>
-                {% endfor %}
+<div class="collapsible-section">
+  <div class="section-header" onclick="toggleSection(this)">
+    <span><i class="fas fa-map-marker-alt mr-1"></i>Sin Ubicación ({{ total_projects_without_location }})</span>
+    <i class="fas fa-chevron-right section-icon"></i>
+  </div>
+  <div class="section-content">
+    {% if projects_without_location %}
+    {% for project_id, project in projects_without_location.items %}
+    <div class="project-item">
+      {% if project_id %}
+        <div class="project-name" style="cursor: pointer; color: #667eea; text-decoration: underline;" 
+             onclick="window.open('{% url 'add_project_location' project_id %}', '_blank')">
+          {{ project.name }}
+        </div>
+      {% else %}
+        <div class="project-name" style="color: #6b7280;">
+          {{ project.name }} <span style="font-size: 0.8em; color: #ef4444;">(Sin ID válido)</span>
+        </div>
+      {% endif %}
+      
+      <div class="project-details">
+        <div>🆔 ID: {{ project_id|default:"N/A" }}</div>
+        <div>🏗️ Tipo: {{ project.type|default:"No especificado" }}</div>
+        <div>👨‍💼 Manager: {{ project.manager|default:"No asignado" }}</div>
+        <div>📍 Provincia: {{ project.province|default:"No especificada" }}</div>
+        <div>👥 Empleados: {{ project.employee_count|default:"0" }}</div>
+      </div>
+    </div>
+  {% endfor %}
 
-                <div style="text-align: center; margin-top: 12px;">
-                  <a href="{% url 'employee_locations_list' %}" style="display: inline-block; padding: 6px 12px; background: #667eea; color: white; text-decoration: none; border-radius: 4px; font-size: 0.75rem;"><i class="fas fa-cog mr-1"></i>Gestionar Ubicaciones</a>
-                </div>
-              {% else %}
-                <p style="text-align: center; color: #28a745; font-style: italic; margin: 20px 0;">
-                  <i class="fas fa-check-circle mr-2"></i>Todos los proyectos tienen ubicación definida
-                </p>
-              {% endif %}
-            </div>
-          </div>
+      <div style="text-align: center; margin-top: 12px;">
+        <a href="{% url 'employee_locations_list' %}" style="display: inline-block; padding: 6px 12px; background: #667eea; color: white; text-decoration: none; border-radius: 4px; font-size: 0.75rem;">
+          <i class="fas fa-cog mr-1"></i>Gestionar Ubicaciones
+        </a>
+      </div>
+    {% else %}
+      <p style="text-align: center; color: #28a745; font-style: italic; margin: 20px 0;">
+        <i class="fas fa-check-circle mr-2"></i>Todos los proyectos tienen ubicación definida
+      </p>
+    {% endif %}
+  </div>
+</div>
         </div>
       </div>
     </div>
