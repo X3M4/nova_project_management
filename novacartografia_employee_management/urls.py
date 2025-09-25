@@ -24,8 +24,11 @@ urlpatterns = [
     path('projects/export/', views.export_projects_csv, name='export_projects_csv'),
     path('projects/<int:project_id>/assign-employees/', views.project_assign_employees, name='project_assign_employees'),
     
+    path('assign-employees/', views.assign_employees_to_project, name='assign_employees_to_project'),
+    
     path('movements/', views.movement_list, name='movement_list'),
     path('kanban/', views.kanban_board, name='kanban_board'),
+    path('kanban/data/', views.kanban_board_data, name='kanban_board_data'),
     path('api/update-employee-project/', views.update_employee_project, name='update_employee_project'),
     
     # Rutas para empleados necesitados

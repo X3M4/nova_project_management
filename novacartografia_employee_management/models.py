@@ -1,3 +1,4 @@
+from datetime import timedelta
 from django.db import models
 from django.utils import timezone
 from django.db.models.signals import pre_save
@@ -140,6 +141,59 @@ class Employee(models.Model):
     leave_from = models.DateField(blank=True, null=True)
     leave_to = models.DateField(blank=True, null=True)
     
+    def is_on_vacation_today(self):
+        """Check if employee is on vacation today"""
+        from django.utils import timezone
+        today = timezone.now().date()
+        
+        return (self.vacations_from and self.vacations_to and 
+                self.vacations_from <= today <= self.vacations_to)
+    
+    def vacation_status(self):
+        """Get vacation status for display"""
+        from django.utils import timezone
+        today = timezone.now().date()
+        
+        if self.vacations_from and self.vacations_to:
+            if self.vacations_from <= today <= self.vacations_to:
+                return "on_vacation"
+            elif self.vacations_from and self.vacations_from > today and self.vacations_from <= today + timedelta(days=7):
+                return "soon_vacation"
+            else :
+                return "no_vacation"
+        return "no_vacation"
+    
+    def check_end_date_and_project(self):
+        """Check the last 7 days until end_date to set project_id to None"""
+        from django.utils import timezone
+        today = timezone.now().date()
+        
+        if self.end_date and self.end_date >= today - timedelta(days=7) and self.end_date <= today:
+            self.project_id = None
+            self.save()
+            
+    def is_ending_soon(self):
+        """Check if employee contract is ending in 7 days or less"""
+        from django.utils import timezone
+        today = timezone.now().date()
+        
+        return (self.end_date and 
+                self.end_date <= today + timedelta(days=7) and 
+                self.end_date >= today)
+
+    def days_until_end_date(self):
+        """Calculate days remaining until end_date"""
+        if not self.end_date:
+            return None
+        
+        from django.utils import timezone
+        today = timezone.now().date()
+        
+        if self.end_date >= today:
+            return (self.end_date - today).days
+        else:
+            return -1  # Contrato ya terminado
+
     def __str__(self):
         return f"{self.name} - {self.state}"
     
@@ -275,4 +329,3 @@ class EmployeeVacation(models.Model):
         ordering = ['date_from']
         verbose_name = "Employee Holiday"
         verbose_name_plural = "Employee Holidays"
-        

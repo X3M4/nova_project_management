@@ -11,6 +11,7 @@ from django.contrib.auth.models import Group
 from .forms import EmployeeCSVImportForm, EmployeeForm, EmployeeNeededForm, GetEmployeeLockedForm, ProjectCSVImportForm, ProjectForm, EmployeeVacationForm
 from .models import Employee, GetEmployeeLocked, Project, ProjectMovementLine, EmployeeNeeded, EmployeeVacation
 from django.http import HttpResponse, JsonResponse
+from django.views.decorators.http import require_http_methods
 from django.db.models import Case, When, Value, CharField, Q, IntegerField, Count, Q, BooleanField, FloatField, F, Min
 from django.db.models.functions import Cast
 from django.core.paginator import Paginator
@@ -755,6 +756,64 @@ def movement_list(request):
 def kanban_board(request):
     today = timezone.now().date()
     
+    # **NUEVO: Auto-desasignar empleados cercanos a end_date**
+    auto_unassigned_employees = Employee.objects.filter(
+        end_date__isnull=False,
+        end_date__lte=today + timedelta(days=7),
+        end_date__gte=today,  # Solo empleados activos (end_date no pasada)
+        project_id__isnull=False  # Solo empleados que tienen proyecto asignado
+    )
+    
+    auto_unassigned_count = 0
+    auto_unassigned_names = []
+    
+    for employee in auto_unassigned_employees:
+        days_remaining = (employee.end_date - today).days
+        old_project = employee.project_id
+        
+        # Desasignar empleado
+        employee.project_id = None
+        employee.save()
+        
+        auto_unassigned_count += 1
+        auto_unassigned_names.append(f"{employee.name} ({days_remaining} días restantes)")
+        
+        # Log para debugging
+        print(f"Auto-unassigned {employee.name} from {old_project.name if old_project else 'Unknown'} - {days_remaining} days remaining")
+    
+    # Mostrar mensaje informativo si se desasignaron empleados
+    if auto_unassigned_count > 0:
+        if auto_unassigned_count == 1:
+            messages.info(
+                request, 
+                f"Empleado desasignado automáticamente por proximidad a fecha de fin: {auto_unassigned_names[0]}"
+            )
+        else:
+            messages.info(
+                request, 
+                f"{auto_unassigned_count} empleados desasignados automáticamente por proximidad a fecha de fin de contrato."
+            )
+    
+    # **NUEVO: Marcar empleados inactivos (end_date pasada)**
+    inactive_employees = Employee.objects.filter(
+        end_date__isnull=False,
+        end_date__lt=today,
+        active=True
+    )
+    
+    inactive_count = 0
+    for employee in inactive_employees:
+        employee.active = False
+        employee.project_id = None  # También desasignar si tenía proyecto
+        employee.save()
+        inactive_count += 1
+    
+    if inactive_count > 0:
+        messages.warning(
+            request,
+            f"{inactive_count} empleados marcados como inactivos por contrato finalizado."
+        )
+    
     # Anotar proyectos con información sobre necesidades, fechas y manager
     projects = Project.objects.annotate(
         has_needs=Case(
@@ -764,7 +823,7 @@ def kanban_board(request):
         ),
         earliest_start_date=Min('employeeneeded__start_date'),
         manager_order=Case(
-            When(manager__isnull=True, then=Value('ZZZZZZ')),  # Un valor que será ordenado al final
+            When(manager__isnull=True, then=Value('ZZZZZZ')),
             default='manager',
             output_field=CharField(),
         )
@@ -784,10 +843,48 @@ def kanban_board(request):
     # Apply ordering after filtering
     projects = projects.order_by('-has_needs', 'earliest_start_date', 'manager_order')
     
-    # **NUEVO: Ordenar empleados por vacaciones**
+    # **Anotar empleados con estado de vacaciones Y proximidad a end_date**
     employees = Employee.objects.annotate(
+        # Determinar si está de vacaciones HOY
+        is_on_vacation=Case(
+            When(
+                vacations_from__lte=today,
+                vacations_to__gte=today,
+                then=Value(True)
+            ),
+            default=Value(False),
+            output_field=BooleanField(),
+        ),
+        # **NUEVO: Determinar si está cerca de end_date**
+        is_ending_soon=Case(
+            When(
+                end_date__isnull=False,
+                end_date__lte=today + timedelta(days=7),
+                end_date__gte=today,
+                then=Value(True)
+            ),
+            default=Value(False),
+            output_field=BooleanField(),
+        ),
+        # **NUEVO: Días restantes hasta end_date**
+        days_remaining=Case(
+            When(
+                end_date__isnull=False,
+                end_date__gte=today,
+                then=Cast(F('end_date') - today, IntegerField())
+            ),
+            default=Value(999),
+            output_field=IntegerField(),
+        ),
         # Crear categorías para el ordenamiento de vacaciones
         vacation_category=Case(
+            # **NUEVO: Contratos terminando pronto (prioridad máxima)**
+            When(
+                end_date__isnull=False,
+                end_date__lte=today + timedelta(days=7),
+                end_date__gte=today,
+                then=Value(0)  # Prioridad máxima
+            ),
             # Vacaciones actuales (en curso)
             When(
                 vacations_from__lte=today, 
@@ -800,23 +897,39 @@ def kanban_board(request):
                 vacations_to__gte=today - timedelta(days=10), 
                 then=Value(2)
             ),
-            # Vacaciones futuras
+            # Vacaciones próximas (empiezan pronto)
             When(
                 vacations_from__gt=today, 
+                vacations_from__lte=today + timedelta(days=7), 
                 then=Value(3)
             ),
-            # Vacaciones muy antiguas o sin vacaciones
+            # Sin vacaciones relevantes
             default=Value(4),
             output_field=IntegerField(),
         )
-    ).order_by(
-        'vacation_category',           # Primero por categoría
-        '-vacations_from',            # Luego por fecha de inicio descendente (más recientes primero)
-        'name'                        # Finalmente por nombre para consistencia
-    )
+    ).order_by('vacation_category', 'days_remaining', 'name')
     
     needs = EmployeeNeeded.objects.filter(fulfilled=False)
     locks = GetEmployeeLocked.objects.filter(fulfilled=False)
+    
+    # **NUEVO: Estadísticas para el dashboard**
+    stats = {
+        'employees_ending_soon': Employee.objects.filter(
+            end_date__isnull=False,
+            end_date__lte=today + timedelta(days=7),
+            end_date__gte=today,
+            active=True
+        ).count(),
+        'employees_on_vacation': Employee.objects.filter(
+            vacations_from__lte=today,
+            vacations_to__gte=today,
+            active=True
+        ).count(),
+        'unassigned_employees': Employee.objects.filter(
+            project_id__isnull=True,
+            active=True
+        ).count(),
+    }
     
     return render(request, 'novacartografia_employee_management/kanban_board.html', {
         'projects': projects,
@@ -824,6 +937,9 @@ def kanban_board(request):
         'needs': needs,
         'locks': locks,
         'search_query': search_query,
+        'today': today,
+        'stats': stats,
+        'auto_unassigned_count': auto_unassigned_count,
     })
 
 @login_required
@@ -1499,7 +1615,6 @@ def cleanup_expired_vacations(request):
     
     return render(request, 'novacartografia_employee_management/cleanup_expired_vacations.html', context)
 
-# Añadir esta nueva vista al final del archivo views.py:
 
 @login_required
 @require_edit_permission
@@ -1616,3 +1731,296 @@ def project_assign_employees(request, project_id):
     }
     
     return render(request, 'novacartografia_employee_management/project_assign_employees.html', context)
+
+@require_http_methods(["POST"])
+@login_required
+@require_edit_permission
+def assign_employees_to_project(request):
+    """Asignar múltiples empleados a un proyecto via AJAX"""
+    print("🚀 Iniciando assign_employees_to_project")
+    
+    try:
+        data = json.loads(request.body)
+        project_id = data.get('project_id')
+        employee_ids = data.get('employee_ids', [])
+        
+        print(f"📊 Datos recibidos - Project ID: {project_id}, Employee IDs: {employee_ids}")
+        
+        if not project_id:
+            return JsonResponse({'success': False, 'error': 'ID de proyecto requerido'})
+        
+        if not employee_ids:
+            return JsonResponse({'success': False, 'error': 'Selecciona al menos un empleado'})
+        
+        # Obtener proyecto
+        try:
+            project = Project.objects.get(id=project_id)
+            print(f"✅ Proyecto encontrado: {project.name}")
+        except Project.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Proyecto no encontrado'})
+        
+        # Contadores
+        assigned_count = 0
+        errors = []
+        processed_count = 0
+        
+        print(f"🔄 Procesando {len(employee_ids)} empleados...")
+        
+        for employee_id in employee_ids:
+            processed_count += 1
+            print(f"👤 Procesando empleado {processed_count}/{len(employee_ids)}: ID {employee_id}")
+            
+            try:
+                # Buscar empleado
+                employee = Employee.objects.get(id=employee_id)
+                print(f"✅ Empleado encontrado: {employee.name}")
+                print(f"   - Activo: {employee.active}")
+                print(f"   - Proyecto actual: {employee.project_id}")
+                
+                # Verificaciones que NO impiden asignación
+                warnings = []
+                
+                # Verificar que esté activo
+                if not employee.active:
+                    warnings.append(f'{employee.name} está inactivo')
+                    print(f"⚠️ ADVERTENCIA: {employee.name} está inactivo pero continuamos")
+                
+                # Verificar que no esté ya asignado a este proyecto
+                if employee.project_id and employee.project_id.id == int(project_id):
+                    warnings.append(f'{employee.name} ya está asignado a este proyecto')
+                    print(f"⚠️ ADVERTENCIA: {employee.name} ya está en este proyecto, saltando...")
+                    continue
+                
+                # Verificar vacaciones (solo advertencia)
+                try:
+                    if hasattr(employee, 'is_on_vacation_today') and employee.is_on_vacation_today():
+                        warnings.append(f'{employee.name} está de vacaciones')
+                        print(f"⚠️ ADVERTENCIA: {employee.name} está de vacaciones pero asignamos igual")
+                except Exception as e:
+                    print(f"⚠️ Error verificando vacaciones: {e}")
+                
+                # Verificar contrato próximo a terminar (solo advertencia)
+                try:
+                    if hasattr(employee, 'is_ending_soon') and employee.is_ending_soon():
+                        warnings.append(f'{employee.name} termina contrato pronto')
+                        print(f"⚠️ ADVERTENCIA: {employee.name} termina contrato pronto pero asignamos igual")
+                except Exception as e:
+                    print(f"⚠️ Error verificando fin de contrato: {e}")
+                
+                # PROCEDER CON LA ASIGNACIÓN
+                print(f"🔄 Asignando {employee.name} al proyecto {project.name}")
+                
+                old_project = employee.project_id
+                old_project_name = old_project.name if old_project else "Sin asignar"
+                
+                # Realizar asignación
+                employee.project_id = project
+                employee.locked = False  # Desbloquear si estaba bloqueado
+                
+                # Guardar cambios
+                employee.save()
+                print(f"💾 {employee.name} guardado exitosamente")
+                
+                # Verificar que se guardó correctamente
+                employee.refresh_from_db()
+                if employee.project_id and employee.project_id.id == int(project_id):
+                    print(f"✅ Verificación: {employee.name} ahora está asignado a {employee.project_id.name}")
+                    assigned_count += 1
+                else:
+                    error_msg = f"Error: {employee.name} no se guardó correctamente"
+                    print(f"❌ {error_msg}")
+                    errors.append(error_msg)
+                    continue
+                
+                # Crear log del movimiento (no crítico)
+                try:
+                    if 'ProjectMovementLine' in globals():
+                        movement = ProjectMovementLine.objects.create(
+                            employee=employee,
+                            new_project=project,
+                            previous_project=old_project,
+                            date=timezone.now()
+                        )
+                        print(f"📝 Movimiento registrado: {old_project_name} → {project.name}")
+                except Exception as log_error:
+                    print(f"⚠️ Error creando log (no crítico): {log_error}")
+                    # No agregar a errors porque no es crítico
+                
+                print(f"🎉 {employee.name} asignado exitosamente! Total asignados: {assigned_count}")
+                
+                # Agregar advertencias a errors si las hay (pero no impiden la asignación)
+                if warnings:
+                    errors.extend(warnings)
+                
+            except Employee.DoesNotExist:
+                error_msg = f'Empleado ID {employee_id} no encontrado'
+                print(f"❌ {error_msg}")
+                errors.append(error_msg)
+                
+            except Exception as e:
+                error_msg = f'Error procesando empleado ID {employee_id}: {str(e)}'
+                print(f"❌ {error_msg}")
+                errors.append(error_msg)
+                import traceback
+                traceback.print_exc()
+        
+        print(f"\n📊 RESUMEN FINAL:")
+        print(f"   - Empleados procesados: {processed_count}")
+        print(f"   - Empleados asignados: {assigned_count}")
+        print(f"   - Errores/Advertencias: {len(errors)}")
+        
+        # RESPUESTA BASADA EN RESULTADOS
+        if assigned_count > 0:
+            message = f'✅ {assigned_count} empleado{"s" if assigned_count > 1 else ""} asignado{"s" if assigned_count > 1 else ""} correctamente a {project.name}'
+            print(f"🎉 ÉXITO: {message}")
+            
+            # Agregar mensaje a Django messages
+            try:
+                messages.success(request, message)
+            except:
+                pass
+            
+            return JsonResponse({
+                'success': True,
+                'assigned_count': assigned_count,
+                'message': message,
+                'warnings': errors if errors else None,  # Cambiar 'errors' por 'warnings'
+                'debug': {
+                    'processed_employees': processed_count,
+                    'assigned_count': assigned_count,
+                    'warnings_count': len(errors)
+                }
+            })
+        else:
+            error_message = '❌ No se pudo asignar ningún empleado'
+            print(f"💥 FALLO TOTAL: {error_message}")
+            print(f"Detalles de errores: {errors}")
+            
+            return JsonResponse({
+                'success': False,
+                'error': error_message,
+                'details': errors,
+                'debug': {
+                    'processed_employees': processed_count,
+                    'assigned_count': assigned_count,
+                    'errors_count': len(errors)
+                }
+            })
+            
+    except json.JSONDecodeError as e:
+        print(f"❌ Error decodificando JSON: {e}")
+        return JsonResponse({'success': False, 'error': 'Datos JSON inválidos'})
+        
+    except Exception as e:
+        print(f"❌ Error general: {e}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'error': f'Error interno: {str(e)}'})   
+
+@login_required
+def kanban_board_data(request):
+    """Vista AJAX para obtener datos actualizados del kanban"""
+    if not request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'error': 'AJAX required'})
+    
+    try:
+        today = timezone.now().date()
+        
+        # Ejecutar la misma lógica de auto-desasignación que en kanban_board
+        auto_unassigned_employees = Employee.objects.filter(
+            end_date__isnull=False,
+            end_date__lte=today + timedelta(days=7),
+            end_date__gte=today,
+            project_id__isnull=False
+        )
+        
+        auto_unassigned_count = 0
+        messages_list = []
+        
+        for employee in auto_unassigned_employees:
+            days_remaining = (employee.end_date - today).days
+            old_project_name = employee.project_id.name if employee.project_id else 'Unknown'
+            
+            employee.project_id = None
+            employee.save()
+            auto_unassigned_count += 1
+            
+            messages_list.append({
+                'level': 'info',
+                'message': f'{employee.name} desasignado automáticamente ({days_remaining} días restantes)'
+            })
+        
+        # Empleados con anotaciones
+        employees = Employee.objects.filter(
+            project_id__isnull=True,
+            active=True
+        ).annotate(
+            is_on_vacation=Case(
+                When(vacations_from__lte=today, vacations_to__gte=today, then=Value(True)),
+                default=Value(False),
+                output_field=BooleanField(),
+            ),
+            is_ending_soon=Case(
+                When(end_date__isnull=False, end_date__lte=today + timedelta(days=7), 
+                     end_date__gte=today, then=Value(True)),
+                default=Value(False),
+                output_field=BooleanField(),
+            ),
+            days_remaining=Case(
+                When(end_date__isnull=False, end_date__gte=today, 
+                     then=Cast(F('end_date') - today, IntegerField())),
+                default=Value(999),
+                output_field=IntegerField(),
+            ),
+        ).order_by('days_remaining', 'name')
+        
+        # Estadísticas actualizadas
+        stats = {
+            'employees_ending_soon': Employee.objects.filter(
+                end_date__isnull=False,
+                end_date__lte=today + timedelta(days=7),
+                end_date__gte=today,
+                active=True
+            ).count(),
+            'employees_on_vacation': Employee.objects.filter(
+                vacations_from__lte=today,
+                vacations_to__gte=today,
+                active=True
+            ).count(),
+            'unassigned_employees': Employee.objects.filter(
+                project_id__isnull=True,
+                active=True
+            ).count(),
+        }
+        
+        # Serializar empleados
+        employees_data = []
+        for emp in employees:
+            employees_data.append({
+                'id': emp.id,
+                'name': emp.name,
+                'job': emp.job,
+                'city': emp.city or '',
+                'state': emp.state or '',
+                'vacation_status': emp.vacation_status(),
+                'is_on_vacation': emp.is_on_vacation,
+                'is_ending_soon': emp.is_ending_soon,
+                'days_remaining': emp.days_remaining,
+                'locked': emp.locked,
+                'end_date': emp.end_date.strftime('%d/%m/%Y') if emp.end_date else None,
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'employees': employees_data,
+            'stats': stats,
+            'messages': messages_list,
+            'auto_unassigned_count': auto_unassigned_count,
+            'timestamp': timezone.now().isoformat(),
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })

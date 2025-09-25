@@ -59,6 +59,51 @@ Asignar Empleados - {{ project.name }}
         margin-bottom: 20px;
         border: 1px solid #e2e8f0;
     }
+
+        /* Estilos para selección múltiple */
+    .tarjeta-empleado-seleccionable {
+        position: relative;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    
+    .tarjeta-empleado-seleccionable:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .tarjeta-empleado-seleccionable.selected {
+        background-color: #eff6ff !important;
+        border: 2px solid #3b82f6 !important;
+        transform: translateY(-1px);
+        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.2);
+    }
+    
+    .selection-checkmark {
+        animation: checkmarkPop 0.3s ease-out;
+    }
+    
+    @keyframes checkmarkPop {
+        0% {
+            opacity: 0;
+            transform: scale(0.5);
+        }
+        100% {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+    
+    /* Estilos para botones */
+    .btn-success:disabled {
+        background-color: #6b7280;
+        cursor: not-allowed;
+    }
+    
+    .btn-success:not(:disabled):hover {
+        background-color: #16a34a;
+        transform: translateY(-1px);
+    }
 </style>
 {% endblock %}
 
@@ -329,106 +374,531 @@ Asignar Empleados - {{ project.name }}
 
 {% block extra_js %}
 <script>
+// Variables globales para manejo de selección múltiple
+let selectedEmployees = new Set();
+let allEmployees = []; // Cache de todos los empleados
+let filteredEmployees = []; // Empleados filtrados actualmente
+
 document.addEventListener('DOMContentLoaded', function() {
-    // Configuración de selección múltiple de empleados
-    function configurarSeleccionEmpleados(idFormulario, idSeleccionarTodos, idLimpiarTodos, idBotonEnviar) {
-        const formulario = document.getElementById(idFormulario);
-        const btnSeleccionarTodos = document.getElementById(idSeleccionarTodos);
-        const btnLimpiarTodos = document.getElementById(idLimpiarTodos);
-        const btnEnviar = document.getElementById(idBotonEnviar);
-        const checkboxes = formulario.querySelectorAll('input[type="checkbox"][name="selected_employees"]');
-        const tarjetas = formulario.querySelectorAll('.tarjeta-empleado-seleccionable');
+    console.log('🚀 Inicializando sistema de selección múltiple con filtros...');
+    
+    // Elementos principales
+    const btnAsignar = document.getElementById('btn-asignar');
+    const btnDesasignar = document.getElementById('btn-desasignar');
+    const searchInput = document.querySelector('input[name="search"]');
+    const skillFilter = document.querySelector('select[name="skill_filter"]');
+    const compatibilityFilter = document.querySelector('select[name="compatibility"]');
+    const employeeContainer = document.querySelector('#unassigned-employees-container') || 
+                               document.querySelector('.space-y-3');
+    
+    // Cachear todos los empleados al cargar
+    cacheAllEmployees();
+    
+    // Event listeners para filtros en tiempo real
+    if (searchInput) {
+        searchInput.addEventListener('input', debounce(applyFilters, 300));
+    }
+    
+    if (skillFilter) {
+        skillFilter.addEventListener('change', applyFilters);
+    }
+    
+    if (compatibilityFilter) {
+        compatibilityFilter.addEventListener('change', applyFilters);
+    }
+    
+    // Función para cachear todos los empleados
+    function cacheAllEmployees() {
+        const employeeCards = document.querySelectorAll('.tarjeta-empleado-seleccionable');
+        allEmployees = [];
         
-        // Función para actualizar el estado del botón
-        function actualizarBotonEnviar() {
-            const checkboxesMarcados = formulario.querySelectorAll('input[type="checkbox"][name="selected_employees"]:checked');
-            if (btnEnviar) {
-                btnEnviar.disabled = checkboxesMarcados.length === 0;
+        employeeCards.forEach(card => {
+            const employeeData = {
+                id: card.dataset.employeeId,
+                element: card.cloneNode(true),
+                name: card.querySelector('h4').textContent.toLowerCase(),
+                job: card.querySelector('.fas.fa-briefcase')?.parentElement.textContent.toLowerCase() || '',
+                location: card.querySelector('.fas.fa-map-marker-alt')?.parentElement.textContent.toLowerCase() || '',
+                skills: extractSkillsFromCard(card),
+                compatibility: extractCompatibilityFromCard(card),
+                originalCard: card
+            };
+            
+            allEmployees.push(employeeData);
+        });
+        
+        filteredEmployees = [...allEmployees];
+        console.log(`📊 Cacheados ${allEmployees.length} empleados`);
+    }
+    
+    // Extraer habilidades de la tarjeta
+    function extractSkillsFromCard(card) {
+        const skillBadges = card.querySelectorAll('.insignia-habilidad');
+        const skills = [];
+        
+        skillBadges.forEach(badge => {
+            const skillText = badge.textContent.toLowerCase().trim();
+            const hasSkill = badge.classList.contains('habilidad-coincide');
+            skills.push({
+                name: skillText,
+                hasSkill: hasSkill
+            });
+        });
+        
+        return skills;
+    }
+    
+    // Extraer compatibilidad de la tarjeta
+    function extractCompatibilityFromCard(card) {
+        const compatibilityElement = card.querySelector('.compatibilidad-empleado');
+        if (compatibilityElement) {
+            const text = compatibilityElement.textContent;
+            const match = text.match(/(\d+)%/);
+            return match ? parseInt(match[1]) : 0;
+        }
+        return 0;
+    }
+    
+    // Aplicar filtros
+    function applyFilters() {
+        const searchTerm = searchInput?.value.toLowerCase().trim() || '';
+        const selectedSkill = skillFilter?.value || '';
+        const minCompatibility = compatibilityFilter?.value ? parseInt(compatibilityFilter.value) : 0;
+        
+        console.log('🔍 Aplicando filtros:', { searchTerm, selectedSkill, minCompatibility });
+        
+        // Filtrar empleados
+        filteredEmployees = allEmployees.filter(employee => {
+            // Filtro de búsqueda por texto
+            const matchesSearch = !searchTerm || 
+                employee.name.includes(searchTerm) ||
+                employee.job.includes(searchTerm) ||
+                employee.location.includes(searchTerm);
+            
+            // Filtro por habilidad específica
+            const matchesSkill = !selectedSkill || 
+                employee.skills.some(skill => 
+                    skill.name.includes(selectedSkill.toLowerCase()) && skill.hasSkill
+                );
+            
+            // Filtro por compatibilidad mínima
+            const matchesCompatibility = employee.compatibility >= minCompatibility;
+            
+            return matchesSearch && matchesSkill && matchesCompatibility;
+        });
+        
+        // Actualizar visualización
+        updateEmployeeDisplay();
+        
+        console.log(`📊 Filtros aplicados: ${filteredEmployees.length}/${allEmployees.length} empleados mostrados`);
+    }
+    
+    // Actualizar visualización de empleados
+    function updateEmployeeDisplay() {
+        if (!employeeContainer) return;
+        
+        // Limpiar contenedor
+        employeeContainer.innerHTML = '';
+        
+        if (filteredEmployees.length === 0) {
+            employeeContainer.innerHTML = `
+                <div class="text-center py-8 text-gray-500">
+                    <i class="fas fa-search text-3xl mb-3"></i>
+                    <p>No se encontraron empleados con los filtros aplicados</p>
+                    <button type="button" onclick="clearFilters()" class="mt-2 text-blue-600 hover:text-blue-800 text-sm">
+                        <i class="fas fa-times mr-1"></i>Limpiar filtros
+                    </button>
+                </div>
+            `;
+            return;
+        }
+        
+        // Agregar empleados filtrados
+        filteredEmployees.forEach(employeeData => {
+            const card = employeeData.element.cloneNode(true);
+            
+            // Restaurar selección si estaba seleccionado
+            if (selectedEmployees.has(employeeData.id)) {
+                card.classList.add('selected', 'ring-2', 'ring-blue-500', 'bg-blue-50');
+                
+                // Agregar checkmark
+                if (!card.querySelector('.selection-checkmark')) {
+                    const checkmark = document.createElement('div');
+                    checkmark.className = 'selection-checkmark absolute top-2 right-2 bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm z-10';
+                    checkmark.innerHTML = '<i class="fas fa-check"></i>';
+                    card.style.position = 'relative';
+                    card.appendChild(checkmark);
+                }
+                
+                // Marcar checkbox
+                const checkbox = card.querySelector('input[type="checkbox"]');
+                if (checkbox) {
+                    checkbox.checked = true;
+                }
+            }
+            
+            // Reattach event listeners
+            attachCardEventListeners(card, employeeData.id);
+            
+            employeeContainer.appendChild(card);
+        });
+        
+        // Actualizar contador
+        updateEmployeeCount();
+    }
+    
+    // Adjuntar event listeners a una tarjeta
+    function attachCardEventListeners(card, employeeId) {
+        card.style.cursor = 'pointer';
+        card.classList.add('transition-all', 'duration-200');
+        
+        card.addEventListener('click', function(e) {
+            if (e.target.closest('button') || e.target.closest('a') || e.target.type === 'checkbox') {
+                return;
+            }
+            
+            e.preventDefault();
+            e.stopPropagation();
+            
+            toggleEmployeeSelection(this, employeeId);
+        });
+        
+        const checkbox = card.querySelector('input[type="checkbox"]');
+        if (checkbox) {
+            checkbox.addEventListener('change', function(e) {
+                e.stopPropagation();
+                toggleEmployeeSelection(card, employeeId);
+            });
+        }
+    }
+    
+    // Actualizar contador de empleados disponibles
+    function updateEmployeeCount() {
+        const countElement = document.querySelector('h2:contains("Empleados Disponibles")') ||
+                           document.querySelector('h2');
+        if (countElement) {
+            const baseText = countElement.textContent.replace(/\(\d+\)/, '');
+            countElement.textContent = `${baseText}(${filteredEmployees.length})`;
+        }
+    }
+    
+    // Función para limpiar filtros
+    window.clearFilters = function() {
+        if (searchInput) searchInput.value = '';
+        if (skillFilter) skillFilter.selectedIndex = 0;
+        if (compatibilityFilter) compatibilityFilter.selectedIndex = 0;
+        applyFilters();
+    };
+    
+    // Función debounce para optimizar búsqueda
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+    
+    // Función para actualizar UI de selección
+    function updateSelectionUI() {
+        const count = selectedEmployees.size;
+        console.log(`📊 Empleados seleccionados: ${count}`, Array.from(selectedEmployees));
+        
+        // Actualizar botón de asignar
+        if (btnAsignar) {
+            if (count > 0) {
+                btnAsignar.disabled = false;
+                btnAsignar.innerHTML = `
+                    <i class="fas fa-user-plus mr-2"></i>
+                    Asignar ${count} Empleado${count > 1 ? 's' : ''} Seleccionado${count > 1 ? 's' : ''}
+                `;
+                btnAsignar.classList.remove('opacity-50', 'cursor-not-allowed');
+                btnAsignar.classList.add('hover:bg-green-600');
+            } else {
+                btnAsignar.disabled = true;
+                btnAsignar.innerHTML = `
+                    <i class="fas fa-user-plus mr-2"></i>
+                    Selecciona empleados para asignar
+                `;
+                btnAsignar.classList.add('opacity-50', 'cursor-not-allowed');
+                btnAsignar.classList.remove('hover:bg-green-600');
             }
         }
         
-        // Manejar clicks en las tarjetas
-        tarjetas.forEach(tarjeta => {
-            tarjeta.addEventListener('click', function(e) {
-                if (e.target.type === 'checkbox') return; // No procesar si se hizo click en el checkbox
-                
-                const checkbox = tarjeta.querySelector('input[type="checkbox"]');
-                checkbox.checked = !checkbox.checked;
-                tarjeta.classList.toggle('selected', checkbox.checked);
-                actualizarBotonEnviar();
-            });
-        });
+        // Mostrar contador de seleccionados en el header
+        updateSelectionCounter();
+    }
+    
+    // Mostrar contador de seleccionados
+    function updateSelectionCounter() {
+        let counterElement = document.getElementById('selection-counter');
         
-        // Manejar cambios en checkboxes
-        checkboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                const tarjeta = this.closest('.tarjeta-empleado-seleccionable');
-                tarjeta.classList.toggle('selected', this.checked);
-                actualizarBotonEnviar();
-            });
-        });
-        
-        // Seleccionar todos
-        if (btnSeleccionarTodos) {
-            btnSeleccionarTodos.addEventListener('click', function() {
-                checkboxes.forEach(checkbox => {
-                    checkbox.checked = true;
-                    const tarjeta = checkbox.closest('.tarjeta-empleado-seleccionable');
-                    tarjeta.classList.add('selected');
-                });
-                actualizarBotonEnviar();
-            });
-        }
-        
-        // Limpiar todos
-        if (btnLimpiarTodos) {
-            btnLimpiarTodos.addEventListener('click', function() {
-                checkboxes.forEach(checkbox => {
-                    checkbox.checked = false;
-                    const tarjeta = checkbox.closest('.tarjeta-empleado-seleccionable');
-                    tarjeta.classList.remove('selected');
-                });
-                actualizarBotonEnviar();
-            });
-        }
-        
-        // Confirmación antes de enviar
-        if (formulario) {
-            formulario.addEventListener('submit', function(e) {
-                const checkboxesMarcados = formulario.querySelectorAll('input[type="checkbox"][name="selected_employees"]:checked');
-                const accion = formulario.querySelector('input[name="action"]').value;
-                
-                if (checkboxesMarcados.length === 0) {
-                    e.preventDefault();
-                    alert('Por favor selecciona al menos un empleado.');
-                    return;
-                }
-                
-                const textoAccion = accion === 'assign' ? 'asignar' : 'desasignar';
-                const mensajeConfirmacion = `¿Estás seguro que quieres ${textoAccion} ${checkboxesMarcados.length} empleado(s)?`;
-                
-                if (!confirm(mensajeConfirmacion)) {
-                    e.preventDefault();
-                }
-            });
+        if (selectedEmployees.size > 0) {
+            if (!counterElement) {
+                counterElement = document.createElement('div');
+                counterElement.id = 'selection-counter';
+                counterElement.className = 'fixed top-20 right-4 bg-blue-500 text-white px-4 py-2 rounded-full shadow-lg z-50 transition-all duration-300';
+                document.body.appendChild(counterElement);
+            }
+            
+            counterElement.innerHTML = `
+                <i class="fas fa-check-circle mr-2"></i>
+                ${selectedEmployees.size} seleccionado${selectedEmployees.size > 1 ? 's' : ''}
+                <button onclick="clearSelection()" class="ml-2 text-blue-200 hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            counterElement.style.display = 'block';
+        } else if (counterElement) {
+            counterElement.style.display = 'none';
         }
     }
     
-    // Configurar ambos formularios
-    configurarSeleccionEmpleados('formulario-asignar', 'seleccionar-todos-disponibles', 'limpiar-todos-disponibles', 'btn-asignar');
-    configurarSeleccionEmpleados('formulario-desasignar', 'seleccionar-todos-actuales', 'limpiar-todos-actuales', 'btn-desasignar');
+    // Función para toggle selección de empleado
+    function toggleEmployeeSelection(employeeCard, employeeId) {
+        if (selectedEmployees.has(employeeId)) {
+            // Deseleccionar
+            selectedEmployees.delete(employeeId);
+            employeeCard.classList.remove('selected', 'ring-2', 'ring-blue-500', 'bg-blue-50');
+            
+            const checkmark = employeeCard.querySelector('.selection-checkmark');
+            if (checkmark) {
+                checkmark.remove();
+            }
+            
+            const checkbox = employeeCard.querySelector('input[type="checkbox"]');
+            if (checkbox) {
+                checkbox.checked = false;
+            }
+            
+        } else {
+            // Seleccionar
+            selectedEmployees.add(employeeId);
+            employeeCard.classList.add('selected', 'ring-2', 'ring-blue-500', 'bg-blue-50');
+            
+            if (!employeeCard.querySelector('.selection-checkmark')) {
+                const checkmark = document.createElement('div');
+                checkmark.className = 'selection-checkmark absolute top-2 right-2 bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm z-10';
+                checkmark.innerHTML = '<i class="fas fa-check"></i>';
+                employeeCard.style.position = 'relative';
+                employeeCard.appendChild(checkmark);
+            }
+            
+            const checkbox = employeeCard.querySelector('input[type="checkbox"]');
+            if (checkbox) {
+                checkbox.checked = true;
+            }
+        }
+        
+        updateSelectionUI();
+        
+        // Guardar selección en localStorage para persistencia
+        localStorage.setItem('selectedEmployees', JSON.stringify(Array.from(selectedEmployees)));
+    }
     
-    // Filtro de búsqueda en tiempo real
-    const inputBusqueda = document.querySelector('input[name="search"]');
-    if (inputBusqueda) {
-        inputBusqueda.addEventListener('input', function() {
-            // Auto-enviar después de 500ms de inactividad
-            clearTimeout(this.timeoutBusqueda);
-            this.timeoutBusqueda = setTimeout(() => {
-                this.closest('form').submit();
-            }, 500);
+    // Función para limpiar selección
+    function clearSelection() {
+        selectedEmployees.clear();
+        localStorage.removeItem('selectedEmployees');
+        
+        // Actualizar todas las tarjetas visibles
+        document.querySelectorAll('.tarjeta-empleado-seleccionable').forEach(card => {
+            card.classList.remove('selected', 'ring-2', 'ring-blue-500', 'bg-blue-50');
+            
+            const checkmark = card.querySelector('.selection-checkmark');
+            if (checkmark) {
+                checkmark.remove();
+            }
+            
+            const checkbox = card.querySelector('input[type="checkbox"]');
+            if (checkbox) {
+                checkbox.checked = false;
+            }
+        });
+        
+        updateSelectionUI();
+    }
+    
+    window.clearSelection = clearSelection;
+    
+    // Restaurar selección guardada
+    function restoreSelection() {
+        try {
+            const saved = localStorage.getItem('selectedEmployees');
+            if (saved) {
+                const savedIds = JSON.parse(saved);
+                savedIds.forEach(id => selectedEmployees.add(id));
+                console.log('📥 Selección restaurada:', savedIds);
+            }
+        } catch (e) {
+            console.error('Error restaurando selección:', e);
+        }
+    }
+    
+    // Función para asignar empleados seleccionados
+    function assignSelectedEmployees() {
+        if (selectedEmployees.size === 0) {
+            alert('⚠️ Selecciona al menos un empleado para asignar');
+            return;
+        }
+        
+        const projectId = getProjectId();
+        if (!projectId) {
+            alert('❌ Error: No se pudo obtener el ID del proyecto');
+            return;
+        }
+        
+        console.log('🔄 Asignando empleados:', Array.from(selectedEmployees), 'al proyecto:', projectId);
+        
+        btnAsignar.disabled = true;
+        btnAsignar.innerHTML = `
+            <i class="fas fa-spinner fa-spin mr-2"></i>
+            Asignando ${selectedEmployees.size} empleado${selectedEmployees.size > 1 ? 's' : ''}...
+        `;
+        
+        fetch('{% url "assign_employees_to_project" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken(),
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                project_id: parseInt(projectId),
+                employee_ids: Array.from(selectedEmployees).map(id => parseInt(id))
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('📥 Respuesta del servidor:', data);
+            
+            if (data.success) {
+                const assignedCount = data.assigned_count || selectedEmployees.size;
+                showSuccessMessage(`✅ ${assignedCount} empleado${assignedCount > 1 ? 's asignados' : ' asignado'} correctamente`);
+                
+                clearSelection();
+                setTimeout(() => window.location.reload(), 2000);
+                
+            } else {
+                alert(`❌ Error: ${data.error || 'No se pudieron asignar los empleados'}`);
+                console.error('Assignment error:', data);
+            }
+        })
+        .catch(error => {
+            console.error('Network error:', error);
+            alert('❌ Error de conexión. Inténtalo de nuevo.');
+        })
+        .finally(() => {
+            updateSelectionUI();
         });
     }
+    
+    // Event listeners para botones
+    if (btnAsignar) {
+        btnAsignar.addEventListener('click', function(e) {
+            e.preventDefault();
+            assignSelectedEmployees();
+        });
+    }
+    
+    // Botones de seleccionar/limpiar todos
+    const btnSeleccionarTodos = document.getElementById('seleccionar-todos-disponibles');
+    const btnLimpiarTodos = document.getElementById('limpiar-todos-disponibles');
+    
+    if (btnSeleccionarTodos) {
+        btnSeleccionarTodos.addEventListener('click', function(e) {
+            e.preventDefault();
+            filteredEmployees.forEach(employeeData => {
+                if (!selectedEmployees.has(employeeData.id)) {
+                    selectedEmployees.add(employeeData.id);
+                }
+            });
+            updateEmployeeDisplay();
+            updateSelectionUI();
+        });
+    }
+    
+    if (btnLimpiarTodos) {
+        btnLimpiarTodos.addEventListener('click', function(e) {
+            e.preventDefault();
+            clearSelection();
+            updateEmployeeDisplay();
+        });
+    }
+    
+    // Funciones auxiliares
+    function getProjectId() {
+        return window.PROJECT_ID;
+    }
+    
+    function getCsrfToken() {
+        const tokenElement = document.querySelector('[name=csrfmiddlewaretoken]');
+        return tokenElement ? tokenElement.value : '';
+    }
+    
+    function showSuccessMessage(message) {
+        const successDiv = document.createElement('div');
+        successDiv.className = 'fixed top-4 right-4 bg-green-500 text-white p-4 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform duration-300';
+        successDiv.innerHTML = `
+            <div class="flex items-center">
+                <i class="fas fa-check-circle mr-2"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        document.body.appendChild(successDiv);
+        
+        setTimeout(() => {
+            successDiv.classList.remove('translate-x-full');
+        }, 100);
+        
+        setTimeout(() => {
+            successDiv.classList.add('translate-x-full');
+            setTimeout(() => {
+                if (successDiv.parentNode) {
+                    successDiv.remove();
+                }
+            }, 300);
+        }, 4000);
+    }
+    
+    // Shortcuts de teclado
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+            e.preventDefault();
+            filteredEmployees.forEach(employeeData => {
+                if (!selectedEmployees.has(employeeData.id)) {
+                    selectedEmployees.add(employeeData.id);
+                }
+            });
+            updateEmployeeDisplay();
+            updateSelectionUI();
+        }
+        
+        if (e.key === 'Escape') {
+            clearSelection();
+            updateEmployeeDisplay();
+        }
+        
+        if (e.key === 'Enter' && selectedEmployees.size > 0) {
+            e.preventDefault();
+            assignSelectedEmployees();
+        }
+    });
+    
+    // Inicializar
+    restoreSelection();
+    updateSelectionUI();
+    
+    console.log('✅ Sistema con filtros en tiempo real inicializado');
 });
+</script>
+
+<script>
+    window.PROJECT_ID = {{ project.id }};
 </script>
 {% endblock %}
