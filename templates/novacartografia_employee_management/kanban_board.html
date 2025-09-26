@@ -206,6 +206,11 @@
                       {% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
                       <i class="fa-solid fa-person-falling text-base"></i>
                     </div>
+                    {% if employee.end_contract %}
+                    <div class="text-purple-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
+                      <i class="fa-solid fa-skull-crossbones text-xl"></i>
+                    </div>
+                    {% endif %}
                   </div>
                 </div>
               {% endif %}
@@ -304,6 +309,11 @@
 
 
                       {% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
+                      {% if employee.end_contract %}
+                    <div class="text-purple-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
+                      <i class="fa-solid fa-skull-crossbones text-xl"></i>
+                    </div>
+                    {% endif %}
                       <i class="fa-solid fa-person-falling text-base"></i>
                     </div>
                   </div>

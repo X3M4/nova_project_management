@@ -54,13 +54,14 @@
                 <dt class="text-base font-medium text-gray-500">Employee ID</dt>
                 <dd class="mt-1 text-base text-gray-900 sm:mt-0 sm:col-span-2">{{ employee.id }}</dd>
             </div>
-            <!-- Licencia de conducir -->
+            <!-- Permiso de conducir -->
             <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                 <dt class="text-base font-medium text-gray-500">Driver License</dt>
                 <div class="{% if employee.driver_license %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-8 h-8 flex items-center justify-center">
                     <i class="fa-solid fa-id-card text-xl"></i>
                 </div>
             </div>
+            
         </div>
     </div>
 </div>
