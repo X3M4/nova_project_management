@@ -154,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             // Find the card
-            const card = document.querySelector(`.employee-card[data-employee-id="${employeeId}"`);
+            const card = document.querySelector(`.employee-card[data-employee-id="${employeeId}"]`);
             
             if (!card) {
                 console.error('Could not find employee card with ID:', employeeId);
