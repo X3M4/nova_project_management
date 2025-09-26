@@ -69,7 +69,7 @@
   {% if stats.employees_ending_soon > 0 %}
       <div class="alert alert-warning">
           <i class="fas fa-exclamation-triangle"></i>
-          <span id="stat-ending-soon">{{ stats.employees_ending_soon }}</span> empleado{{ stats.employees_ending_soon|pluralize }} con contrato terminando en 7 días
+          <span id="stat-ending-soon">{{ stats.employees_ending_soon }}</span> empleado{{ stats.employees_ending_soon|pluralize }} con obra/contrato terminando en 7 días
       </div>
   {% endif %}
   
@@ -415,6 +415,11 @@
 
 
                       {% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
+                      {% if employee.end_contract %}
+                    <div class="text-purple-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
+                      <i class="fa-solid fa-skull-crossbones text-xl"></i>
+                    </div>
+                    {% endif %}
                       <i class="fa-solid fa-person-falling text-base"></i>
                     </div>
                   </div>
@@ -514,6 +519,11 @@
 
 
                       {% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
+                      {% if employee.end_contract %}
+                    <div class="text-purple-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
+                      <i class="fa-solid fa-skull-crossbones text-xl"></i>
+                    </div>
+                    {% endif %}
                       <i class="fa-solid fa-person-falling text-base"></i>
                     </div>
                   </div>
@@ -686,6 +696,7 @@
 
 
                             {% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
+                            
                             <i class="fa-solid fa-person-falling text-base"></i>
                           </div>
                           {% if employee.vacation_status == 'soon_vacation' %}
@@ -697,6 +708,11 @@
                             <i class="fa-solid fa-umbrella-beach text-3xl"></i>
                           </div>
                           {% endif %}
+                          {% if employee.end_contract %}
+                    <div class="text-purple-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
+                      <i class="fa-solid fa-skull-crossbones text-xl"></i>
+                    </div>
+                    {% endif %}
                         </div>
                       </div>
                     {% endif %}
@@ -799,6 +815,7 @@
 
 
                             {% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
+                            
                             <i class="fa-solid fa-person-falling text-base"></i>
                           </div>
                           {% if employee.vacation_status == 'soon_vacation' %}
@@ -810,6 +827,11 @@
                             <i class="fa-solid fa-umbrella-beach text-3xl"></i>
                           </div>
                           {% endif %}
+                          {% if employee.end_contract %}
+                    <div class="text-purple-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
+                      <i class="fa-solid fa-skull-crossbones text-xl"></i>
+                    </div>
+                    {% endif %}
                         </div>
                       </div>
                     {% endif %}
@@ -909,6 +931,7 @@
 
 
                             {% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
+                            
                             <i class="fa-solid fa-person-falling text-base"></i>
                           </div>
                           {% if employee.vacation_status == 'soon_vacation' %}
@@ -920,6 +943,11 @@
                             <i class="fa-solid fa-umbrella-beach text-3xl"></i>
                           </div>
                           {% endif %}
+                          {% if employee.end_contract %}
+                    <div class="text-purple-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
+                      <i class="fa-solid fa-skull-crossbones text-xl"></i>
+                    </div>
+                    {% endif %}
                         </div>
                       </div>
                     {% endif %}
@@ -1030,6 +1058,11 @@
                             <i class="fa-solid fa-umbrella-beach text-3xl"></i>
                           </div>
                           {% endif %}
+                          {% if employee.end_contract %}
+                    <div class="text-purple-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
+                      <i class="fa-solid fa-skull-crossbones text-xl"></i>
+                    </div>
+                    {% endif %}
                         </div>
                       </div>
                     {% endif %}
@@ -1259,6 +1292,11 @@
                             <i class="fa-solid fa-umbrella-beach text-3xl"></i>
                           </div>
                           {% endif %}
+                          {% if employee.end_contract %}
+                    <div class="text-purple-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
+                      <i class="fa-solid fa-skull-crossbones text-xl"></i>
+                    </div>
+                    {% endif %}
                         </div>
                       </div>
                     {% endif %}
@@ -1369,6 +1407,11 @@
                             <i class="fa-solid fa-umbrella-beach text-3xl"></i>
                           </div>
                           {% endif %}
+                          {% if employee.end_contract %}
+                    <div class="text-purple-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
+                      <i class="fa-solid fa-skull-crossbones text-xl"></i>
+                    </div>
+                    {% endif %}
                         </div>
                       </div>
                     {% endif %}
@@ -1479,6 +1522,11 @@
                             <i class="fa-solid fa-umbrella-beach text-3xl"></i>
                           </div>
                           {% endif %}
+                          {% if employee.end_contract %}
+                    <div class="text-purple-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
+                      <i class="fa-solid fa-skull-crossbones text-xl"></i>
+                    </div>
+                    {% endif %}
                         </div>
                       </div>
                     {% endif %}
@@ -1589,6 +1637,11 @@
                             <i class="fa-solid fa-umbrella-beach text-3xl"></i>
                           </div>
                           {% endif %}
+                          {% if employee.end_contract %}
+                    <div class="text-purple-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
+                      <i class="fa-solid fa-skull-crossbones text-xl"></i>
+                    </div>
+                    {% endif %}
                         </div>
                       </div>
                     {% endif %}
