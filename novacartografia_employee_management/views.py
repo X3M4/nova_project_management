@@ -1915,7 +1915,7 @@ def assign_employees_to_project(request):
         print(f"❌ Error general: {e}")
         import traceback
         traceback.print_exc()
-        return JsonResponse({'success': False, 'error': f'Error interno: {str(e)}'})   
+        return JsonResponse({'success': False, 'error': f'Error interno: {str(e)}'})
 
 @login_required
 def kanban_board_data(request):
@@ -2024,3 +2024,82 @@ def kanban_board_data(request):
             'success': False,
             'error': str(e)
         })
+        
+@require_http_methods(["POST"])
+@login_required
+def unassign_employees_from_project(request):
+    """Desasignar múltiples empleados de un proyecto via AJAX"""
+    try:
+        data = json.loads(request.body)
+        employee_ids = data.get('employee_ids', [])
+        
+        print(f"🔄 Desasignando empleados: {employee_ids}")
+        
+        if not employee_ids:
+            return JsonResponse({'success': False, 'error': 'Selecciona al menos un empleado'})
+        
+        # Desasignar empleados
+        unassigned_count = 0
+        errors = []
+        
+        for employee_id in employee_ids:
+            try:
+                employee = Employee.objects.get(id=employee_id)
+                print(f"👤 Procesando {employee.name}")
+                
+                # Guardar proyecto anterior para el log
+                old_project = employee.project_id
+                old_project_name = old_project.name if old_project else "Sin asignar"
+                
+                # Desasignar empleado (enviar a pool sin asignar)
+                employee.project_id = None
+                employee.locked = False
+                employee.save()
+                
+                # Verificar que se guardó
+                employee.refresh_from_db()
+                if employee.project_id is None:
+                    unassigned_count += 1
+                    print(f"✅ {employee.name} desasignado correctamente")
+                    
+                    # Log del movimiento
+                    try:
+                        ProjectMovementLine.objects.create(
+                            employee=employee,
+                            new_project=None,
+                            previous_project=old_project,
+                            date=timezone.now()
+                        )
+                        print(f"📝 Movimiento registrado: {old_project_name} → Sin asignar")
+                    except Exception as log_error:
+                        print(f"⚠️ Error creando log: {log_error}")
+                else:
+                    errors.append(f"Error: {employee.name} no se desasignó correctamente")
+                
+            except Employee.DoesNotExist:
+                errors.append(f'Empleado ID {employee_id} no encontrado')
+            except Exception as e:
+                errors.append(f'Error desasignando empleado ID {employee_id}: {str(e)}')
+        
+        # Respuesta
+        if unassigned_count > 0:
+            message = f'{unassigned_count} empleado{"s" if unassigned_count > 1 else ""} desasignado{"s" if unassigned_count > 1 else ""} del proyecto'
+            messages.success(request, message)
+            
+            return JsonResponse({
+                'success': True,
+                'unassigned_count': unassigned_count,
+                'message': message,
+                'errors': errors if errors else None
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': 'No se pudo desasignar ningún empleado',
+                'details': errors
+            })
+            
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Datos JSON inválidos'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'Error interno: {str(e)}'})

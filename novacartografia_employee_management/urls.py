@@ -25,6 +25,7 @@ urlpatterns = [
     path('projects/<int:project_id>/assign-employees/', views.project_assign_employees, name='project_assign_employees'),
     
     path('assign-employees/', views.assign_employees_to_project, name='assign_employees_to_project'),
+    path('api/unassign-employees/', views.unassign_employees_from_project, name='unassign_employees_from_project'),
     
     path('movements/', views.movement_list, name='movement_list'),
     path('kanban/', views.kanban_board, name='kanban_board'),

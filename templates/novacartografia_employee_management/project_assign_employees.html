@@ -1,904 +1,414 @@
 <!-- filepath: /home/p102/django_projects/nova_workers_management/templates/novacartografia_employee_management/project_assign_employees.html -->
-
 {% extends 'base.html' %}
 {% load employee_filters %}
 
-{% block title %}
-Asignar Empleados - {{ project.name }}
-{% endblock %}
-
-{% block extra_css %}
-{% load static %}
-<link rel="stylesheet" href="{% static 'css/kanban.css' %}">
-<style>
-    .compatibilidad-empleado {
-        background: linear-gradient(90deg, 
-            #10b981 0%, #10b981 var(--porcentaje, 0%), 
-            #e5e7eb var(--porcentaje, 0%), #e5e7eb 100%);
-        border-radius: 4px;
-        padding: 2px 8px;
-        color: white;
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-    }
-    
-    .insignia-habilidad {
-        display: inline-flex;
-        align-items: center;
-        padding: 2px 6px;
-        border-radius: 12px;
-        font-size: 0.625rem;
-        font-weight: 500;
-    }
-    
-    .habilidad-coincide { background: #dcfce7; color: #166534; }
-    .habilidad-falta { background: #fee2e2; color: #991b1b; }
-    
-    .tarjeta-empleado-seleccionable {
-        cursor: pointer;
-        transition: all 0.2s ease;
-        border: 2px solid transparent;
-    }
-    
-    .tarjeta-empleado-seleccionable:hover {
-        border-color: #3b82f6;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    }
-    
-    .tarjeta-empleado-seleccionable.selected {
-        border-color: #10b981;
-        background-color: #f0fdf4;
-    }
-    
-    .seccion-filtros {
-        background: #f8fafc;
-        border-radius: 8px;
-        padding: 16px;
-        margin-bottom: 20px;
-        border: 1px solid #e2e8f0;
-    }
-
-        /* Estilos para selección múltiple */
-    .tarjeta-empleado-seleccionable {
-        position: relative;
-        transition: all 0.2s ease;
-        cursor: pointer;
-    }
-    
-    .tarjeta-empleado-seleccionable:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-    
-    .tarjeta-empleado-seleccionable.selected {
-        background-color: #eff6ff !important;
-        border: 2px solid #3b82f6 !important;
-        transform: translateY(-1px);
-        box-shadow: 0 8px 25px rgba(59, 130, 246, 0.2);
-    }
-    
-    .selection-checkmark {
-        animation: checkmarkPop 0.3s ease-out;
-    }
-    
-    @keyframes checkmarkPop {
-        0% {
-            opacity: 0;
-            transform: scale(0.5);
-        }
-        100% {
-            opacity: 1;
-            transform: scale(1);
-        }
-    }
-    
-    /* Estilos para botones */
-    .btn-success:disabled {
-        background-color: #6b7280;
-        cursor: not-allowed;
-    }
-    
-    .btn-success:not(:disabled):hover {
-        background-color: #16a34a;
-        transform: translateY(-1px);
-    }
-</style>
-{% endblock %}
+{% block title %}Gestionar Empleados - {{ project.name }}{% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-6">
-    <!-- Encabezado -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-        <div class="flex justify-between items-start">
-            <div>
-                <h1 class="text-2xl font-bold text-gray-900">Asignar Empleados</h1>
-                <p class="text-sm text-gray-600 mt-1">{{ project.name }}</p>
-                <div class="flex items-center mt-2 space-x-4">
-                    <span class="text-sm text-gray-500">
-                        <i class="fas fa-users mr-1"></i>
-                        {{ current_employees|length }} actualmente asignados
-                    </span>
-                    <span class="text-sm text-gray-500">
-                        <i class="fas fa-user-plus mr-1"></i>
-                        {{ unassigned_employees|length }} disponibles
-                    </span>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header del Proyecto -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+        <div class="px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">{{ project.name }}</h1>
+                    <p class="text-sm text-gray-600 mt-1">
+                        <i class="fas fa-user mr-1"></i>Manager: {{ project.manager|default:"No asignado" }}
+                        <span class="ml-4"><i class="fas fa-map-marker-alt mr-1"></i>{{ project.state|default:"N/A" }}</span>
+                    </p>
                 </div>
-            </div>
-            <div class="flex space-x-3">
-                <a href="{% url 'project_detail' project.id %}" 
-                   class="btn-secondary">
-                    <i class="fas fa-arrow-left mr-2"></i>Volver al Proyecto
-                </a>
-                <a href="{% url 'kanban_board' %}" 
-                   class="btn-primary">
-                    <i class="fas fa-columns mr-2"></i>Tablero Kanban
+                <a href="{% url 'kanban_board' %}" class="btn-secondary">
+                    <i class="fas fa-arrow-left mr-2"></i>Volver al Kanban
                 </a>
             </div>
         </div>
-    </div>
-
-    <!-- Habilidades Requeridas del Proyecto -->
-    {% if required_skills %}
-    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-        <h3 class="text-sm font-medium text-blue-900 mb-2">
-            <i class="fas fa-tools mr-1"></i>Habilidades Requeridas para este Proyecto
-        </h3>
-        <div class="flex flex-wrap gap-2">
-            {% for skill in required_skills %}
-                <span class="insignia-habilidad bg-blue-100 text-blue-800">
-                    <i class="fas fa-check-circle mr-1"></i>{{ skill|formato_habilidad }}
-                </span>
-            {% endfor %}
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- Sección de Filtros -->
-    <div class="seccion-filtros">
-        <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Buscar</label>
-                <input type="text" name="search" value="{{ search_query }}" 
-                       placeholder="Nombre, trabajo, ubicación..." 
-                       class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200">
-            </div>
-            
-            {% if required_skills %}
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Filtrar por Habilidad</label>
-                <select name="skill_filter" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200">
-                    <option value="">Todas las Habilidades</option>
-                    {% for skill in required_skills %}
-                        <option value="{{ skill }}" {% if skill_filter == skill %}selected{% endif %}>
-                            {{ skill|formato_habilidad }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-            
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Compatibilidad Mínima</label>
-                <select name="compatibility" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200">
-                    <option value="">Cualquier Compatibilidad</option>
-                    <option value="100" {% if compatibility_filter == "100" %}selected{% endif %}>100% Coincidencia</option>
-                    <option value="75" {% if compatibility_filter == "75" %}selected{% endif %}>75%+ Coincidencia</option>
-                    <option value="50" {% if compatibility_filter == "50" %}selected{% endif %}>50%+ Coincidencia</option>
-                    <option value="25" {% if compatibility_filter == "25" %}selected{% endif %}>25%+ Coincidencia</option>
-                </select>
-            </div>
-            {% endif %}
-            
-            <div class="flex items-end">
-                <button type="submit" class="w-full btn-primary">
-                    <i class="fas fa-filter mr-2"></i>Aplicar Filtros
-                </button>
-            </div>
-        </form>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Empleados Disponibles -->
+        <!-- SECCIÓN ASIGNACIONES -->
         <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 rounded-t-lg">
+            <!-- Header Asignaciones -->
+            <div class="bg-green-50 px-6 py-4 border-b border-green-200 rounded-t-lg">
                 <div class="flex justify-between items-center">
-                    <h2 class="text-lg font-semibold text-gray-900">
-                        <i class="fas fa-user-plus mr-2 text-green-600"></i>
-                        Empleados Disponibles ({{ unassigned_employees|length }})
+                    <h2 class="text-lg font-semibold text-green-800">
+                        <i class="fas fa-user-plus mr-2"></i>
+                        Asignar Empleados ({{ unassigned_employees|length }} disponibles)
                     </h2>
                     <div class="flex space-x-2">
-                        <button type="button" id="seleccionar-todos-disponibles" class="text-sm text-blue-600 hover:text-blue-800">
-                            Seleccionar Todos
+                        <button type="button" id="btn-select-all-available" class="text-sm text-green-600 hover:text-green-800">
+                            <i class="fas fa-check-double mr-1"></i>Todos
                         </button>
-                        <button type="button" id="limpiar-todos-disponibles" class="text-sm text-gray-600 hover:text-gray-800">
-                            Limpiar Todos
+                        <button type="button" id="btn-clear-all-available" class="text-sm text-gray-600 hover:text-gray-800">
+                            <i class="fas fa-times mr-1"></i>Ninguno
                         </button>
                     </div>
                 </div>
             </div>
-            
-            <form method="POST" id="formulario-asignar">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="assign">
-                
-                <div class="p-4 max-h-96 overflow-y-auto space-y-3">
-                    {% for employee in unassigned_employees %}
-                        <div class="tarjeta-empleado-seleccionable bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200"
-                             data-employee-id="{{ employee.id }}">
-                            <div class="flex items-start justify-between">
-                                <div class="flex-1">
-                                    <div class="flex items-center mb-2">
-                                        <input type="checkbox" name="selected_employees" value="{{ employee.id }}" 
-                                               class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded mr-3">
-                                        <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
-                                    </div>
-                                    
-                                    <div class="text-xs text-gray-600 mb-2">
-                                        <i class="fas fa-briefcase mr-1"></i>{{ employee.job }}
-                                        {% if employee.state %}
-                                            <span class="ml-2"><i class="fas fa-map-marker-alt mr-1"></i>{{ employee.state }}</span>
-                                        {% endif %}
-                                    </div>
-                                    
-                                    {% if required_skills_count > 0 %}
-                                        <div class="mb-2">
-                                            <div class="compatibilidad-empleado" style="--porcentaje: {{ employee.match_percentage }}%;">
-                                                {{ employee.match_percentage|floatformat:0 }}% Coincidencia ({{ employee.match_count }}/{{ employee.required_count }})
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- Indicadores de habilidades -->
-                                        <div class="flex flex-wrap gap-1">
-                                            {% for skill in required_skills %}
-                                                <span class="insignia-habilidad {% if employee|obtener_atributo_empleado:skill %}habilidad-coincide{% else %}habilidad-falta{% endif %}">
-                                                    {% if employee|obtener_atributo_empleado:skill %}
-                                                        <i class="fas fa-check mr-1"></i>
-                                                    {% else %}
-                                                        <i class="fas fa-times mr-1"></i>
-                                                    {% endif %}
-                                                    {{ skill|formato_habilidad }}
-                                                </span>
-                                            {% endfor %}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                                
-                                <div class="ml-3">
-                                    <a href="{% url 'employee_detail' employee.id %}" 
-                                       class="text-gray-400 hover:text-gray-600 p-1"
-                                       title="Ver Detalles">
-                                        <i class="fas fa-external-link-alt text-sm"></i>
-                                    </a>
-                                </div>
+
+            <!-- Lista de Empleados Disponibles -->
+            <div class="p-4 max-h-96 overflow-y-auto" id="available-employees">
+                {% for employee in unassigned_employees %}
+                <div class="employee-card bg-gray-50 border border-gray-200 rounded-lg p-3 mb-2 hover:bg-green-50 hover:border-green-300 transition-all duration-200 cursor-pointer"
+                     data-employee-id="{{ employee.id }}">
+                    <div class="flex items-center">
+                        <input type="checkbox" class="employee-checkbox h-4 w-4 text-green-600 rounded mr-3" value="{{ employee.id }}">
+                        <div class="flex-1">
+                            <div class="flex items-center justify-between">
+                                <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
+                                {% if employee.match_percentage %}
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+                                    {% if employee.match_percentage >= 75 %}bg-green-100 text-green-800
+                                    {% elif employee.match_percentage >= 50 %}bg-yellow-100 text-yellow-800
+                                    {% else %}bg-red-100 text-red-800{% endif %}">
+                                    {{ employee.match_percentage|floatformat:0 }}% compatible
+                                </span>
+                                {% endif %}
+                            </div>
+                            <div class="text-xs text-gray-600 mt-1">
+                                <i class="fas fa-briefcase mr-1"></i>{{ employee.job }}
+                                {% if employee.state %}
+                                <span class="ml-2"><i class="fas fa-map-marker-alt mr-1"></i>{{ employee.state }}</span>
+                                {% endif %}
                             </div>
                         </div>
-                    {% empty %}
-                        <div class="text-center py-8 text-gray-500">
-                            <i class="fas fa-users text-3xl mb-3"></i>
-                            <p>No se encontraron empleados disponibles</p>
-                        </div>
-                    {% endfor %}
+                    </div>
                 </div>
-                
-                {% if unassigned_employees %}
-                <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-lg">
-                    <button type="submit" class="w-full btn-success" id="btn-asignar" disabled>
-                        <i class="fas fa-user-plus mr-2"></i>
-                        Asignar Empleados Seleccionados
-                    </button>
+                {% empty %}
+                <div class="text-center py-8 text-gray-500">
+                    <i class="fas fa-users text-3xl mb-3"></i>
+                    <p>No hay empleados disponibles</p>
                 </div>
-                {% endif %}
-            </form>
+                {% endfor %}
+            </div>
+
+            <!-- Botón Asignar -->
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-lg">
+                <button type="button" id="btn-assign" class="w-full bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i class="fas fa-user-plus mr-2"></i>
+                    <span id="assign-text">Selecciona empleados para asignar</span>
+                </button>
+            </div>
         </div>
 
-        <!-- Empleados Actualmente Asignados -->
+        <!-- SECCIÓN DESASIGNACIONES -->
         <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 rounded-t-lg">
+            <!-- Header Desasignaciones -->
+            <div class="bg-red-50 px-6 py-4 border-b border-red-200 rounded-t-lg">
                 <div class="flex justify-between items-center">
-                    <h2 class="text-lg font-semibold text-gray-900">
-                        <i class="fas fa-users mr-2 text-blue-600"></i>
-                        Actualmente Asignados ({{ current_employees|length }})
+                    <h2 class="text-lg font-semibold text-red-800">
+                        <i class="fas fa-user-minus mr-2"></i>
+                        Desasignar Empleados ({{ current_employees|length }} asignados)
                     </h2>
                     <div class="flex space-x-2">
-                        <button type="button" id="seleccionar-todos-actuales" class="text-sm text-blue-600 hover:text-blue-800">
-                            Seleccionar Todos
+                        <button type="button" id="btn-select-all-current" class="text-sm text-red-600 hover:text-red-800">
+                            <i class="fas fa-check-double mr-1"></i>Todos
                         </button>
-                        <button type="button" id="limpiar-todos-actuales" class="text-sm text-gray-600 hover:text-gray-800">
-                            Limpiar Todos
+                        <button type="button" id="btn-clear-all-current" class="text-sm text-gray-600 hover:text-gray-800">
+                            <i class="fas fa-times mr-1"></i>Ninguno
                         </button>
                     </div>
                 </div>
             </div>
-            
-            <form method="POST" id="formulario-desasignar">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="unassign">
-                
-                <div class="p-4 max-h-96 overflow-y-auto space-y-3">
-                    {% for employee in current_employees %}
-                        <div class="tarjeta-empleado-seleccionable bg-blue-50 border border-blue-200 rounded-lg p-4 hover:shadow-md transition-all duration-200"
-                             data-employee-id="{{ employee.id }}">
-                            <div class="flex items-start justify-between">
-                                <div class="flex-1">
-                                    <div class="flex items-center mb-2">
-                                        <input type="checkbox" name="selected_employees" value="{{ employee.id }}" 
-                                               class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded mr-3">
-                                        <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
-                                    </div>
-                                    
-                                    <div class="text-xs text-gray-600 mb-2">
-                                        <i class="fas fa-briefcase mr-1"></i>{{ employee.job }}
-                                        {% if employee.state %}
-                                            <span class="ml-2"><i class="fas fa-map-marker-alt mr-1"></i>{{ employee.state }}</span>
-                                        {% endif %}
-                                    </div>
-                                    
-                                    <!-- Mostrar fecha de asignación si está disponible -->
-                                    <div class="text-xs text-blue-600">
-                                        <i class="fas fa-calendar-plus mr-1"></i>
-                                        Asignado al proyecto
-                                    </div>
-                                </div>
-                                
-                                <div class="ml-3">
-                                    <a href="{% url 'employee_detail' employee.id %}" 
-                                       class="text-gray-400 hover:text-gray-600 p-1"
-                                       title="Ver Detalles">
-                                        <i class="fas fa-external-link-alt text-sm"></i>
-                                    </a>
-                                </div>
+
+            <!-- Lista de Empleados Actuales -->
+            <div class="p-4 max-h-96 overflow-y-auto" id="current-employees">
+                {% for employee in current_employees %}
+                <div class="employee-card bg-blue-50 border border-blue-200 rounded-lg p-3 mb-2 hover:bg-red-50 hover:border-red-300 transition-all duration-200 cursor-pointer"
+                     data-employee-id="{{ employee.id }}">
+                    <div class="flex items-center">
+                        <input type="checkbox" class="employee-checkbox h-4 w-4 text-red-600 rounded mr-3" value="{{ employee.id }}">
+                        <div class="flex-1">
+                            <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
+                            <div class="text-xs text-gray-600 mt-1">
+                                <i class="fas fa-briefcase mr-1"></i>{{ employee.job }}
+                                {% if employee.state %}
+                                <span class="ml-2"><i class="fas fa-map-marker-alt mr-1"></i>{{ employee.state }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="text-xs text-blue-600 mt-1">
+                                <i class="fas fa-calendar-check mr-1"></i>Asignado al proyecto
                             </div>
                         </div>
-                    {% empty %}
-                        <div class="text-center py-8 text-gray-500">
-                            <i class="fas fa-user-slash text-3xl mb-3"></i>
-                            <p>No hay empleados asignados actualmente</p>
-                        </div>
-                    {% endfor %}
+                    </div>
                 </div>
-                
-                {% if current_employees %}
-                <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-lg">
-                    <button type="submit" class="w-full btn-danger" id="btn-desasignar" disabled>
-                        <i class="fas fa-user-minus mr-2"></i>
-                        Desasignar Empleados Seleccionados
-                    </button>
+                {% empty %}
+                <div class="text-center py-8 text-gray-500">
+                    <i class="fas fa-user-slash text-3xl mb-3"></i>
+                    <p>No hay empleados asignados</p>
                 </div>
-                {% endif %}
-            </form>
+                {% endfor %}
+            </div>
+
+            <!-- Botón Desasignar -->
+            {% if current_employees %}
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-lg">
+                <button type="button" id="btn-unassign" class="w-full bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i class="fas fa-user-minus mr-2"></i>
+                    <span id="unassign-text">Selecciona empleados para desasignar</span>
+                </button>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
-{% endblock %}
 
-{% block extra_js %}
+<!-- JavaScript Simplificado -->
 <script>
-// Variables globales para manejo de selección múltiple
-let selectedEmployees = new Set();
-let allEmployees = []; // Cache de todos los empleados
-let filteredEmployees = []; // Empleados filtrados actualmente
-
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Inicializando sistema de selección múltiple con filtros...');
+    console.log('🚀 Inicializando gestión de empleados...');
     
-    // Elementos principales
-    const btnAsignar = document.getElementById('btn-asignar');
-    const btnDesasignar = document.getElementById('btn-desasignar');
-    const searchInput = document.querySelector('input[name="search"]');
-    const skillFilter = document.querySelector('select[name="skill_filter"]');
-    const compatibilityFilter = document.querySelector('select[name="compatibility"]');
-    const employeeContainer = document.querySelector('#unassigned-employees-container') || 
-                               document.querySelector('.space-y-3');
+    const PROJECT_ID = {{ project.id }};
     
-    // Cachear todos los empleados al cargar
-    cacheAllEmployees();
+    // Elementos
+    const btnAssign = document.getElementById('btn-assign');
+    const btnUnassign = document.getElementById('btn-unassign');
+    const btnSelectAllAvailable = document.getElementById('btn-select-all-available');
+    const btnClearAllAvailable = document.getElementById('btn-clear-all-available');
+    const btnSelectAllCurrent = document.getElementById('btn-select-all-current');
+    const btnClearAllCurrent = document.getElementById('btn-clear-all-current');
     
-    // Event listeners para filtros en tiempo real
-    if (searchInput) {
-        searchInput.addEventListener('input', debounce(applyFilters, 300));
+    const assignText = document.getElementById('assign-text');
+    const unassignText = document.getElementById('unassign-text');
+    
+    // Configurar event listeners para tarjetas y checkboxes
+    setupEmployeeCards();
+    
+    // Botones de selección masiva
+    if (btnSelectAllAvailable) {
+        btnSelectAllAvailable.addEventListener('click', () => selectAll('available'));
+    }
+    if (btnClearAllAvailable) {
+        btnClearAllAvailable.addEventListener('click', () => clearAll('available'));
+    }
+    if (btnSelectAllCurrent) {
+        btnSelectAllCurrent.addEventListener('click', () => selectAll('current'));
+    }
+    if (btnClearAllCurrent) {
+        btnClearAllCurrent.addEventListener('click', () => clearAll('current'));
     }
     
-    if (skillFilter) {
-        skillFilter.addEventListener('change', applyFilters);
+    // Botones principales
+    if (btnAssign) {
+        btnAssign.addEventListener('click', handleAssign);
+    }
+    if (btnUnassign) {
+        btnUnassign.addEventListener('click', handleUnassign);
     }
     
-    if (compatibilityFilter) {
-        compatibilityFilter.addEventListener('change', applyFilters);
-    }
-    
-    // Función para cachear todos los empleados
-    function cacheAllEmployees() {
-        const employeeCards = document.querySelectorAll('.tarjeta-empleado-seleccionable');
-        allEmployees = [];
+    // Configurar tarjetas de empleados
+    function setupEmployeeCards() {
+        const cards = document.querySelectorAll('.employee-card');
         
-        employeeCards.forEach(card => {
-            const employeeData = {
-                id: card.dataset.employeeId,
-                element: card.cloneNode(true),
-                name: card.querySelector('h4').textContent.toLowerCase(),
-                job: card.querySelector('.fas.fa-briefcase')?.parentElement.textContent.toLowerCase() || '',
-                location: card.querySelector('.fas.fa-map-marker-alt')?.parentElement.textContent.toLowerCase() || '',
-                skills: extractSkillsFromCard(card),
-                compatibility: extractCompatibilityFromCard(card),
-                originalCard: card
-            };
+        cards.forEach(card => {
+            const checkbox = card.querySelector('.employee-checkbox');
             
-            allEmployees.push(employeeData);
-        });
-        
-        filteredEmployees = [...allEmployees];
-        console.log(`📊 Cacheados ${allEmployees.length} empleados`);
-    }
-    
-    // Extraer habilidades de la tarjeta
-    function extractSkillsFromCard(card) {
-        const skillBadges = card.querySelectorAll('.insignia-habilidad');
-        const skills = [];
-        
-        skillBadges.forEach(badge => {
-            const skillText = badge.textContent.toLowerCase().trim();
-            const hasSkill = badge.classList.contains('habilidad-coincide');
-            skills.push({
-                name: skillText,
-                hasSkill: hasSkill
+            // Click en tarjeta
+            card.addEventListener('click', function(e) {
+                if (e.target.type !== 'checkbox') {
+                    checkbox.checked = !checkbox.checked;
+                    updateCardStyle(card, checkbox.checked);
+                    updateButtonStates();
+                }
+            });
+            
+            // Change en checkbox
+            checkbox.addEventListener('change', function() {
+                updateCardStyle(card, this.checked);
+                updateButtonStates();
             });
         });
-        
-        return skills;
     }
     
-    // Extraer compatibilidad de la tarjeta
-    function extractCompatibilityFromCard(card) {
-        const compatibilityElement = card.querySelector('.compatibilidad-empleado');
-        if (compatibilityElement) {
-            const text = compatibilityElement.textContent;
-            const match = text.match(/(\d+)%/);
-            return match ? parseInt(match[1]) : 0;
-        }
-        return 0;
-    }
-    
-    // Aplicar filtros
-    function applyFilters() {
-        const searchTerm = searchInput?.value.toLowerCase().trim() || '';
-        const selectedSkill = skillFilter?.value || '';
-        const minCompatibility = compatibilityFilter?.value ? parseInt(compatibilityFilter.value) : 0;
-        
-        console.log('🔍 Aplicando filtros:', { searchTerm, selectedSkill, minCompatibility });
-        
-        // Filtrar empleados
-        filteredEmployees = allEmployees.filter(employee => {
-            // Filtro de búsqueda por texto
-            const matchesSearch = !searchTerm || 
-                employee.name.includes(searchTerm) ||
-                employee.job.includes(searchTerm) ||
-                employee.location.includes(searchTerm);
-            
-            // Filtro por habilidad específica
-            const matchesSkill = !selectedSkill || 
-                employee.skills.some(skill => 
-                    skill.name.includes(selectedSkill.toLowerCase()) && skill.hasSkill
-                );
-            
-            // Filtro por compatibilidad mínima
-            const matchesCompatibility = employee.compatibility >= minCompatibility;
-            
-            return matchesSearch && matchesSkill && matchesCompatibility;
-        });
-        
-        // Actualizar visualización
-        updateEmployeeDisplay();
-        
-        console.log(`📊 Filtros aplicados: ${filteredEmployees.length}/${allEmployees.length} empleados mostrados`);
-    }
-    
-    // Actualizar visualización de empleados
-    function updateEmployeeDisplay() {
-        if (!employeeContainer) return;
-        
-        // Limpiar contenedor
-        employeeContainer.innerHTML = '';
-        
-        if (filteredEmployees.length === 0) {
-            employeeContainer.innerHTML = `
-                <div class="text-center py-8 text-gray-500">
-                    <i class="fas fa-search text-3xl mb-3"></i>
-                    <p>No se encontraron empleados con los filtros aplicados</p>
-                    <button type="button" onclick="clearFilters()" class="mt-2 text-blue-600 hover:text-blue-800 text-sm">
-                        <i class="fas fa-times mr-1"></i>Limpiar filtros
-                    </button>
-                </div>
-            `;
-            return;
-        }
-        
-        // Agregar empleados filtrados
-        filteredEmployees.forEach(employeeData => {
-            const card = employeeData.element.cloneNode(true);
-            
-            // Restaurar selección si estaba seleccionado
-            if (selectedEmployees.has(employeeData.id)) {
-                card.classList.add('selected', 'ring-2', 'ring-blue-500', 'bg-blue-50');
-                
-                // Agregar checkmark
-                if (!card.querySelector('.selection-checkmark')) {
-                    const checkmark = document.createElement('div');
-                    checkmark.className = 'selection-checkmark absolute top-2 right-2 bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm z-10';
-                    checkmark.innerHTML = '<i class="fas fa-check"></i>';
-                    card.style.position = 'relative';
-                    card.appendChild(checkmark);
-                }
-                
-                // Marcar checkbox
-                const checkbox = card.querySelector('input[type="checkbox"]');
-                if (checkbox) {
-                    checkbox.checked = true;
-                }
-            }
-            
-            // Reattach event listeners
-            attachCardEventListeners(card, employeeData.id);
-            
-            employeeContainer.appendChild(card);
-        });
-        
-        // Actualizar contador
-        updateEmployeeCount();
-    }
-    
-    // Adjuntar event listeners a una tarjeta
-    function attachCardEventListeners(card, employeeId) {
-        card.style.cursor = 'pointer';
-        card.classList.add('transition-all', 'duration-200');
-        
-        card.addEventListener('click', function(e) {
-            if (e.target.closest('button') || e.target.closest('a') || e.target.type === 'checkbox') {
-                return;
-            }
-            
-            e.preventDefault();
-            e.stopPropagation();
-            
-            toggleEmployeeSelection(this, employeeId);
-        });
-        
-        const checkbox = card.querySelector('input[type="checkbox"]');
-        if (checkbox) {
-            checkbox.addEventListener('change', function(e) {
-                e.stopPropagation();
-                toggleEmployeeSelection(card, employeeId);
-            });
-        }
-    }
-    
-    // Actualizar contador de empleados disponibles
-    function updateEmployeeCount() {
-        const countElement = document.querySelector('h2:contains("Empleados Disponibles")') ||
-                           document.querySelector('h2');
-        if (countElement) {
-            const baseText = countElement.textContent.replace(/\(\d+\)/, '');
-            countElement.textContent = `${baseText}(${filteredEmployees.length})`;
-        }
-    }
-    
-    // Función para limpiar filtros
-    window.clearFilters = function() {
-        if (searchInput) searchInput.value = '';
-        if (skillFilter) skillFilter.selectedIndex = 0;
-        if (compatibilityFilter) compatibilityFilter.selectedIndex = 0;
-        applyFilters();
-    };
-    
-    // Función debounce para optimizar búsqueda
-    function debounce(func, wait) {
-        let timeout;
-        return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
-                func(...args);
-            };
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-        };
-    }
-    
-    // Función para actualizar UI de selección
-    function updateSelectionUI() {
-        const count = selectedEmployees.size;
-        console.log(`📊 Empleados seleccionados: ${count}`, Array.from(selectedEmployees));
-        
-        // Actualizar botón de asignar
-        if (btnAsignar) {
-            if (count > 0) {
-                btnAsignar.disabled = false;
-                btnAsignar.innerHTML = `
-                    <i class="fas fa-user-plus mr-2"></i>
-                    Asignar ${count} Empleado${count > 1 ? 's' : ''} Seleccionado${count > 1 ? 's' : ''}
-                `;
-                btnAsignar.classList.remove('opacity-50', 'cursor-not-allowed');
-                btnAsignar.classList.add('hover:bg-green-600');
-            } else {
-                btnAsignar.disabled = true;
-                btnAsignar.innerHTML = `
-                    <i class="fas fa-user-plus mr-2"></i>
-                    Selecciona empleados para asignar
-                `;
-                btnAsignar.classList.add('opacity-50', 'cursor-not-allowed');
-                btnAsignar.classList.remove('hover:bg-green-600');
-            }
-        }
-        
-        // Mostrar contador de seleccionados en el header
-        updateSelectionCounter();
-    }
-    
-    // Mostrar contador de seleccionados
-    function updateSelectionCounter() {
-        let counterElement = document.getElementById('selection-counter');
-        
-        if (selectedEmployees.size > 0) {
-            if (!counterElement) {
-                counterElement = document.createElement('div');
-                counterElement.id = 'selection-counter';
-                counterElement.className = 'fixed top-20 right-4 bg-blue-500 text-white px-4 py-2 rounded-full shadow-lg z-50 transition-all duration-300';
-                document.body.appendChild(counterElement);
-            }
-            
-            counterElement.innerHTML = `
-                <i class="fas fa-check-circle mr-2"></i>
-                ${selectedEmployees.size} seleccionado${selectedEmployees.size > 1 ? 's' : ''}
-                <button onclick="clearSelection()" class="ml-2 text-blue-200 hover:text-white">
-                    <i class="fas fa-times"></i>
-                </button>
-            `;
-            counterElement.style.display = 'block';
-        } else if (counterElement) {
-            counterElement.style.display = 'none';
-        }
-    }
-    
-    // Función para toggle selección de empleado
-    function toggleEmployeeSelection(employeeCard, employeeId) {
-        if (selectedEmployees.has(employeeId)) {
-            // Deseleccionar
-            selectedEmployees.delete(employeeId);
-            employeeCard.classList.remove('selected', 'ring-2', 'ring-blue-500', 'bg-blue-50');
-            
-            const checkmark = employeeCard.querySelector('.selection-checkmark');
-            if (checkmark) {
-                checkmark.remove();
-            }
-            
-            const checkbox = employeeCard.querySelector('input[type="checkbox"]');
-            if (checkbox) {
-                checkbox.checked = false;
-            }
-            
+    // Actualizar estilo de tarjeta
+    function updateCardStyle(card, selected) {
+        if (selected) {
+            card.classList.add('ring-2', 'ring-blue-500');
+            card.classList.remove('hover:bg-green-50', 'hover:bg-red-50');
         } else {
-            // Seleccionar
-            selectedEmployees.add(employeeId);
-            employeeCard.classList.add('selected', 'ring-2', 'ring-blue-500', 'bg-blue-50');
-            
-            if (!employeeCard.querySelector('.selection-checkmark')) {
-                const checkmark = document.createElement('div');
-                checkmark.className = 'selection-checkmark absolute top-2 right-2 bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm z-10';
-                checkmark.innerHTML = '<i class="fas fa-check"></i>';
-                employeeCard.style.position = 'relative';
-                employeeCard.appendChild(checkmark);
-            }
-            
-            const checkbox = employeeCard.querySelector('input[type="checkbox"]');
-            if (checkbox) {
-                checkbox.checked = true;
-            }
+            card.classList.remove('ring-2', 'ring-blue-500');
+            card.classList.add(card.closest('#available-employees') ? 'hover:bg-green-50' : 'hover:bg-red-50');
         }
-        
-        updateSelectionUI();
-        
-        // Guardar selección en localStorage para persistencia
-        localStorage.setItem('selectedEmployees', JSON.stringify(Array.from(selectedEmployees)));
     }
     
-    // Función para limpiar selección
-    function clearSelection() {
-        selectedEmployees.clear();
-        localStorage.removeItem('selectedEmployees');
+    // Seleccionar todos
+    function selectAll(type) {
+        const container = type === 'available' ? '#available-employees' : '#current-employees';
+        const checkboxes = document.querySelectorAll(`${container} .employee-checkbox`);
         
-        // Actualizar todas las tarjetas visibles
-        document.querySelectorAll('.tarjeta-empleado-seleccionable').forEach(card => {
-            card.classList.remove('selected', 'ring-2', 'ring-blue-500', 'bg-blue-50');
-            
-            const checkmark = card.querySelector('.selection-checkmark');
-            if (checkmark) {
-                checkmark.remove();
-            }
-            
-            const checkbox = card.querySelector('input[type="checkbox"]');
-            if (checkbox) {
-                checkbox.checked = false;
-            }
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = true;
+            updateCardStyle(checkbox.closest('.employee-card'), true);
         });
         
-        updateSelectionUI();
+        updateButtonStates();
     }
     
-    window.clearSelection = clearSelection;
+    // Limpiar selección
+    function clearAll(type) {
+        const container = type === 'available' ? '#available-employees' : '#current-employees';
+        const checkboxes = document.querySelectorAll(`${container} .employee-checkbox`);
+        
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = false;
+            updateCardStyle(checkbox.closest('.employee-card'), false);
+        });
+        
+        updateButtonStates();
+    }
     
-    // Restaurar selección guardada
-    function restoreSelection() {
-        try {
-            const saved = localStorage.getItem('selectedEmployees');
-            if (saved) {
-                const savedIds = JSON.parse(saved);
-                savedIds.forEach(id => selectedEmployees.add(id));
-                console.log('📥 Selección restaurada:', savedIds);
+    // Actualizar estado de botones
+    function updateButtonStates() {
+        const selectedAvailable = document.querySelectorAll('#available-employees .employee-checkbox:checked');
+        const selectedCurrent = document.querySelectorAll('#current-employees .employee-checkbox:checked');
+        
+        // Botón asignar
+        if (assignText) {
+            if (selectedAvailable.length > 0) {
+                assignText.textContent = `Asignar ${selectedAvailable.length} empleado${selectedAvailable.length > 1 ? 's' : ''}`;
+            } else {
+                assignText.textContent = 'Selecciona empleados para asignar';
             }
-        } catch (e) {
-            console.error('Error restaurando selección:', e);
+        }
+        
+        // Botón desasignar
+        if (unassignText) {
+            if (selectedCurrent.length > 0) {
+                unassignText.textContent = `Desasignar ${selectedCurrent.length} empleado${selectedCurrent.length > 1 ? 's' : ''}`;
+            } else {
+                unassignText.textContent = 'Selecciona empleados para desasignar';
+            }
         }
     }
     
-    // Función para asignar empleados seleccionados
-    function assignSelectedEmployees() {
-        if (selectedEmployees.size === 0) {
+    // Manejar asignación
+    function handleAssign() {
+        const selected = document.querySelectorAll('#available-employees .employee-checkbox:checked');
+        
+        if (selected.length === 0) {
             alert('⚠️ Selecciona al menos un empleado para asignar');
             return;
         }
         
-        const projectId = getProjectId();
-        if (!projectId) {
-            alert('❌ Error: No se pudo obtener el ID del proyecto');
-            return;
-        }
+        const employeeIds = Array.from(selected).map(cb => parseInt(cb.value));
+        console.log('🔄 Asignando empleados:', employeeIds);
         
-        console.log('🔄 Asignando empleados:', Array.from(selectedEmployees), 'al proyecto:', projectId);
+        // Deshabilitar botón
+        btnAssign.disabled = true;
+        btnAssign.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i>Asignando ${selected.length} empleado${selected.length > 1 ? 's' : ''}...`;
         
-        btnAsignar.disabled = true;
-        btnAsignar.innerHTML = `
-            <i class="fas fa-spinner fa-spin mr-2"></i>
-            Asignando ${selectedEmployees.size} empleado${selectedEmployees.size > 1 ? 's' : ''}...
-        `;
-        
+        // Realizar petición
         fetch('{% url "assign_employees_to_project" %}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': getCsrfToken(),
-                'X-Requested-With': 'XMLHttpRequest'
             },
             body: JSON.stringify({
-                project_id: parseInt(projectId),
-                employee_ids: Array.from(selectedEmployees).map(id => parseInt(id))
+                project_id: PROJECT_ID,
+                employee_ids: employeeIds
             })
         })
         .then(response => response.json())
         .then(data => {
-            console.log('📥 Respuesta del servidor:', data);
-            
             if (data.success) {
-                const assignedCount = data.assigned_count || selectedEmployees.size;
-                showSuccessMessage(`✅ ${assignedCount} empleado${assignedCount > 1 ? 's asignados' : ' asignado'} correctamente`);
-                
-                clearSelection();
+                showMessage(`✅ ${data.assigned_count || selected.length} empleado${data.assigned_count > 1 ? 's asignados' : ' asignado'} correctamente`, 'success');
                 setTimeout(() => window.location.reload(), 2000);
-                
             } else {
-                alert(`❌ Error: ${data.error || 'No se pudieron asignar los empleados'}`);
-                console.error('Assignment error:', data);
+                throw new Error(data.error || 'Error desconocido');
             }
         })
         .catch(error => {
-            console.error('Network error:', error);
-            alert('❌ Error de conexión. Inténtalo de nuevo.');
+            console.error('Error:', error);
+            showMessage(`❌ Error: ${error.message}`, 'error');
         })
         .finally(() => {
-            updateSelectionUI();
+            btnAssign.disabled = false;
+            updateButtonStates();
         });
     }
     
-    // Event listeners para botones
-    if (btnAsignar) {
-        btnAsignar.addEventListener('click', function(e) {
-            e.preventDefault();
-            assignSelectedEmployees();
-        });
-    }
-    
-    // Botones de seleccionar/limpiar todos
-    const btnSeleccionarTodos = document.getElementById('seleccionar-todos-disponibles');
-    const btnLimpiarTodos = document.getElementById('limpiar-todos-disponibles');
-    
-    if (btnSeleccionarTodos) {
-        btnSeleccionarTodos.addEventListener('click', function(e) {
-            e.preventDefault();
-            filteredEmployees.forEach(employeeData => {
-                if (!selectedEmployees.has(employeeData.id)) {
-                    selectedEmployees.add(employeeData.id);
-                }
-            });
-            updateEmployeeDisplay();
-            updateSelectionUI();
-        });
-    }
-    
-    if (btnLimpiarTodos) {
-        btnLimpiarTodos.addEventListener('click', function(e) {
-            e.preventDefault();
-            clearSelection();
-            updateEmployeeDisplay();
+    // Manejar desasignación
+    function handleUnassign() {
+        const selected = document.querySelectorAll('#current-employees .employee-checkbox:checked');
+        
+        if (selected.length === 0) {
+            alert('⚠️ Selecciona al menos un empleado para desasignar');
+            return;
+        }
+        
+        const confirmMsg = `¿Estás seguro de desasignar ${selected.length} empleado${selected.length > 1 ? 's' : ''} del proyecto?`;
+        if (!confirm(confirmMsg)) return;
+        
+        const employeeIds = Array.from(selected).map(cb => parseInt(cb.value));
+        console.log('🔄 Desasignando empleados:', employeeIds);
+        
+        // Deshabilitar botón
+        btnUnassign.disabled = true;
+        btnUnassign.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i>Desasignando ${selected.length} empleado${selected.length > 1 ? 's' : ''}...`;
+        
+        // Realizar petición
+        fetch('{% url "unassign_employees_from_project" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken(),
+            },
+            body: JSON.stringify({
+                employee_ids: employeeIds
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showMessage(`✅ ${data.unassigned_count || selected.length} empleado${data.unassigned_count > 1 ? 's desasignados' : ' desasignado'} correctamente`, 'success');
+                setTimeout(() => window.location.reload(), 2000);
+            } else {
+                throw new Error(data.error || 'Error desconocido');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showMessage(`❌ Error: ${error.message}`, 'error');
+        })
+        .finally(() => {
+            btnUnassign.disabled = false;
+            updateButtonStates();
         });
     }
     
     // Funciones auxiliares
-    function getProjectId() {
-        return window.PROJECT_ID;
-    }
-    
     function getCsrfToken() {
-        const tokenElement = document.querySelector('[name=csrfmiddlewaretoken]');
-        return tokenElement ? tokenElement.value : '';
+        return document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
     }
     
-    function showSuccessMessage(message) {
-        const successDiv = document.createElement('div');
-        successDiv.className = 'fixed top-4 right-4 bg-green-500 text-white p-4 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform duration-300';
-        successDiv.innerHTML = `
+    function showMessage(message, type) {
+        const bgColor = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+        
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform duration-300`;
+        messageDiv.innerHTML = `
             <div class="flex items-center">
-                <i class="fas fa-check-circle mr-2"></i>
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} mr-2"></i>
                 <span>${message}</span>
             </div>
         `;
         
-        document.body.appendChild(successDiv);
+        document.body.appendChild(messageDiv);
         
-        setTimeout(() => {
-            successDiv.classList.remove('translate-x-full');
-        }, 100);
+        // Mostrar
+        setTimeout(() => messageDiv.classList.remove('translate-x-full'), 100);
         
+        // Ocultar
         setTimeout(() => {
-            successDiv.classList.add('translate-x-full');
-            setTimeout(() => {
-                if (successDiv.parentNode) {
-                    successDiv.remove();
-                }
-            }, 300);
+            messageDiv.classList.add('translate-x-full');
+            setTimeout(() => messageDiv.remove(), 300);
         }, 4000);
     }
     
-    // Shortcuts de teclado
-    document.addEventListener('keydown', function(e) {
-        if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
-            e.preventDefault();
-            filteredEmployees.forEach(employeeData => {
-                if (!selectedEmployees.has(employeeData.id)) {
-                    selectedEmployees.add(employeeData.id);
-                }
-            });
-            updateEmployeeDisplay();
-            updateSelectionUI();
-        }
-        
-        if (e.key === 'Escape') {
-            clearSelection();
-            updateEmployeeDisplay();
-        }
-        
-        if (e.key === 'Enter' && selectedEmployees.size > 0) {
-            e.preventDefault();
-            assignSelectedEmployees();
-        }
-    });
-    
-    // Inicializar
-    restoreSelection();
-    updateSelectionUI();
-    
-    console.log('✅ Sistema con filtros en tiempo real inicializado');
+    console.log('✅ Gestión de empleados inicializada');
 });
 </script>
 
-<script>
-    window.PROJECT_ID = {{ project.id }};
-</script>
+<!-- CSRF Token -->
+{% csrf_token %}
 {% endblock %}
