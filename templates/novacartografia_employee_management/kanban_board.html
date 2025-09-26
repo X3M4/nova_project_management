@@ -17,7 +17,7 @@
   <!-- Añade SortableJS antes de tus scripts -->
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
   <!-- Reemplaza el script original por el nuevo -->
-  <script src="{% static 'js/touch_kanban.js' %}"></script>
+  {% comment %} <script src="{% static 'js/touch_kanban.js' %}"></script> {% endcomment %}
 {% endblock %}
 
 {% block content %}
@@ -2399,5 +2399,29 @@ document.getElementById('vacation-form').addEventListener('submit', function(e) 
       font-size: 11px;
       border: 1px solid rgba(40, 167, 69, 0.3);
   }
+
+  .search-highlight {
+    transition: all 0.3s ease !important;
+}
+
+.employee-card.search-highlight {
+    transform: scale(1.02);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.project-title.search-highlight {
+    font-weight: bold;
+}
+
+/* Mejorar el input de búsqueda */
+#search-input:focus {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    border-color: #3b82f6;
+}
+
+/* Animación para el scroll */
+.smooth-highlight {
+    animation: highlightPulse 2s ease-in-out;
+}
   </style>
 {% endblock %}
