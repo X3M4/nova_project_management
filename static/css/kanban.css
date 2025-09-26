@@ -1,728 +1,1010 @@
-/* Reset spacing and make full screen layout */
-body,
-html {
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
+/*
+==========================================================================
+  KANBAN BOARD OPTIMIZADO - Nova Workers Management
+==========================================================================
+  Archivo CSS optimizado para el tablero Kanban con soporte completo para
+  drag & drop, responsivo y con mejores performance.
+==========================================================================
+*/
+
+/* ==========================================================================
+   1. VARIABLES CSS PERSONALIZADAS
+   ========================================================================== */
+:root {
+  /* Colores principales */
+  --kanban-primary: #3b82f6;
+  --kanban-success: #10b981;
+  --kanban-warning: #f59e0b;
+  --kanban-error: #ef4444;
+  --kanban-gray: #6b7280;
+  --kanban-light-gray: #f3f4f6;
+  
+  /* Espaciado */
+  --kanban-spacing-xs: 0.25rem;
+  --kanban-spacing-sm: 0.5rem;
+  --kanban-spacing-md: 1rem;
+  --kanban-spacing-lg: 1.5rem;
+  --kanban-spacing-xl: 2rem;
+  
+  /* Bordes y sombras */
+  --kanban-border-radius: 0.5rem;
+  --kanban-border-radius-lg: 0.75rem;
+  --kanban-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --kanban-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --kanban-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  
+  /* Transiciones */
+  --kanban-transition-fast: 0.15s ease-out;
+  --kanban-transition-normal: 0.3s ease-out;
+  --kanban-transition-slow: 0.5s ease-out;
+  
+  /* Z-index hierarchy */
+  --kanban-z-dropdown: 1000;
+  --kanban-z-sticky: 1020;
+  --kanban-z-fixed: 1030;
+  --kanban-z-modal-backdrop: 1040;
+  --kanban-z-modal: 1050;
+  --kanban-z-popover: 1060;
+  --kanban-z-tooltip: 1070;
+  --kanban-z-toast: 1080;
+  --kanban-z-drag: 9999;
 }
 
-/* Adjust base.html content container to match menu width */
-.content-container {
-    padding-top: 0 !important;
-    margin-top: 0 !important;
-    max-width: 100% !important;
-    /* Ensure it takes full width */
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    z-index: auto !important;
-    position: relative !important;
+/* ==========================================================================
+   2. BASE Y RESET
+   ========================================================================== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-/* Make kanban header match the width of base.html navbar */
-.kanban-header {
-    background-color: white;
-    border-bottom: 1px solid #e5e7eb;
-    padding: 10px;
-    width: 100%;
-    position: relative !important; /* En lugar de sticky para evitar problemas */
-    z-index: 1 !important; /* Reducir de 20 a un valor más bajo */
-    /* Eliminar position: sticky si está causando problemas */
+.kanban-container {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.6;
+  color: #374151;
+  background-color: #f9fafb;
+  min-height: 100vh;
 }
 
-/* Layout for sidebar and main content - match container width */
-.kanban-layout {
-    display: flex;
-    height: calc(100vh - 150px);
-    /* Reduced from 100px to 70px */
-    overflow: hidden;
-    width: 100%;
-    margin: 0 auto;
-    /* Center the content */
-    padding-left: 8px;
-    padding-right: 8px;
-    z-index: 1 !important; /* Valor muy bajo */
-    position: relative !important; /* Ensure it doesn't create an unexpected stacking context */
-    margin-top: 10px;
+/* ==========================================================================
+   3. LAYOUT PRINCIPAL
+   ========================================================================== */
+.kanban-board {
+  display: flex;
+  gap: var(--kanban-spacing-lg);
+  padding: var(--kanban-spacing-lg);
+  min-height: calc(100vh - 4rem);
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
-/* Sidebar styling */
-.sidebar {
-    width: 250px;
-    min-width: 250px;
-    border-right: 1px solid #e5e7eb;
-    background-color: white;
-    height: 100%;
-    overflow: hidden !important; /* Forzar hidden para la sidebar externa */
-    position: relative;
-    z-index: 10;
+.kanban-sidebar {
+  flex: 0 0 300px;
+  background: white;
+  border-radius: var(--kanban-border-radius-lg);
+  box-shadow: var(--kanban-shadow-md);
+  padding: var(--kanban-spacing-lg);
+  height: fit-content;
+  position: sticky;
+  top: var(--kanban-spacing-lg);
+  z-index: var(--kanban-z-sticky);
 }
 
-/* Hacer que solo el contenido interno sea scrolleable, no toda la sidebar */
-.sidebar > div {
-    height: 100%;
-    overflow-y: hidden !important;
-    overflow-x: hidden !important;
-    padding-right: 4px; /* Espacio para la barra de desplazamiento */
+.kanban-main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--kanban-spacing-lg);
+  height: fit-content;
 }
 
-/* Asegurarnos que no haya padding doble */
-.sidebar .p-4 {
-    padding: 0.75rem !important;
-    height: 100%;
-    overflow: visible !important; /* Corregido para evitar doble scroll */
-    padding-right: 8px; /* Espacio para barra de scroll */
-}
-/* Corregir el contenedor de empleados no asignados */
-.sidebar .bg-white.shadow.rounded-lg {
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    max-height: calc(100vh - 220px);
-}
-
-/* Hacer que la barra de desplazamiento sea más estética */
-.sidebar .bg-white.shadow.rounded-lg::-webkit-scrollbar {
-    width: 4px !important;  /* Reducido de 8px/16px a 4px */
-    height: 4px !important; /* Para scroll horizontal también */
-}
-
-.sidebar .bg-white.shadow.rounded-lg::-webkit-scrollbar-track {
-    background: transparent !important;
-    border-radius: 4px !important;
-}
-
-.sidebar .bg-white.shadow.rounded-lg::-webkit-scrollbar-thumb {
-    background-color: rgba(156, 163, 175, 0.5) !important;
-    border-radius: 4px !important;
-    border: none !important;
-    background-clip: padding-box;
-}
-
-.sidebar .bg-white.shadow.rounded-lg::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(107, 114, 128, 0.7) !important;
-}
-
-/* Main content area */
-.main-content {
-    flex: 1;
-    overflow-y: auto;
-    padding: 0 8px;
-    /* Reduced side padding */
-    height: 100%;
-    z-index: auto; /* Reset any z-index that might be creating issues */
-    position: relative; /* Ensure it doesn't create an unexpected stacking context */
-}
-
-/* Make columns narrower */
-.kanban-column {
-    min-height: 300px;
-    max-height: calc(100vh - 200px);
-    /* Adjusted for less space at top */
-    overflow-y: auto !important;
-    overflow-x: hidden;
-    padding-right: 4px;
-    width: 100%;
-    /* Full width of its container */
-    -webkit-overflow-scrolling: touch; /* Habilitar scroll con inercia en iOS */
-    touch-action: pan-y; /* Permitir solo scroll vertical */
-    overscroll-behavior: contain; /* Prevenir scroll de rebote */
-    position: relative;
-    padding-bottom: 30px !important; /* Asegurar espacio al final */
-    user-select: none;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-}
-
-.kanban-column > *:last-child {
-    margin-bottom: 20px;
-}
-
-.scroll-indicator {
-    opacity: 0.7;
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); }
-}
-
-.kanban-column.scrolling {
-    user-select: none;
-}
-
-/* Column container styling - more efficient use of space */
+/* ==========================================================================
+   4. COLUMNAS DE PROYECTO
+   ========================================================================== */
 .project-column {
-    width: 220px;
-    /* Slightly reduced width */
-    min-width: 220px;
-    flex-shrink: 0;
-    position: relative;
-    transition: all 0.2s ease;
-    max-height: calc(100vh - 220px);
-    display: flex;
-    flex-direction: column;
+  background: white;
+  border-radius: var(--kanban-border-radius-lg);
+  box-shadow: var(--kanban-shadow-md);
+  overflow: hidden;
+  transition: all var(--kanban-transition-normal);
+  position: relative;
+  min-height: 200px;
 }
 
-.project-column.drop-hover {
-    transform: scale(1.01);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    z-index: 10; /* Ensure this is not too high */
+.project-column:hover {
+  box-shadow: var(--kanban-shadow-lg);
+  transform: translateY(-2px);
 }
 
-.project-column.drop-hover::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(59, 130, 246, 0.1);
-    border: 2px dashed #3b82f6;
-    border-radius: 0.375rem;
-    pointer-events: none; /* Permite que los eventos pasen a través */
-    z-index: 0;
+.project-header {
+  padding: var(--kanban-spacing-lg);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  position: relative;
 }
 
-.project-column.potential-drop-area {
-    animation: pulse 2s infinite;
+.project-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0 0 var(--kanban-spacing-xs) 0;
+  line-height: 1.4;
 }
 
-@keyframes pulse {
-    0% {
-        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.2);
-    }
-    70% {
-        box-shadow: 0 0 0 6px rgba(59, 130, 246, 0);
-    }
-    100% {
-        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
-    }
+.project-meta {
+  font-size: 0.875rem;
+  opacity: 0.9;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--kanban-spacing-md);
+  margin-top: var(--kanban-spacing-sm);
 }
 
-/* Make the scrollable container */
-.projects-container {
-    display: flex;
-    overflow-x: auto;
-    padding-bottom: 1rem;
-    gap: 1rem;
-    /* Reduced from 16px */
-    margin: 0 -8px;
-    /* Reduced negative margin */
-    padding: 0 8px;
-    /* Reduced padding */
-    scroll-padding: 8px;
-    -webkit-overflow-scrolling: touch;
-    touch-action: pan-x;
-    position: relative;
+.project-meta i {
+  margin-right: var(--kanban-spacing-xs);
+  width: 12px;
+  text-align: center;
 }
 
-.employee-card {
-    cursor: grab;
-    transition: all 0.2s ease;
-    min-height: 60px;  /* Ensure minimum height for touch */
+.employee-count {
+  position: absolute;
+  top: var(--kanban-spacing-sm);
+  right: var(--kanban-spacing-sm);
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: var(--kanban-spacing-xs) var(--kanban-spacing-sm);
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  backdrop-filter: blur(10px);
 }
 
-.employee-card:active {
-    cursor: grabbing;
-    transform: scale(0.98);
+/* ==========================================================================
+   5. COLUMNA KANBAN (CONTENEDOR DE EMPLEADOS)
+   ========================================================================== */
+.kanban-column {
+  padding: var(--kanban-spacing-md);
+  min-height: 150px;
+  transition: all var(--kanban-transition-normal);
+  position: relative;
 }
 
-.employee-card.dragging {
-    opacity: 0.7;
-    transform: scale(0.95);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    cursor: grabbing;
-    z-index: 30; /* High enough for dragging, but not higher than dropdown menus */
+.kanban-column.drop-zone-active {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.2) 100%);
+  border: 2px dashed var(--kanban-primary);
+  transform: scale(1.02);
 }
 
 .kanban-column.drop-hover {
-    background-color: rgba(59, 130, 246, 0.1);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.2) 100%);
+  border: 2px solid var(--kanban-success);
+  transform: scale(1.05);
 }
 
-/* Section title styling - make more compact */
-.section-title {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.5rem;
-    position: sticky;
-    left: 8px;
-    background-color: white;
-    z-index: 10;
-    position: relative;
-    padding-top: 4px;
+/* Indicador de zona vacía */
+.kanban-column:empty::after {
+  content: "Arrastra empleados aquí";
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 80px;
+  color: var(--kanban-gray);
+  font-size: 0.875rem;
+  font-style: italic;
+  border: 2px dashed #d1d5db;
+  border-radius: var(--kanban-border-radius);
+  background: var(--kanban-light-gray);
+  transition: all var(--kanban-transition-normal);
 }
 
-.section-title h3 {
-    font-size: 1.125rem;
-    font-weight: 700;
+.kanban-column.drop-zone-active:empty::after {
+  content: "Suelta aquí";
+  color: var(--kanban-primary);
+  border-color: var(--kanban-primary);
+  background: rgba(59, 130, 246, 0.1);
 }
 
-/* Custom scrollbar for modern browsers - with increased size for touch screens */
-.projects-container::-webkit-scrollbar, 
-.sidebar::-webkit-scrollbar, 
-.main-content::-webkit-scrollbar, 
-.kanban-column::-webkit-scrollbar {
-    height: 4px !important;  /* Reducido de 8px/16px a 4px */
-    width: 4px !important;   /* Para scroll horizontal también */
-}
-
-.projects-container::-webkit-scrollbar-thumb, 
-.sidebar::-webkit-scrollbar-thumb, 
-.main-content::-webkit-scrollbar-thumb, 
-.kanban-column::-webkit-scrollbar-thumb {
-    background-color: rgba(156, 163, 175, 0.5) !important;
-    border-radius: 4px !important;
-    border: none !important;
-    background-clip: padding-box;
-    min-height: 40px;  /* Minimum size for thumb to improve grabability */
-}
-
-.projects-container::-webkit-scrollbar-thumb:hover, 
-.sidebar::-webkit-scrollbar-thumb:hover, 
-.main-content::-webkit-scrollbar-thumb:hover, 
-.kanban-column::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(107, 114, 128, 0.7) !important;
-}
-
-.projects-container::-webkit-scrollbar-track, 
-.sidebar::-webkit-scrollbar-track, 
-.main-content::-webkit-scrollbar-track, 
-.kanban-column::-webkit-scrollbar-track {
-    background: transparent !important;
-    border-radius: 4px !important;
-}
-
-/* Add visible buttons at ends of scrollbar for easier touch */
-.projects-container::-webkit-scrollbar-button, 
-.sidebar::-webkit-scrollbar-button, 
-.main-content::-webkit-scrollbar-button, 
-.kanban-column::-webkit-scrollbar-button {
-    width: 0;
-    height: 0;
-    display: none;
-}
-
-/* For Firefox */
-* {
-    scrollbar-width: thin !important;
-    scrollbar-color: rgba(156, 163, 175, 0.5) transparent !important;
-}
-
-/* For touch targets, ensure interactive items have enough size */
-button, a {
-    min-height: 36px;  /* Minimum touch target size for buttons/links */
-    /* Only apply min-height if they're standalone elements, not inside other components */
-}
-
-.employee-card button,
-.employee-card a,
-.project-column button,
-.project-column a {
-    min-height: auto;  /* Reset for buttons inside cards */
-}
-
-/* For improved momentum scrolling on touch devices */
-.projects-container, 
-.sidebar, 
-.main-content, 
-.kanban-column {
-    -webkit-overflow-scrolling: touch;
-}
-
-/* Add touch-specific visual feedback */
-@media (pointer: coarse) {
-    /* Larger drop target highlighting for touch */
-    .project-column.drop-hover::after {
-        border-width: 4px;
-    }
-    
-    /* More pronounced touch feedback */
-    .employee-card:active {
-        transform: scale(0.98);
-    }
-    
-    /* Extra feedback for active touch areas */
-    .kanban-column::-webkit-scrollbar-thumb:active,
-    .projects-container::-webkit-scrollbar-thumb:active {
-        background-color: rgba(107, 114, 128, 0.8);
-    }
-
-    /* Contenedor principal de proyectos - para scroll horizontal táctil */
-    .projects-container {
-        -webkit-overflow-scrolling: touch; /* Para scroll con inercia en iOS */
-        touch-action: pan-x;  /* Permitir desplazamiento horizontal nativo pero no zoom */
-        position: relative;
-    }
-    
-    /* Hacer los elementos interactivos más grandes para facilitar su uso en pantallas táctiles */
-    .employee-card {
-        min-height: 70px;
-    }
-    
-    /* Hacer los botones y enlaces más fáciles de pulsar */
-    a, button {
-        padding: 8px !important;
-        min-height: 44px;
-        min-width: 44px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    .employee-card a, 
-    .employee-card button,
-    .project-column a:not(.btn),
-    .project-column button:not(.btn) {
-        min-height: unset; /* Excepción para elementos pequeños dentro de tarjetas */
-        padding: 4px !important;
-    }
-    
-    /* Aumentar el espacio entre elementos para evitar toques accidentales */
-    .project-column {
-        margin-right: 16px;
-    }
-    
-    /* Ocultar scrollbar en dispositivos móviles pero mantener la funcionalidad */
-    .projects-container::-webkit-scrollbar {
-        width: 0;
-        height: 0;
-        display: none;
-    }
-    
-    /* Agregar sombras a los lados para indicar que hay más contenido */
-    .kanban-layout::before,
-    .kanban-layout::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        width: 15px;
-        pointer-events: none;
-        z-index: 10;
-    }
-    
-    .kanban-layout::before {
-        left: 0;
-        background: linear-gradient(to right, rgba(255,255,255,0.8), rgba(255,255,255,0));
-    }
-    
-    .kanban-layout::after {
-        right: 0;
-        background: linear-gradient(to left, rgba(255,255,255,0.8), rgba(255,255,255,0));
-    }
-
-    .kanban-column::-webkit-scrollbar-thumb {
-        background-color: rgba(59, 130, 246, 0.7); /* Azul más visible */
-        border: none;
-        border-radius: 4px;
-    }
-    
-    .kanban-column::-webkit-scrollbar {
-        width: 12px; /* Más ancho para pantallas táctiles */
-    }
-}
-
-/* Sidebar padding adjustments */
-.sidebar .p-4 {
-    padding: 0.75rem !important;
-    /* Reduced padding */
-}
-
-/* Toggle sidebar button for mobile */
-.toggle-sidebar {
-    display: none;
-}
-
-/* More compact mobile layout */
-@media (max-width: 768px) {
-    .kanban-layout {
-        display: block;
-        height: calc(100vh - 110px);
-    }
-
-    .sidebar {
-        width: 100%;
-        height: auto;
-        max-height: 0;
-        overflow: hidden;
-        transition: max-height 0.3s ease;
-    }
-
-    .sidebar.open {
-        max-height: 500px;
-    }
-
-    .toggle-sidebar {
-        display: block;
-        margin-bottom: 0.5rem;
-    }
-
-    .kanban-header {
-        padding: 8px;
-    }
-}
-
-/* Clase de transición explícita para asegurar que la animación termina limpiamente */
-.project-column.no-transitions {
-    transition: none !important;
-    animation: none !important;
-}
-
-/* Loading indicator should be very high, but still below dropdowns */
-#loading-indicator {
-    z-index: 1999 !important; /* High but not higher than dropdown menus */
-}
-
-/* Toast notifications can be very high */
-#toast-notification {
-    z-index: 2000 !important;
-}
-
-/* If you have a modal, it should also be high but below dropdowns */
-.modal,
-.dialog {
-    z-index: 40;
-}
-
-/* Asegurarse que no haya overflow visible que pueda causar interferencia */
-.kanban-header, .kanban-layout {
-    overflow: visible;
-}
-
-/* Clase adicional para base.html para asegurar que el menú principal tenga prioridad */
-/* Añade esta clase al elemento dropdown/navbar en base.html */
-.navbar-dropdown-container {
-    position: relative;
-    z-index: 1000 !important; /* Valor muy alto para asegurar que esté por encima de todo */
-}
-
-.dropdown-menu, 
-.dropdown-content, 
-.submenu {
-    z-index: 1001 !important; /* Forzar un z-index muy alto */
-}
-
-/* Ajustes para asegurar que los menús desplegables aparezcan por encima del kanban */
-
-/* Reset el z-index del contenedor principal del kanban */
-body > main,
-#content {
-    z-index: auto !important;
-    position: relative !important;
-}
-
-/* Asegurar que el navbar siempre esté por encima */
-nav.navbar-drpdown-container {
-    position: relative;
-    z-index: 1000 !important; /* Un valor muy alto */
-}
-
-/* Asegurar que cualquier menú desplegable Alpine.js tiene un z-index extremadamente alto */
-div[x-show="open"],
-.origin-top-left,
-.origin-top-right {
-    z-index: 1100 !important; /* Aún más alto que el navbar */
-}
-
-.kanban-column::-webkit-scrollbar {
-  width: 4px !important;  /* Reducido de 8px/16px a 4px */
-  height: 4px !important; /* Para scroll horizontal también */
-}
-
-.kanban-column::-webkit-scrollbar-track {
-  background: transparent !important;
-  border-radius: 4px !important;
-}
-
-.kanban-column::-webkit-scrollbar-thumb {
-  background-color: rgba(156, 163, 175, 0.5) !important;
-  border-radius: 4px !important;
-  border: none !important;
-  background-clip: padding-box;
-}
-
-.kanban-column::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(107, 114, 128, 0.7) !important;
-}
-
-/* Optimización de rendimiento en dispositivos lentos como pizarras Smart */
+/* ==========================================================================
+   6. TARJETAS DE EMPLEADOS
+   ========================================================================== */
 .employee-card {
-    will-change: transform; /* Mejora el rendimiento de drag & drop */
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: var(--kanban-border-radius);
+  padding: var(--kanban-spacing-md);
+  margin-bottom: var(--kanban-spacing-sm);
+  box-shadow: var(--kanban-shadow-sm);
+  transition: all var(--kanban-transition-normal);
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  position: relative;
+  overflow: hidden;
 }
 
-/* Estilos para drag & drop */
+/* Estados de hover y focus */
+.employee-card:hover {
+  box-shadow: var(--kanban-shadow-md);
+  transform: translateY(-2px);
+  border-color: var(--kanban-primary);
+}
+
+.employee-card:focus {
+  outline: 2px solid var(--kanban-primary);
+  outline-offset: 2px;
+}
+
+/* Estados de drag */
+.employee-card:active,
+.employee-card.grabbing {
+  cursor: grabbing;
+  transform: scale(1.02) rotate(2deg);
+}
+
+.employee-card.dragging {
+  opacity: 0.5;
+  transform: scale(1.05) rotate(3deg);
+  z-index: var(--kanban-z-drag);
+  box-shadow: var(--kanban-shadow-lg);
+}
+
+.employee-card.drag-preview {
+  opacity: 0.8;
+  transform: scale(1.05);
+  border: 2px solid var(--kanban-primary);
+  background: rgba(59, 130, 246, 0.05);
+}
+
+/* Contenido de la tarjeta */
+.employee-name {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #1f2937;
+  margin: 0 0 var(--kanban-spacing-xs) 0;
+  line-height: 1.4;
+}
+
+.employee-job {
+  font-size: 0.75rem;
+  color: var(--kanban-gray);
+  margin-bottom: var(--kanban-spacing-xs);
+}
+
+.employee-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--kanban-spacing-xs);
+  margin-top: var(--kanban-spacing-sm);
+}
+
+.employee-meta-item {
+  font-size: 0.625rem;
+  color: var(--kanban-gray);
+  background: var(--kanban-light-gray);
+  padding: 2px var(--kanban-spacing-xs);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* Indicadores de estado */
+.employee-status {
+  position: absolute;
+  top: var(--kanban-spacing-xs);
+  right: var(--kanban-spacing-xs);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--kanban-success);
+}
+
+.employee-status.unavailable {
+  background: var(--kanban-error);
+}
+
+.employee-status.partial {
+  background: var(--kanban-warning);
+}
+
+/* Enlaces y botones dentro de tarjetas */
+.employee-card a,
+.employee-card button {
+  pointer-events: auto;
+  z-index: 10;
+  position: relative;
+}
+
+.employee-card .card-link {
+  position: absolute;
+  top: var(--kanban-spacing-xs);
+  right: var(--kanban-spacing-xs);
+  color: var(--kanban-gray);
+  font-size: 0.75rem;
+  opacity: 0;
+  transition: opacity var(--kanban-transition-fast);
+}
+
+.employee-card:hover .card-link {
+  opacity: 1;
+}
+
+/* ==========================================================================
+   7. SIDEBAR Y EMPLEADOS SIN ASIGNAR
+   ========================================================================== */
+.sidebar-header {
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: var(--kanban-spacing-md);
+  margin-bottom: var(--kanban-spacing-md);
+}
+
+.sidebar-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.unassigned-employees {
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-right: var(--kanban-spacing-xs);
+}
+
+/* Scrollbar personalizada */
+.unassigned-employees::-webkit-scrollbar {
+  width: 6px;
+}
+
+.unassigned-employees::-webkit-scrollbar-track {
+  background: var(--kanban-light-gray);
+  border-radius: 3px;
+}
+
+.unassigned-employees::-webkit-scrollbar-thumb {
+  background: var(--kanban-gray);
+  border-radius: 3px;
+}
+
+.unassigned-employees::-webkit-scrollbar-thumb:hover {
+  background: #4b5563;
+}
+
+/* ==========================================================================
+   8. ESTADOS DE SORTABLE.JS
+   ========================================================================== */
 .sortable-ghost {
-    opacity: 0.4;
-    background: #f3f4f6;
-    border: 2px dashed #9ca3af;
+  opacity: 0.4;
+  background: var(--kanban-light-gray);
+  border: 2px dashed var(--kanban-gray);
+  transform: none;
 }
 
 .sortable-chosen {
-    background: #dbeafe;
-    border: 2px solid #3b82f6;
-    transform: rotate(2deg);
+  background: rgba(59, 130, 246, 0.1);
+  border: 2px solid var(--kanban-primary);
+  transform: rotate(2deg);
 }
 
 .sortable-drag {
-    background: #ffffff;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-    transform: rotate(5deg);
-    z-index: 9999;
+  background: white;
+  box-shadow: var(--kanban-shadow-lg);
+  transform: rotate(5deg);
+  z-index: var(--kanban-z-drag);
 }
 
-.is-dragging {
+/* ==========================================================================
+   9. TOAST NOTIFICATIONS
+   ========================================================================== */
+#toast-container {
+  position: fixed;
+  top: var(--kanban-spacing-lg);
+  right: var(--kanban-spacing-lg);
+  z-index: var(--kanban-z-toast);
+  display: flex;
+  flex-direction: column;
+  gap: var(--kanban-spacing-sm);
+  max-width: 400px;
+}
+
+.toast {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: var(--kanban-border-radius);
+  box-shadow: var(--kanban-shadow-lg);
+  padding: var(--kanban-spacing-md);
+  display: flex;
+  align-items: center;
+  gap: var(--kanban-spacing-sm);
+  transform: translateX(100%);
+  opacity: 0;
+  transition: all var(--kanban-transition-normal);
+}
+
+.toast.show {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.toast.success {
+  border-left: 4px solid var(--kanban-success);
+  background: #f0fdf4;
+}
+
+.toast.error {
+  border-left: 4px solid var(--kanban-error);
+  background: #fef2f2;
+}
+
+.toast.info {
+  border-left: 4px solid var(--kanban-primary);
+  background: #eff6ff;
+}
+
+/* ==========================================================================
+   10. LOADING Y ESTADOS
+   ========================================================================== */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--kanban-z-modal);
+}
+
+.loading-spinner {
+  background: white;
+  padding: var(--kanban-spacing-xl);
+  border-radius: var(--kanban-border-radius-lg);
+  box-shadow: var(--kanban-shadow-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--kanban-spacing-md);
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--kanban-light-gray);
+  border-top: 4px solid var(--kanban-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ==========================================================================
+   11. RESPONSIVE DESIGN
+   ========================================================================== */
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .kanban-board {
+    gap: var(--kanban-spacing-md);
+    padding: var(--kanban-spacing-md);
+  }
+  
+  .kanban-sidebar {
+    flex: 0 0 280px;
+  }
+  
+  .kanban-main {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--kanban-spacing-md);
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .kanban-board {
+    flex-direction: column;
+    gap: var(--kanban-spacing-md);
+    padding: var(--kanban-spacing-sm);
+  }
+  
+  .kanban-sidebar {
+    flex: none;
+    position: static;
+    order: -1;
+  }
+  
+  .kanban-main {
+    grid-template-columns: 1fr;
+    gap: var(--kanban-spacing-md);
+  }
+  
+  .project-column {
+    margin-bottom: var(--kanban-spacing-md);
+  }
+  
+  .employee-card {
+    padding: var(--kanban-spacing-md);
+    margin-bottom: var(--kanban-spacing-sm);
+    min-height: 60px;
+    touch-action: manipulation;
+  }
+  
+  .employee-card:hover {
+    transform: none; /* Desactivar hover effects en móvil */
+  }
+  
+  #toast-container {
+    left: var(--kanban-spacing-sm);
+    right: var(--kanban-spacing-sm);
+    top: var(--kanban-spacing-sm);
+    max-width: none;
+  }
+  
+  .toast {
+    font-size: 0.875rem;
+    padding: var(--kanban-spacing-sm) var(--kanban-spacing-md);
+  }
+}
+
+/* Mobile pequeño */
+@media (max-width: 480px) {
+  .kanban-board {
+    padding: var(--kanban-spacing-xs);
+    gap: var(--kanban-spacing-sm);
+  }
+  
+  .project-header {
+    padding: var(--kanban-spacing-md);
+  }
+  
+  .project-title {
+    font-size: 1rem;
+  }
+  
+  .kanban-column {
+    padding: var(--kanban-spacing-sm);
+  }
+  
+  .employee-card {
+    padding: var(--kanban-spacing-sm);
+  }
+  
+  .employee-name {
+    font-size: 0.8125rem;
+  }
+}
+
+/* ==========================================================================
+   12. ANIMACIONES Y EFECTOS
+   ========================================================================== */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.kanban-fade-in {
+  animation: slideIn var(--kanban-transition-normal) ease-out;
+}
+
+.kanban-pulse {
+  animation: pulse 2s infinite;
+}
+
+/* ==========================================================================
+   13. UTILIDADES Y HELPERS
+   ========================================================================== */
+.kanban-hidden {
+  display: none !important;
+}
+
+.kanban-invisible {
+  opacity: 0 !important;
+}
+
+.kanban-no-pointer {
+  pointer-events: none !important;
+}
+
+.kanban-grab {
+  cursor: grab !important;
+}
+
+.kanban-grabbing {
+  cursor: grabbing !important;
+}
+
+.kanban-text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   14. PRINT STYLES
+   ========================================================================== */
+@media print {
+  .kanban-board {
+    display: block !important;
+    padding: 0 !important;
+  }
+  
+  .project-column {
+    page-break-inside: avoid;
+    margin-bottom: var(--kanban-spacing-lg);
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+  }
+  
+  .employee-card {
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+  }
+  
+  .kanban-sidebar {
+    display: none !important;
+  }
+}
+
+/* ==========================================================================
+   15. ACCESIBILIDAD
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Focus visible para accesibilidad */
+.employee-card:focus-visible {
+  outline: 2px solid var(--kanban-primary);
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
+   16. MODO OSCURO (OPCIONAL)
+   ========================================================================== */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --kanban-primary: #60a5fa;
+    --kanban-success: #34d399;
+    --kanban-warning: #fbbf24;
+    --kanban-error: #f87171;
+    --kanban-gray: #9ca3af;
+    --kanban-light-gray: #374151;
+  }
+  
+  .kanban-container {
+    background-color: #111827;
+    color: #f9fafb;
+  }
+  
+  .project-column,
+  .kanban-sidebar,
+  .employee-card {
+    background: #1f2937;
+    border-color: #374151;
+    color: #f9fafb;
+  }
+  
+  .project-header {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  }
+}
+
+/* ==========================================================================
+   17. OPTIMIZACIONES DE PERFORMANCE PARA DRAG & DROP
+   ========================================================================== */
+
+/* Optimizaciones GPU para elementos que se mueven */
+.employee-card,
+.project-column,
+.kanban-column {
+  will-change: transform;
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Estados de drag optimizados */
+.employee-card.dragging {
+  opacity: 0.6;
+  transform: scale(1.02) rotate(2deg);
+  z-index: var(--kanban-z-drag);
+  box-shadow: var(--kanban-shadow-lg);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+/* Ghost element optimizado */
+#drag-ghost {
+  will-change: transform;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+  transition: none !
+important;
+    pointer-events: none;
     opacity: 0.8;
     transform: scale(1.05) rotate(3deg);
-    z-index: 1000;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--kanban-shadow-lg);
+    border: 2px dashed var(--kanban-primary);
+    background: rgba(59, 130, 246, 0.1);
+    z-index: var(--kanban-z-drag);
 }
 
-/* Zonas de drop activas */
-.drop-zone-active {
-    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-    border: 2px dashed #0ea5e9;
-    border-radius: 8px;
-    position: relative;
+/* Optimizar repaints durante drag */
+.kanban-column.drop-zone-active,
+.kanban-column.drop-hover {
+    will-change: transform, background-color, border-color;
+    contain: layout style paint;
 }
 
-.drop-zone-active::before {
+/* Smooth transitions para drop zones */
+.kanban-column {
+    contain: layout;
+    transform: translateZ(0);
+}
+
+/* ==========================================================================
+     18. CONTENIDO GENERADO Y PSEUDO-ELEMENTOS
+     ========================================================================== */
+
+/* Indicador de carga en columnas */
+.kanban-column.loading::before {
     content: '';
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
-    bottom: 0;
-    background: rgba(59, 130, 246, 0.1);
-    border-radius: 6px;
-    animation: pulse 2s infinite;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--kanban-primary), transparent);
+    animation: loading-bar 1.5s infinite;
+    z-index: 1;
 }
 
-/* Indicador de zona de drop */
-.drop-indicator {
-    display: none;
+@keyframes loading-bar {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* Badge de contador de empleados */
+.project-header::after {
+    content: attr(data-employee-count) ' empleados';
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(59, 130, 246, 0.9);
-    color: white;
-    padding: 8px 16px;
-    border-radius: 6px;
-    font-size: 14px;
-    z-index: 10;
-    pointer-events: none;
+    bottom: var(--kanban-spacing-sm);
+    left: var(--kanban-spacing-lg);
+    font-size: 0.75rem;
+    opacity: 0.8;
 }
 
-.drop-zone-active .drop-indicator {
-    display: block;
-    animation: bounceIn 0.3s ease;
+/* ==========================================================================
+     19. CUSTOM SCROLLBARS PARA FIREFOX
+     ========================================================================== */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--kanban-gray) var(--kanban-light-gray);
 }
 
-/* Mejorar tarjetas de empleados para touch */
-.employee-card {
-    touch-action: none;
-    user-select: none;
-    cursor: grab;
-    transition: all 0.2s ease;
+/* ==========================================================================
+     20. ESTADOS DE ERROR Y VALIDACIÓN
+     ========================================================================== */
+.employee-card.invalid {
+    border-color: var(--kanban-error);
+    background: rgba(239, 68, 68, 0.05);
+    animation: shake 0.5s ease-in-out;
 }
 
-.employee-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
 }
 
-.employee-card:active {
-    cursor: grabbing;
+.kanban-column.error {
+    border: 2px solid var(--kanban-error);
+    background: rgba(239, 68, 68, 0.1);
 }
 
-/* Responsive touch targets */
+/* ==========================================================================
+     21. MEJORAS DE TOUCH PARA MÓVILES
+     ========================================================================== */
 @media (max-width: 768px) {
     .employee-card {
-        padding: 12px;
-        margin-bottom: 8px;
-        min-height: 60px;
-    }
-    
-    .kanban-column, .unassigned-column {
-        padding: 12px;
-    }
-}
-
-/* Animaciones */
-@keyframes pulse {
-    0%, 100% { opacity: 0.1; }
-    50% { opacity: 0.2; }
-}
-
-@keyframes bounceIn {
-    0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
-    50% { transform: translate(-50%, -50%) scale(1.1); }
-    100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-}
-
-/* Loading indicator */
-#loading-indicator {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(0, 0, 0, 0.8);
-    color: white;
-    padding: 20px;
-    border-radius: 8px;
-    z-index: 9999;
-}
-
-/* Toast container */
-#toast-container {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 9999;
-}
-
-/* Drag ghost personalizado */
-.dragging-ghost {
-    pointer-events: none;
-    transform: rotate(5deg);
-    filter: drop-shadow(0 10px 25px rgba(0,0,0,0.3));
-}
-
-/* Optimizaciones adicionales para dispositivos táctiles */
-@media (pointer: coarse) {
-    /* Aumentar espacio entre elementos */
-    .employee-card {
-        margin-bottom: 15px;
-    }
-    
-    /* Evitar que los botones queden demasiado juntos */
-    .flex.space-x-1 {
-        gap: 8px;
-    }
-    
-    /* Hacer más visible el estado de hover/active */
-    .employee-card:active {
-        background-color: rgba(59, 130, 246, 0.1);
-        transform: scale(0.98);
-    }
-    
-    /* Aumentar la barra de desplazamiento para mejor acceso táctil */
-    .projects-container::-webkit-scrollbar, 
-    .kanban-column::-webkit-scrollbar {
-        height: 8px !important;
-        width: 8px !important;
-    }
-    
-    .projects-container::-webkit-scrollbar-thumb, 
-    .kanban-column::-webkit-scrollbar-thumb {
         min-height: 50px;
-        min-width: 50px;
-        background-color: rgba(107, 114, 128, 0.5);
+        padding: var(--kanban-spacing-sm);
+        touch-action: pan-y;
     }
-
     
+    /* Aumentar área de toque */
+    .employee-card::before {
+        content: '';
+        position: absolute;
+        top: -10px;
+        left: -10px;
+        right: -10px;
+        bottom: -10px;
+        z-index: -1;
+    }
+}
+
+/* Agregar al final del archivo kanban.css existente: */
+
+/* ==========================================================================
+   17. OPTIMIZACIONES DE PERFORMANCE PARA DRAG & DROP
+   ========================================================================== */
+
+/* Optimizaciones GPU para elementos que se mueven */
+.employee-card,
+.project-column,
+.kanban-column {
+  will-change: transform;
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Estados de drag optimizados */
+.employee-card.dragging {
+  opacity: 0.6;
+  transform: scale(1.02) rotate(2deg);
+  z-index: var(--kanban-z-drag);
+  box-shadow: var(--kanban-shadow-lg);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+/* Ghost element optimizado */
+#drag-ghost {
+  will-change: transform;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+  transition: none !important; /* Sin transiciones para mejor performance */
+}
+
+/* Zonas de drop optimizadas */
+.project-column.drop-hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(59, 130, 246, 0.2);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.kanban-column.drop-zone-active {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.15) 100%);
+  border: 2px dashed var(--kanban-primary);
+  border-radius: var(--kanban-border-radius);
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.kanban-column.drop-zone-active::before {
+  content: 'Suelta aquí';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--kanban-primary);
+  color: white;
+  padding: var(--kanban-spacing-xs) var(--kanban-spacing-sm);
+  border-radius: var(--kanban-border-radius);
+  font-size: 0.75rem;
+  font-weight: 500;
+  opacity: 0;
+  animation: fadeInScale 0.2s ease forwards;
+  pointer-events: none;
+  z-index: 10;
+}
+
+@keyframes fadeInScale {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* Toast optimizado */
+.toast {
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+.toast.show {
+  transform: translateX(0) translateZ(0);
+  opacity: 1;
+}
+
+/* Sidebar drop zone */
+.kanban-sidebar.drop-hover {
+  transform: scale(1.02);
+  box-shadow: 0 10px 30px rgba(16, 185, 129, 0.2);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(16, 185, 129, 0.1) 100%);
+  border: 2px solid var(--kanban-success);
+  transition: all 0.2s ease;
+}
+
+/* Animaciones de entrada para nuevas tarjetas */
+.employee-card.card-enter {
+  animation: cardEnter 0.3s ease-out forwards;
+}
+
+@keyframes cardEnter {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Optimización para móvil */
+@media (max-width: 768px) {
+  .employee-card.dragging {
+    transform: scale(1.05) rotate(2deg);
+    z-index: var(--kanban-z-drag);
+  }
+  
+  .project-column.drop-hover {
+    transform: scale(1.01);
+    transition-duration: 0.15s;
+  }
+  
+  #drag-ghost {
+    transform: rotate(2deg) scale(1.03) !important;
+    box-shadow: 0 15px 30px rgba(0,0,0,0.25) !important;
+  }
+}
+
+/* Reducir motion para usuarios que lo prefieren */
+@media (prefers-reduced-motion: reduce) {
+  .employee-card.dragging,
+  .project-column.drop-hover,
+  .kanban-column.drop-zone-active {
+    transition: none !important;
+    animation: none !important;
+  }
+  
+  #drag-ghost {
+    transform: none !important;
+  }
+}
+
+/* Optimizaciones de scrolling */
+.unassigned-employees {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Estados de focus mejorados */
+.employee-card:focus-visible {
+  outline: 2px solid var(--kanban-primary);
+  outline-offset: 2px;
+  transform: translateY(-2px);
+  box-shadow: var(--kanban-shadow-md);
 }
