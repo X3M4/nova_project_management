@@ -831,14 +831,37 @@ def kanban_board(request):
     
     # Handle search
     search_query = request.GET.get('search')
+    employee_found_project_id = None  # Para destacar el proyecto del empleado encontrado
+    
     if search_query:
-        projects = projects.filter(
+        # Búsqueda original en proyectos
+        project_query = Q(
             Q(name__icontains=search_query) |
             Q(manager__icontains=search_query) |
             Q(state__icontains=search_query) |
             Q(description__icontains=search_query) |
             Q(type__icontains=search_query)
         )
+        
+        # 🆕 NUEVA: Búsqueda en empleados
+        employee_matches = Employee.objects.filter(
+            Q(name__icontains=search_query) |
+            Q(job__icontains=search_query) |
+            Q(city__icontains=search_query) |
+            Q(state__icontains=search_query),
+            active=True
+        ).first()
+        
+        if employee_matches and employee_matches.project_id:
+            # Si encontramos un empleado con proyecto, destacar ese proyecto
+            employee_found_project_id = employee_matches.project_id.id
+            # Incluir el proyecto del empleado en los resultados
+            employee_project_query = Q(id=employee_found_project_id)
+            combined_query = project_query | employee_project_query
+            projects = projects.filter(combined_query)
+        else:
+            # Si no hay empleado coincidente, usar solo búsqueda de proyectos
+            projects = projects.filter(project_query)
     
     # Apply ordering after filtering
     projects = projects.order_by('-has_needs', 'earliest_start_date', 'manager_order')
@@ -937,6 +960,7 @@ def kanban_board(request):
         'needs': needs,
         'locks': locks,
         'search_query': search_query,
+        'employee_found_project_id': employee_found_project_id,  # 🆕 NUEVO
         'today': today,
         'stats': stats,
         'auto_unassigned_count': auto_unassigned_count,
