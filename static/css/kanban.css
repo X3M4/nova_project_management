@@ -554,183 +554,142 @@ div[x-show="open"],
     will-change: transform; /* Mejora el rendimiento de drag & drop */
 }
 
-/* Añadir estos estilos para mejorar el drag & drop: */
-
+/* Estilos para drag & drop */
 .sortable-ghost {
     opacity: 0.4;
-    background: #e3f2fd !important;
-    border: 2px dashed #2196f3 !important;
+    background: #f3f4f6;
+    border: 2px dashed #9ca3af;
 }
 
 .sortable-chosen {
-    background: #fff3e0 !important;
-    border: 2px solid #ff9800 !important;
-    transform: scale(1.02);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    background: #dbeafe;
+    border: 2px solid #3b82f6;
+    transform: rotate(2deg);
 }
 
 .sortable-drag {
+    background: #ffffff;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    transform: rotate(5deg);
+    z-index: 9999;
+}
+
+.is-dragging {
     opacity: 0.8;
-    transform: rotate(2deg);
-    z-index: 9999 !important;
+    transform: scale(1.05) rotate(3deg);
+    z-index: 1000;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
-.drop-zone-highlight {
-    background: #f0f9ff !important;
-    border: 2px dashed #0ea5e9 !important;
+/* Zonas de drop activas */
+.drop-zone-active {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border: 2px dashed #0ea5e9;
     border-radius: 8px;
+    position: relative;
 }
 
-.employee-card[data-being-dragged="true"] {
+.drop-zone-active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(59, 130, 246, 0.1);
+    border-radius: 6px;
+    animation: pulse 2s infinite;
+}
+
+/* Indicador de zona de drop */
+.drop-indicator {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(59, 130, 246, 0.9);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    z-index: 10;
     pointer-events: none;
-    user-select: none;
 }
 
-/* Prevenir selección de texto durante drag */
-.kanban-column {
-    user-select: none;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
+.drop-zone-active .drop-indicator {
+    display: block;
+    animation: bounceIn 0.3s ease;
 }
 
-/* Smooth transitions */
+/* Mejorar tarjetas de empleados para touch */
 .employee-card {
+    touch-action: none;
+    user-select: none;
+    cursor: grab;
     transition: all 0.2s ease;
 }
 
-.employee-card.dragging {
-    box-shadow: none !important; /* Eliminar sombra durante el drag para evitar lag */
+.employee-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* Añadir al final del archivo */
-
-/* Estilos específicos para dispositivos táctiles */
-.touch-device .employee-card {
-    /* Hacemos las tarjetas más grandes para mejor interacción táctil */
-    min-height: 70px !important;
-    padding: 10px !important;
-    margin-bottom: 10px !important;
-    touch-action: none; /* Previene desplazamiento durante el arrastre */
+.employee-card:active {
+    cursor: grabbing;
 }
 
-/* Estilos para el arrastre en dispositivos táctiles */
-.touch-device .employee-card.chosen {
-    box-shadow: 0 0 0 2px #3b82f6 !important;
-}
-
-.touch-device .employee-card.drag {
-    opacity: 0.8;
-    transform: scale(1.05);
-    box-shadow: 0 10px 15px rgba(0,0,0,0.1);
-}
-
-.touch-device .employee-card.dragging {
-    opacity: 0.7;
-    transform: scale(0.95);
-}
-
-/* Indicador visual de que el elemento es arrastrable */
-.touch-device .employee-card::before {
-    content: '⋮⋮';
-    position: absolute;
-    top: 2px;
-    right: 5px;
-    color: rgba(0,0,0,0.3);
-    font-size: 12px;
-    line-height: 1;
-}
-
-/* Mejoras visuales para columnas en táctil */
-.touch-device .kanban-column.drop-hover {
-    background-color: rgba(59, 130, 246, 0.1);
-    border: 2px dashed #3b82f6;
-}
-
-/* Evita selección de texto durante arrastre */
-.touch-device * {
-    user-select: none;
-}
-
-/* Mejora el feedback visual cuando se hace tap en un elemento */
-@media (pointer: coarse) {
-    .employee-card:active {
-        background-color: rgba(59, 130, 246, 0.1);
-        transform: scale(0.98);
+/* Responsive touch targets */
+@media (max-width: 768px) {
+    .employee-card {
+        padding: 12px;
+        margin-bottom: 8px;
+        min-height: 60px;
     }
     
-    /* Aumenta el área de toque */
-    .employee-card a, 
-    .employee-card button {
-        min-width: 30px;
-        min-height: 30px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+    .kanban-column, .unassigned-column {
+        padding: 12px;
     }
 }
 
-/* Estilos específicos para tactil con detección automática */
-.touch-device .employee-card {
-    position: relative;
-    min-height: 80px !important;
-    padding: 12px !important;
-    margin-bottom: 12px !important;
-    -webkit-touch-callout: none !important;
-    user-select: none !important;
-    touch-action: none !important; /* Crítico para evitar desplazamiento durante arrastre */
+/* Animaciones */
+@keyframes pulse {
+    0%, 100% { opacity: 0.1; }
+    50% { opacity: 0.2; }
 }
 
-/* Indicador visual adicional de arrastre para pantallas táctiles */
-.touch-device .employee-card::before {
-    content: '⋮⋮';
-    position: absolute;
-    top: 3px;
-    right: 5px;
-    color: rgba(0,0,0,0.3);
-    font-size: 14px;
+@keyframes bounceIn {
+    0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+    50% { transform: translate(-50%, -50%) scale(1.1); }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
 }
 
-/* Estilos para arrastrar con SortableJS */
-.touch-device .employee-card.chosen {
-    border: 2px solid #3b82f6 !important;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3) !important;
+/* Loading indicator */
+#loading-indicator {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 20px;
+    border-radius: 8px;
+    z-index: 9999;
 }
 
-.touch-device .employee-card.drag {
-    opacity: 0.8;
-    transform: scale(1.05);
-    box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+/* Toast container */
+#toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
 }
 
-.touch-device .employee-card.dragging {
-    opacity: 0.7;
-    transform: scale(0.97);
-}
-
-/* Mejoras en los destinos para toques en pantalla grande */
-.touch-device .kanban-column {
-    padding: 10px !important;
-}
-
-.touch-device .kanban-column.drop-hover {
-    background-color: rgba(59, 130, 246, 0.1);
-    border: 2px dashed #3b82f6;
-}
-
-/* Evitar problemas con desplazamiento durante arrastre táctil */
-.touch-device * {
-    user-select: none;
-}
-
-/* Asegurarse que los botones tengan áreas de toque lo suficientemente grandes */
-.touch-device a,
-.touch-device button {
-    min-height: 36px;
-    min-width: 36px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+/* Drag ghost personalizado */
+.dragging-ghost {
+    pointer-events: none;
+    transform: rotate(5deg);
+    filter: drop-shadow(0 10px 25px rgba(0,0,0,0.3));
 }
 
 /* Optimizaciones adicionales para dispositivos táctiles */
@@ -764,4 +723,6 @@ div[x-show="open"],
         min-width: 50px;
         background-color: rgba(107, 114, 128, 0.5);
     }
+
+    
 }
