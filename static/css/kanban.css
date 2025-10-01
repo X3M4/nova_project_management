@@ -336,7 +336,7 @@
 }
 
 /* Optimización específica para pantallas grandes (pizarras electrónicas) */
-@media (min-width: 1920px) {
+@media (min-width: 3840) {
   .kanban-board {
     gap: var(--kanban-spacing-xl);
     padding: var(--kanban-spacing-xl);
