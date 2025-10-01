@@ -27,7 +27,7 @@ from django.db.models import Sum, Avg, Count
 def project_map(request):
     # Crear un mapa centrado en España
     m = folium.Map(location=[38, -4.7038], zoom_start=7,
-                   tiles='OpenStreetMap', min_zoom=6, max_zoom=14, prefer_canvas=True)
+                   tiles='OpenStreetMap', min_zoom=6, max_zoom=17, prefer_canvas=True)
     
     # Crear clusters separados para diferentes tipos
     # Crear clusters separados para diferentes tipos con configuración para mostrar marcadores al hacer clic
@@ -608,6 +608,9 @@ def project_map(request):
     # Renderizar el mapa
     map_html = m._repr_html_()
     
+    # Obtener el total de empleados en la base de datos
+    total_employees = Employee.objects.count()
+    
     return render(request, 'project_maps/map.html', {
         'map': map_html,
         'projects_without_location': projects_without_location,
@@ -629,7 +632,8 @@ def project_map(request):
         'total_employees_in_projects': total_employees_in_projects,
         'total_displaced_employees': len(displaced_employees),  # Número correcto de empleados desplazados
         'total_red_markers': total_red_markers,  # Número de marcadores rojos
-        'big_projects_count': big_project_locations.count()
+        'big_projects_count': big_project_locations.count(),
+        'total_employees': total_employees
     })
 
 

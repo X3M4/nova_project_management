@@ -984,6 +984,8 @@ def update_employee_project(request):
         if project_id:
             project = get_object_or_404(Project, id=project_id)
             employee.project_id = project
+            employee.start_date = timezone.now().date()
+            employee.end_date = None  # Clear end_date when assigning to a new project
         else:
             employee.project_id = None
         

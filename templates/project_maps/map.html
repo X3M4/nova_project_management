@@ -366,15 +366,19 @@
             </div>
             <div class="stat-card">
               <div class="stat-number">{{ total_projects_without_location }}</div>
-              <div class="stat-label">Sin Ubicación</div>
+              <div class="stat-label">Proyectos Sin Ubicación</div>
             </div>
             <div class="stat-card">
               <div class="stat-number">{{ projects_without_employees|length }}</div>
-              <div class="stat-label">Sin Empleados</div>
+              <div class="stat-label">Proyectos Sin Empleados</div>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);">
+              <div class="stat-number">{{ total_employees }}</div>
+              <div class="stat-label">Total Empleados</div>
             </div>
             <div class="stat-card" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);">
               <div class="stat-number">{{ total_displaced_employees }}</div>
-              <div class="stat-label">Desplazados</div>
+              <div class="stat-label">Empleados Desplazados</div>
             </div>
             <!-- Añadir después de las estadísticas existentes -->
             <div class="stat-card" style="background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);">
