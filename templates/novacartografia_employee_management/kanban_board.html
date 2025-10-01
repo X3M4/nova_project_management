@@ -1934,6 +1934,105 @@ document.getElementById('vacation-form').addEventListener('submit', function(e) 
   // Inicializar countdown después del primer refresh
   setTimeout(showRefreshCountdown, 2000);
   </script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Detectar pizarras Smart por resolución y características
+        function detectSmartBoard() {
+            const width = window.screen.width;
+            const height = window.screen.height;
+            const isLargeScreen = width >= 1920 && height >= 1080;
+            const isTouch = 'ontouchstart' in window;
+            const hasHighDPI = window.devicePixelRatio > 1;
+            
+            // Criterios para detectar pizarra Smart:
+            // - Pantalla grande (mínimo Full HD)
+            // - Táctil
+            // - Resolución alta
+            const isSmartBoard = isLargeScreen && isTouch && hasHighDPI;
+            
+            if (isSmartBoard) {
+                document.body.classList.add('smart-board');
+                console.log('🖥️ Pizarra Smart detectada:', {
+                    resolution: `${width}x${height}`,
+                    dpi: window.devicePixelRatio,
+                    touch: isTouch
+                });
+                
+                // Forzar layout horizontal
+                const kanbanBoard = document.querySelector('.kanban-board');
+                if (kanbanBoard) {
+                    kanbanBoard.style.flexDirection = 'row';
+                }
+                
+                const projectsContainers = document.querySelectorAll('.projects-container');
+                projectsContainers.forEach(container => {
+                    container.style.display = 'flex';
+                    container.style.flexDirection = 'row';
+                });
+            }
+            
+            console.log('📺 Información de pantalla:', {
+                resolution: `${width}x${height}`,
+                devicePixelRatio: window.devicePixelRatio,
+                isTouch: isTouch,
+                isSmartBoard: isSmartBoard,
+                userAgent: navigator.userAgent.substring(0, 100)
+            });
+        }
+        
+        // Ejecutar detección
+        detectSmartBoard();
+        
+        // Re-ejecutar si cambia el tamaño de pantalla
+        window.addEventListener('resize', detectSmartBoard);
+        
+        // Forzar layout horizontal en pantallas grandes
+        function forceHorizontalLayout() {
+            const width = window.innerWidth;
+            if (width >= 1920) {
+                const kanbanBoard = document.querySelector('.kanban-board');
+                if (kanbanBoard) {
+                    kanbanBoard.style.flexDirection = 'row';
+                    kanbanBoard.style.display = 'flex';
+                }
+                
+                const projectsContainers = document.querySelectorAll('.projects-container');
+                projectsContainers.forEach(container => {
+                    container.style.display = 'flex';
+                    container.style.flexDirection = 'row';
+                    container.style.overflowX = 'auto';
+                    container.style.overflowY = 'hidden';
+                });
+                
+                console.log('🔧 Layout horizontal forzado para pantalla grande');
+            }
+        }
+        
+        // Ejecutar inmediatamente y al redimensionar
+        forceHorizontalLayout();
+        window.addEventListener('resize', forceHorizontalLayout);
+        
+        // Debugging: Mostrar información de layout actual
+        setTimeout(() => {
+            const kanbanBoard = document.querySelector('.kanban-board');
+            const projectsContainer = document.querySelector('.projects-container');
+            
+            if (kanbanBoard && projectsContainer) {
+                console.log('📐 Layout actual:', {
+                    kanbanBoard: {
+                        flexDirection: getComputedStyle(kanbanBoard).flexDirection,
+                        display: getComputedStyle(kanbanBoard).display
+                    },
+                    projectsContainer: {
+                        flexDirection: getComputedStyle(projectsContainer).flexDirection,
+                        display: getComputedStyle(projectsContainer).display
+                    }
+                });
+            }
+        }, 1000);
+    });
+    </script>
   
   <!-- Opcional: Indicador visual discreto -->
   <div id="refresh-indicator" style="

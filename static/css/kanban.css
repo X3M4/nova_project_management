@@ -272,11 +272,104 @@
 }
 
 /* ==========================================================================
-   8. RESPONSIVE DESIGN MEJORADO
+   8. RESPONSIVE DESIGN MEJORADO - CORREGIDO PARA PIZARRAS SMART
    ========================================================================== */
 
-/* Tablet */
-@media (max-width: 1024px) and (max-height: 1080px) {
+/* Pizarras Smart y pantallas grandes (4K+) - FORZAR LAYOUT HORIZONTAL */
+@media (min-width: 1920px) {
+  .kanban-board {
+    flex-direction: row !important; /* Forzar layout horizontal */
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+
+  .kanban-sidebar {
+    flex: 0 0 380px !important; /* Sidebar más ancha en pantallas grandes */
+    width: 380px !important;
+    max-width: 380px !important;
+    position: sticky !important;
+    top: var(--kanban-spacing-lg) !important;
+    align-self: flex-start !important;
+    max-height: calc(100vh - 8rem) !important;
+  }
+
+  .kanban-main {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: var(--kanban-spacing-lg) !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    max-height: calc(100vh - 6rem) !important;
+  }
+
+  .projects-container {
+    display: flex !important;
+    flex-direction: row !important; /* Forzar fila */
+    gap: var(--kanban-spacing-lg) !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    padding-bottom: var(--kanban-spacing-md) !important;
+  }
+
+  .project-column {
+    flex: 0 0 360px !important; /* Columnas más anchas en pantallas grandes */
+    max-width: 360px !important;
+    min-width: 360px !important;
+  }
+
+  /* Scrollbar más visible en pantallas grandes */
+  .projects-container::-webkit-scrollbar {
+    height: 16px !important;
+  }
+
+  .projects-container::-webkit-scrollbar-thumb {
+    background: linear-gradient(45deg, #6366f1, #8b5cf6) !important;
+    border-radius: 8px !important;
+    border: 3px solid var(--kanban-light-gray) !important;
+  }
+}
+
+/* Pantallas 4K específicamente */
+@media (min-width: 3840px) {
+  .kanban-board {
+    gap: var(--kanban-spacing-xl) !important;
+    padding: var(--kanban-spacing-xl) !important;
+  }
+
+  .kanban-sidebar {
+    flex: 0 0 420px !important;
+    width: 420px !important;
+  }
+
+  .project-column {
+    flex: 0 0 400px !important;
+    max-width: 400px !important;
+    min-width: 400px !important;
+  }
+
+  .section-title h3 {
+    font-size: 1.5rem !important;
+  }
+
+  .employee-card {
+    min-height: 90px !important;
+    padding: 1rem !important;
+    margin-bottom: 1rem !important;
+  }
+
+  /* Texto más grande para pantallas 4K */
+  .employee-name {
+    font-size: 1.125rem !important;
+  }
+
+  .employee-job {
+    font-size: 1rem !important;
+  }
+}
+
+/* Tablet real (NO pizarras Smart) - Solo para dispositivos pequeños */
+@media (max-width: 1024px) and (max-height: 1366px) and (pointer: coarse) {
   .kanban-board {
     flex-direction: column;
     overflow-y: auto;
@@ -306,7 +399,7 @@
   }
 }
 
-/* Mobile - Solo para dispositivos realmente móviles */
+/* Mobile real - Solo para teléfonos */
 @media (max-width: 768px) and (max-height: 1024px) {
   .kanban-board {
     flex-direction: column;
@@ -335,25 +428,93 @@
   }
 }
 
-/* Optimización específica para pantallas grandes (pizarras electrónicas) */
-@media (min-width: 3840) {
+/* IMPORTANTE: Sobreescribir cualquier estilo que pueda afectar pizarras Smart */
+@media (min-width: 1920px) and (pointer: coarse) {
+  /* Incluso si es táctil, si es una pantalla grande, usar layout horizontal */
   .kanban-board {
-    gap: var(--kanban-spacing-xl);
-    padding: var(--kanban-spacing-xl);
+    flex-direction: row !important;
   }
-
-  .kanban-sidebar {
-    flex: 0 0 400px;
-    width: 400px;
+  
+  .projects-container {
+    flex-direction: row !important;
+    display: flex !important;
   }
-
+  
   .project-column {
-    flex: 0 0 380px;
-    max-width: 380px;
+    flex: 0 0 360px !important;
   }
+}
 
-  .section-title h3 {
-    font-size: 1.25rem;
+/* ==========================================================================
+   DETECCIÓN Y OPTIMIZACIÓN PARA PIZARRAS SMART
+   ========================================================================== */
+
+/* Detectar pizarras Smart por resolución y aspect ratio */
+@media (min-width: 1920px) and (min-height: 1080px) {
+  body.smart-board {
+    --kanban-spacing-lg: 2rem;
+    --kanban-spacing-xl: 3rem;
+  }
+  
+  .smart-board .kanban-board {
+    flex-direction: row !important;
+    gap: 2rem !important;
+  }
+  
+  .smart-board .projects-container {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 2rem !important;
+  }
+  
+  .smart-board .project-column {
+    flex: 0 0 380px !important;
+    min-width: 380px !important;
+  }
+  
+  .smart-board .employee-card {
+    min-height: 100px !important;
+    font-size: 1.1rem !important;
+  }
+}
+
+/* Regla específica para resoluciones 4K */
+@media (min-width: 3840px) and (min-height: 2160px) {
+  .kanban-board {
+    flex-direction: row !important;
+    padding: 3rem !important;
+  }
+  
+  .projects-container {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 3rem !important;
+  }
+  
+  .project-column {
+    flex: 0 0 420px !important;
+    min-width: 420px !important;
+  }
+}
+
+/* Optimizaciones específicas para pantallas táctiles grandes */
+@media (pointer: coarse) and (min-width: 1920px) {
+  .touch-device .employee-card {
+    min-height: 100px !important;
+    padding: 1.25rem !important;
+    margin-bottom: 1.25rem !important;
+  }
+  
+  .touch-device .project-column {
+    padding: 1.5rem !important;
+  }
+  
+  /* Botones más grandes para tocar */
+  .touch-device a,
+  .touch-device button {
+    min-height: 50px !important;
+    min-width: 50px !important;
+    padding: 12px !important;
   }
 }
 
@@ -416,4 +577,48 @@
 
 .projects-container:hover .scroll-indicator {
   opacity: 0.7;
+}
+
+/* ==========================================================================
+   CONFIGURACIÓN ESPECÍFICA PARA PIZARRA SMART 86"
+   ========================================================================== */
+
+/* Forzar layout horizontal para cualquier pantalla >= 1920px */
+@media (min-width: 1920px) {
+  .kanban-board,
+  body .kanban-board,
+  html body .kanban-board {
+    flex-direction: row !important;
+    display: flex !important;
+  }
+  
+  .projects-container,
+  body .projects-container,
+  html body .projects-container {
+    display: flex !important;
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+  }
+  
+  .project-column,
+  body .project-column,
+  html body .project-column {
+    flex: 0 0 360px !important;
+    min-width: 360px !important;
+    max-width: 360px !important;
+  }
+}
+
+/* Regla ultra-específica para pantallas 4K */
+@screen and (min-width: 3840px), 
+@media (min-device-width: 3840px) {
+  * .kanban-board {
+    flex-direction: row !important;
+  }
+  
+  * .projects-container {
+    flex-direction: row !important;
+    display: flex !important;
+  }
 }
