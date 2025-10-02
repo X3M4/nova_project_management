@@ -487,6 +487,114 @@
         </div>
         
         <div class="projects-container" id="obras-container">
+          <div class="project-column bg-pruple-100 shadow rounded-lg">
+            <div class="bg-purple-300 px-3 py-1 border-b-4 border-purple-500 rounded-t-lg">
+              <div class="flex justify-between items-center">
+                <div>
+                  <h3 class="text-sm font-medium text-purple-700">
+                    <i class="fas fa-umbrella-beach mr-2"></i>Vacaciones
+                  </h3>
+                  <p class="text-xs text-gray-600">Empleados en periodo vacacional</p>
+                </div>
+                <div class="flex space-x-3">
+                  {% if can_edit %}
+                    <i class="fas fa-calendar-alt text-purple-600" title="Gestionar vacaciones"></i>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            <div class="p-3 kanban-column vacation-column" id="vacation-column" data-vacation="true" style="max-height: calc(100vh - 240px); overflow-y: auto; overflow-x: hidden;">
+              {% for employee in employees %}
+                {% if employee.vacations_from or employee.vacations_to %}
+                  {% now "Y-m-d" as today %}
+                  {% if employee.vacations_from|date:"Y-m-d" <= today and employee.vacations_to|date:"Y-m-d" >= today or not employee.project_id %}
+                    <div class="employee-card p-2 bg-purple-200 border border-purple-300 rounded-md shadow-sm mb-2" 
+                         data-employee-id="{{ employee.id }}" 
+                         {% if can_edit %}draggable="true"{% else %}draggable="false"{% endif %}>
+                      <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                          <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
+                          <p class="text-xs text-purple-600">
+                            <i class="fas fa-umbrella-beach mr-1"></i>{{ employee.job }}
+                          </p>
+                          {% if employee.vacations_from and employee.vacations_to %}
+                            <div class="text-xs text-gray-600 mt-1">
+                              <i class="fas fa-calendar mr-1"></i>
+                              <span class="font-medium">Desde:</span> {{ employee.vacations_from|date:"d/m/Y" }}
+                              <br>
+                              <i class="fas fa-calendar mr-1"></i>
+                              <span class="font-medium">Hasta:</span> {{ employee.vacations_to|date:"d/m/Y" }}
+                            </div>
+                          {% elif employee.vacations_from %}
+                            <div class="text-xs text-gray-600 mt-1">
+                              <i class="fas fa-calendar mr-1"></i>
+                              <span class="font-medium">Desde:</span> {{ employee.vacations_from|date:"d/m/Y" }}
+                            </div>
+                          {% elif employee.vacations_to %}
+                            <div class="text-xs text-gray-600 mt-1">
+                              <i class="fas fa-calendar mr-1"></i>
+                              <span class="font-medium">Hasta:</span> {{ employee.vacations_to|date:"d/m/Y" }}
+                            </div>
+                          {% endif %}
+                        </div>
+                        <div class="flex flex-col items-end">
+                          <a href="{% url 'employee_update' employee.id %}" class="text-purple-600 hover:text-gray-600">
+                            <i class="fas fa-external-link-alt text-xs"></i>
+                          </a>
+                          {% if can_edit %}
+                            <button class="text-purple-500 hover:text-purple-700 mt-1" 
+                                    onclick="editVacations({{ employee.id }})" 
+                                    title="Editar vacaciones">
+                              <i class="fas fa-edit text-xs"></i>
+                            </button>
+                          {% endif %}
+                        </div>
+                      </div>
+                      
+                      <!-- Indicadores de habilidades -->
+                      <div class="flex justify-between mt-2">
+                        <div class="{% if employee.driver_license == False %}text-red-500{% else %}text-green-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
+                          <i class="fa-solid fa-id-card text-base"></i>
+                        </div>
+                        <div class="{% if employee.twenty_hours %}text-green-600{% else %}text-red-500{% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
+                          <i class="fa-solid fa-2 text-base"></i>
+                          <i class="fa-solid fa-0 text-base"></i>
+                        </div>
+                        <div class="{% if employee.sixty_hours %}text-green-600{% else %}text-red-500{% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
+                          <i class="fa-solid fa-6 text-base"></i>
+                          <i class="fa-solid fa-0 text-base"></i>
+                        </div>
+                        <div class="{% if employee.confine %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
+                          <i class="fa-solid fa-square-person-confined text-base"></i>
+                        </div>
+                        <div class="{% if employee.height %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
+                          <i class="fa-solid fa-person-falling text-base"></i>
+                        </div>
+                      </div>
+                      
+                      <!-- Indicador del estado de vacaciones -->
+                      <div class="mt-2 px-2 py-1 rounded-full text-xs text-center {% if employee.vacations_from|date:'Y-m-d' <= today and employee.vacations_to|date:'Y-m-d' >= today %}bg-purple-500 text-white{% else %}bg-purple-200 text-purple-700{% endif %}">
+                        {% if employee.vacations_from|date:"Y-m-d" <= today and employee.vacations_to|date:"Y-m-d" >= today %}
+                          <i class="fas fa-check-circle mr-1"></i>En vacaciones
+                        {% elif employee.vacations_from|date:"Y-m-d" > today %}
+                          <i class="fas fa-clock mr-1"></i>Programadas
+                        {% elif employee.vacations_to|date:"Y-m-d" < today %}
+                          <i class="fas fa-history mr-1"></i>Finalizadas
+                        {% else %}
+                          <i class="fas fa-question-circle mr-1"></i>Estado indefinido
+                        {% endif %}
+                      </div>
+                    </div>
+                  {% endif %}
+                {% endif %}
+              {% empty %}
+                <div class="text-center py-8">
+                  <i class="fas fa-umbrella-beach text-4xl text-purple-300 mb-3"></i>
+                  <p class="text-xs text-purple-500 italic">No hay empleados en vacaciones</p>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
           <!-- Indicadores de scroll -->
           <div class="scroll-indicator left">
             <i class="fas fa-chevron-left"></i>
@@ -907,6 +1015,122 @@
         </div>
         
         <div class="projects-container" id="obras-container">
+          <div class="project-column bg-orange-100 shadow rounded-lg">
+            <div class="bg-orange-300 px-3 py-1 border-b-4 border-orange-500 rounded-t-lg">
+              <div class="flex justify-between items-center">
+                <div>
+                  <h3 class="text-sm font-medium text-orange-700">
+                    <i class="fas fa-umbrella-beach mr-2"></i>Bajas
+                  </h3>
+                  <p class="text-xs text-gray-600">Empleados de baja</p>
+                </div>
+                <div class="flex space-x-3">
+                  {% if can_edit %}
+                    <i class="fas fa-calendar-alt text-orange-600" title="Gestionar Bajas"></i>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            <div class="p-3 kanban-column vacation-column" id="vacation-column" data-vacation="true" style="max-height: calc(100vh - 240px); overflow-y: auto; overflow-x: hidden;">
+              {% for employee in employees %}
+                {% if employee.leave_from or employee.leave_to %}
+                  {% now "Y-m-d" as today %}
+                  {% if employee.leave_from|date:"Y-m-d" <= today and employee.leave_to|date:"Y-m-d" >= today or not employee.project_id %}
+                    <div class="employee-card p-2 bg-orange-200 border border-orange-300 rounded-md shadow-sm mb-2" 
+                         data-employee-id="{{ employee.id }}" 
+                         {% if can_edit %}draggable="true"{% else %}draggable="false"{% endif %}>
+                      <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                          <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
+                          <p class="text-xs text-orange-600">
+                            <i class="fas fa-suitcase-medical mr-1"></i>{{ employee.job }}
+                          Baja Médica/Paternidad
+                          </p>
+                          {% if employee.leave_from and employee.leave_to %}
+                            <div class="text-xs text-gray-600 mt-1">
+                              <i class="fas fa-calendar mr-1"></i>
+                              <span class="font-medium">Desde:</span> {{ employee.leave_from|date:"d/m/Y" }}
+                              <br>
+                              <i class="fas fa-calendar mr-1"></i>
+                              <span class="font-medium">Hasta:</span> {{ employee.leave_to|date:"d/m/Y" }}
+                            </div>
+                          {% elif employee.leave_from %}
+                            <div class="text-xs text-gray-600 mt-1">
+                              <i class="fas fa-calendar mr-1"></i>
+                              <span class="font-medium">Desde:</span> {{ employee.leave_from|date:"d/m/Y" }}
+                            </div>
+                          {% elif employee.leave_to %}
+                            <div class="text-xs text-gray-600 mt-1">
+                              <i class="fas fa-calendar mr-1"></i>
+                              <span class="font-medium">Hasta:</span> {{ employee.leave_to|date:"d/m/Y" }}
+                            </div>
+                          {% endif %}
+                        </div>
+                        <div class="flex flex-col items-end space-y-1 ml-2">
+                          <a href="{% url 'employee_update' employee.id %}" 
+                             class="text-orange-600 hover:text-gray-600 p-1 rounded hover:bg-orange-100" 
+                             title="Ver detalles">
+                            <i class="fas fa-external-link-alt text-sm"></i>
+                          </a>
+                          {% if can_edit %}
+                            <button class="text-blue-500 hover:text-blue-700 p-1 rounded hover:bg-blue-100 border border-blue-200" 
+                                    onclick="editLeave({{ employee.id }})" 
+                                    title="Editar fechas de baja">
+                              <i class="fas fa-edit text-sm"></i>
+                            </button>
+                            <button class="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-100 border border-red-200" 
+                                    onclick="clearLeave({{ employee.id }})" 
+                                    title="Limpiar fechas de baja">
+                              <i class="fas fa-trash text-sm"></i>
+                            </button>
+                          {% endif %}
+                        </div>
+                      </div>
+                      
+                      <!-- Indicadores de habilidades -->
+                      <div class="flex justify-between mt-2">
+                        <div class="{% if employee.driver_license == False %}text-red-500{% else %}text-green-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
+                          <i class="fa-solid fa-id-card text-base"></i>
+                        </div>
+                        <div class="{% if employee.twenty_hours %}text-green-600{% else %}text-red-500{% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
+                          <i class="fa-solid fa-2 text-base"></i>
+                          <i class="fa-solid fa-0 text-base"></i>
+                        </div>
+                        <div class="{% if employee.sixty_hours %}text-green-600{% else %}text-red-500{% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
+                          <i class="fa-solid fa-6 text-base"></i>
+                          <i class="fa-solid fa-0 text-base"></i>
+                        </div>
+                        <div class="{% if employee.confine %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
+                          <i class="fa-solid fa-square-person-confined text-base"></i>
+                        </div>
+                        <div class="{% if employee.height %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
+                          <i class="fa-solid fa-person-falling text-base"></i>
+                        </div>
+                      </div>
+                      
+                      <!-- Indicador del estado de bajas -->
+                      <div class="mt-2 px-2 py-1 rounded-full text-xs text-center {% if employee.leave_from|date:'Y-m-d' <= today and employee.leave_to|date:'Y-m-d' >= today %}bg-orange-500 text-white{% else %}bg-purple-200 text-purple-700{% endif %}">
+                        {% if employee.leave_from|date:"Y-m-d" <= today and employee.leave_to|date:"Y-m-d" >= today %}
+                          <i class="fas fa-check-circle mr-1"></i>De baja
+                        {% elif employee.leave_from|date:"Y-m-d" > today %}
+                          <i class="fas fa-clock mr-1"></i>Baja Programada
+                        {% elif employee.leave_to|date:"Y-m-d" < today %}
+                          <i class="fas fa-history mr-1"></i>Finalizada
+                        {% else %}
+                          <i class="fas fa-question-circle mr-1"></i>Estado indefinido
+                        {% endif %}
+                      </div>
+                    </div>
+                  {% endif %}
+                {% endif %}
+              {% empty %}
+                <div class="text-center py-8">
+                  <i class="fas fa-umbrella-beach text-4xl text-purple-300 mb-3"></i>
+                  <p class="text-xs text-purple-500 italic">No hay empleados en vacaciones</p>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
           <!-- Indicadores de scroll -->
           <div class="scroll-indicator left">
             <i class="fas fa-chevron-left"></i>
@@ -1303,268 +1527,16 @@
               </div>
             {% endif %}
           {% endfor %}
-        </div>
-        
-        <!-- Navegación horizontal para Obras -->
-        {% comment %} <div class="scroll-navigation">
-          <button class="scroll-btn" onclick="scrollProjects('obras', -320)">
-            <i class="fas fa-chevron-left"></i> Anterior
-          </button>
-          <span class="text-sm text-gray-600">Deslizar horizontalmente</span>
-          <button class="scroll-btn" onclick="scrollProjects('obras', 320)">
-            Siguiente <i class="fas fa-chevron-right"></i>
-          </button>
-        </div> {% endcomment %}
-      </div>
 
       <!-- AUSENCIAS (TERCERA FILA) -->
-      <div class="mb-4">
-        
-        
-        <div class="projects-container" id="ausencias-container">
-          <!-- Todo el contenido de ausencias como lo tienes -->
-        </div>
-        
-       
-      </div>
+      
+  
+      <!-- Columna de Empleados con ausencia (bajas médicas, paternidad, etc)-->
+      
+
     </div>
   </div>
 
-  <!-- Scripts y resto del contenido como lo tienes -->
-  <div class="section-title">
-    <h3 class="text-md font-bold text-rose-500">Ausencias</h3> <!-- Reduced size -->
-  </div>
-  <div class="projects-container">
-    
-
-    <!-- Columna de Empleados en Vacaciones -->
-    <div class="project-column bg-pruple-100 shadow rounded-lg">
-      <div class="bg-purple-300 px-3 py-1 border-b-4 border-purple-500 rounded-t-lg">
-        <div class="flex justify-between items-center">
-          <div>
-            <h3 class="text-sm font-medium text-purple-700">
-              <i class="fas fa-umbrella-beach mr-2"></i>Vacaciones
-            </h3>
-            <p class="text-xs text-gray-600">Empleados en periodo vacacional</p>
-          </div>
-          <div class="flex space-x-3">
-            {% if can_edit %}
-              <i class="fas fa-calendar-alt text-purple-600" title="Gestionar vacaciones"></i>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-      <div class="p-3 kanban-column vacation-column" id="vacation-column" data-vacation="true" style="max-height: calc(100vh - 240px); overflow-y: auto; overflow-x: hidden;">
-        {% for employee in employees %}
-          {% if employee.vacations_from or employee.vacations_to %}
-            {% now "Y-m-d" as today %}
-            {% if employee.vacations_from|date:"Y-m-d" <= today and employee.vacations_to|date:"Y-m-d" >= today or not employee.project_id %}
-              <div class="employee-card p-2 bg-purple-200 border border-purple-300 rounded-md shadow-sm mb-2" 
-                   data-employee-id="{{ employee.id }}" 
-                   {% if can_edit %}draggable="true"{% else %}draggable="false"{% endif %}>
-                <div class="flex justify-between items-start">
-                  <div class="flex-1">
-                    <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
-                    <p class="text-xs text-purple-600">
-                      <i class="fas fa-umbrella-beach mr-1"></i>{{ employee.job }}
-                    </p>
-                    {% if employee.vacations_from and employee.vacations_to %}
-                      <div class="text-xs text-gray-600 mt-1">
-                        <i class="fas fa-calendar mr-1"></i>
-                        <span class="font-medium">Desde:</span> {{ employee.vacations_from|date:"d/m/Y" }}
-                        <br>
-                        <i class="fas fa-calendar mr-1"></i>
-                        <span class="font-medium">Hasta:</span> {{ employee.vacations_to|date:"d/m/Y" }}
-                      </div>
-                    {% elif employee.vacations_from %}
-                      <div class="text-xs text-gray-600 mt-1">
-                        <i class="fas fa-calendar mr-1"></i>
-                        <span class="font-medium">Desde:</span> {{ employee.vacations_from|date:"d/m/Y" }}
-                      </div>
-                    {% elif employee.vacations_to %}
-                      <div class="text-xs text-gray-600 mt-1">
-                        <i class="fas fa-calendar mr-1"></i>
-                        <span class="font-medium">Hasta:</span> {{ employee.vacations_to|date:"d/m/Y" }}
-                      </div>
-                    {% endif %}
-                  </div>
-                  <div class="flex flex-col items-end">
-                    <a href="{% url 'employee_update' employee.id %}" class="text-purple-600 hover:text-gray-600">
-                      <i class="fas fa-external-link-alt text-xs"></i>
-                    </a>
-                    {% if can_edit %}
-                      <button class="text-purple-500 hover:text-purple-700 mt-1" 
-                              onclick="editVacations({{ employee.id }})" 
-                              title="Editar vacaciones">
-                        <i class="fas fa-edit text-xs"></i>
-                      </button>
-                    {% endif %}
-                  </div>
-                </div>
-                
-                <!-- Indicadores de habilidades -->
-                <div class="flex justify-between mt-2">
-                  <div class="{% if employee.driver_license == False %}text-red-500{% else %}text-green-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                    <i class="fa-solid fa-id-card text-base"></i>
-                  </div>
-                  <div class="{% if employee.twenty_hours %}text-green-600{% else %}text-red-500{% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                    <i class="fa-solid fa-2 text-base"></i>
-                    <i class="fa-solid fa-0 text-base"></i>
-                  </div>
-                  <div class="{% if employee.sixty_hours %}text-green-600{% else %}text-red-500{% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                    <i class="fa-solid fa-6 text-base"></i>
-                    <i class="fa-solid fa-0 text-base"></i>
-                  </div>
-                  <div class="{% if employee.confine %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                    <i class="fa-solid fa-square-person-confined text-base"></i>
-                  </div>
-                  <div class="{% if employee.height %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                    <i class="fa-solid fa-person-falling text-base"></i>
-                  </div>
-                </div>
-                
-                <!-- Indicador del estado de vacaciones -->
-                <div class="mt-2 px-2 py-1 rounded-full text-xs text-center {% if employee.vacations_from|date:'Y-m-d' <= today and employee.vacations_to|date:'Y-m-d' >= today %}bg-purple-500 text-white{% else %}bg-purple-200 text-purple-700{% endif %}">
-                  {% if employee.vacations_from|date:"Y-m-d" <= today and employee.vacations_to|date:"Y-m-d" >= today %}
-                    <i class="fas fa-check-circle mr-1"></i>En vacaciones
-                  {% elif employee.vacations_from|date:"Y-m-d" > today %}
-                    <i class="fas fa-clock mr-1"></i>Programadas
-                  {% elif employee.vacations_to|date:"Y-m-d" < today %}
-                    <i class="fas fa-history mr-1"></i>Finalizadas
-                  {% else %}
-                    <i class="fas fa-question-circle mr-1"></i>Estado indefinido
-                  {% endif %}
-                </div>
-              </div>
-            {% endif %}
-          {% endif %}
-        {% empty %}
-          <div class="text-center py-8">
-            <i class="fas fa-umbrella-beach text-4xl text-purple-300 mb-3"></i>
-            <p class="text-xs text-purple-500 italic">No hay empleados en vacaciones</p>
-          </div>
-        {% endfor %}
-      </div>
-    </div>
-
-    <!-- Columna de Empleados con ausencia (bajas médicas, paternidad, etc)-->
-    <div class="project-column bg-orange-100 shadow rounded-lg">
-      <div class="bg-orange-300 px-3 py-1 border-b-4 border-orange-500 rounded-t-lg">
-        <div class="flex justify-between items-center">
-          <div>
-            <h3 class="text-sm font-medium text-orange-700">
-              <i class="fas fa-umbrella-beach mr-2"></i>Bajas
-            </h3>
-            <p class="text-xs text-gray-600">Empleados de baja</p>
-          </div>
-          <div class="flex space-x-3">
-            {% if can_edit %}
-              <i class="fas fa-calendar-alt text-orange-600" title="Gestionar Bajas"></i>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-      <div class="p-3 kanban-column vacation-column" id="vacation-column" data-vacation="true" style="max-height: calc(100vh - 240px); overflow-y: auto; overflow-x: hidden;">
-        {% for employee in employees %}
-          {% if employee.leave_from or employee.leave_to %}
-            {% now "Y-m-d" as today %}
-            {% if employee.leave_from|date:"Y-m-d" <= today and employee.leave_to|date:"Y-m-d" >= today or not employee.project_id %}
-              <div class="employee-card p-2 bg-orange-200 border border-orange-300 rounded-md shadow-sm mb-2" 
-                   data-employee-id="{{ employee.id }}" 
-                   {% if can_edit %}draggable="true"{% else %}draggable="false"{% endif %}>
-                <div class="flex justify-between items-start">
-                  <div class="flex-1">
-                    <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
-                    <p class="text-xs text-orange-600">
-                      <i class="fas fa-suitcase-medical mr-1"></i>{{ employee.job }}
-                    Baja Médica/Paternidad
-                    </p>
-                    {% if employee.leave_from and employee.leave_to %}
-                      <div class="text-xs text-gray-600 mt-1">
-                        <i class="fas fa-calendar mr-1"></i>
-                        <span class="font-medium">Desde:</span> {{ employee.leave_from|date:"d/m/Y" }}
-                        <br>
-                        <i class="fas fa-calendar mr-1"></i>
-                        <span class="font-medium">Hasta:</span> {{ employee.leave_to|date:"d/m/Y" }}
-                      </div>
-                    {% elif employee.leave_from %}
-                      <div class="text-xs text-gray-600 mt-1">
-                        <i class="fas fa-calendar mr-1"></i>
-                        <span class="font-medium">Desde:</span> {{ employee.leave_from|date:"d/m/Y" }}
-                      </div>
-                    {% elif employee.leave_to %}
-                      <div class="text-xs text-gray-600 mt-1">
-                        <i class="fas fa-calendar mr-1"></i>
-                        <span class="font-medium">Hasta:</span> {{ employee.leave_to|date:"d/m/Y" }}
-                      </div>
-                    {% endif %}
-                  </div>
-                  <div class="flex flex-col items-end space-y-1 ml-2">
-                    <a href="{% url 'employee_update' employee.id %}" 
-                       class="text-orange-600 hover:text-gray-600 p-1 rounded hover:bg-orange-100" 
-                       title="Ver detalles">
-                      <i class="fas fa-external-link-alt text-sm"></i>
-                    </a>
-                    {% if can_edit %}
-                      <button class="text-blue-500 hover:text-blue-700 p-1 rounded hover:bg-blue-100 border border-blue-200" 
-                              onclick="editLeave({{ employee.id }})" 
-                              title="Editar fechas de baja">
-                        <i class="fas fa-edit text-sm"></i>
-                      </button>
-                      <button class="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-100 border border-red-200" 
-                              onclick="clearLeave({{ employee.id }})" 
-                              title="Limpiar fechas de baja">
-                        <i class="fas fa-trash text-sm"></i>
-                      </button>
-                    {% endif %}
-                  </div>
-                </div>
-                
-                <!-- Indicadores de habilidades -->
-                <div class="flex justify-between mt-2">
-                  <div class="{% if employee.driver_license == False %}text-red-500{% else %}text-green-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                    <i class="fa-solid fa-id-card text-base"></i>
-                  </div>
-                  <div class="{% if employee.twenty_hours %}text-green-600{% else %}text-red-500{% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                    <i class="fa-solid fa-2 text-base"></i>
-                    <i class="fa-solid fa-0 text-base"></i>
-                  </div>
-                  <div class="{% if employee.sixty_hours %}text-green-600{% else %}text-red-500{% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                    <i class="fa-solid fa-6 text-base"></i>
-                    <i class="fa-solid fa-0 text-base"></i>
-                  </div>
-                  <div class="{% if employee.confine %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                    <i class="fa-solid fa-square-person-confined text-base"></i>
-                  </div>
-                  <div class="{% if employee.height %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                    <i class="fa-solid fa-person-falling text-base"></i>
-                  </div>
-                </div>
-                
-                <!-- Indicador del estado de bajas -->
-                <div class="mt-2 px-2 py-1 rounded-full text-xs text-center {% if employee.leave_from|date:'Y-m-d' <= today and employee.leave_to|date:'Y-m-d' >= today %}bg-orange-500 text-white{% else %}bg-purple-200 text-purple-700{% endif %}">
-                  {% if employee.leave_from|date:"Y-m-d" <= today and employee.leave_to|date:"Y-m-d" >= today %}
-                    <i class="fas fa-check-circle mr-1"></i>De baja
-                  {% elif employee.leave_from|date:"Y-m-d" > today %}
-                    <i class="fas fa-clock mr-1"></i>Baja Programada
-                  {% elif employee.leave_to|date:"Y-m-d" < today %}
-                    <i class="fas fa-history mr-1"></i>Finalizada
-                  {% else %}
-                    <i class="fas fa-question-circle mr-1"></i>Estado indefinido
-                  {% endif %}
-                </div>
-              </div>
-            {% endif %}
-          {% endif %}
-        {% empty %}
-          <div class="text-center py-8">
-            <i class="fas fa-umbrella-beach text-4xl text-purple-300 mb-3"></i>
-            <p class="text-xs text-purple-500 italic">No hay empleados en vacaciones</p>
-          </div>
-        {% endfor %}
-      </div>
-    </div>
-  </div>
 </div>
 
 <!-- Modal para editar vacaciones (opcional) -->
