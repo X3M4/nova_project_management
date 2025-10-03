@@ -272,301 +272,270 @@
   opacity: 1;
 }
 
+/* Reemplaza la sección de RESPONSIVE DESIGN para pantallas grandes */
+
 /* ==========================================================================
-   8. RESPONSIVE DESIGN MEJORADO - CORREGIDO PARA PIZARRAS SMART
+   8. RESPONSIVE DESIGN MEJORADO - OPTIMIZADO PARA PIZARRAS SMART
    ========================================================================== */
 
-/* Pizarras Smart y pantallas grandes (4K+) - FORZAR LAYOUT HORIZONTAL */
+/* Configuración base para todas las pantallas */
+.project-column {
+  background: white;
+  border-radius: var(--kanban-border-radius-lg);
+  box-shadow: var(--kanban-shadow-md);
+  overflow: hidden;
+  transition: all var(--kanban-transition-normal);
+  position: relative;
+  display: flex !important;
+  flex-direction: column !important;
+  /* Alturas base - serán sobrescritas por media queries */
+  min-height: 250px !important;
+  max-height: calc(45vh - 60px) !important;
+  flex: 0 0 280px;
+  max-width: 280px;
+}
+
+.kanban-column {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 0.5rem !important;
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db #f3f4f6;
+  /* Altura base - será sobrescrita */
+  max-height: calc(45vh - 100px) !important;
+}
+
+/* Pizarras Smart y pantallas grandes (1920px+) */
 @media (min-width: 1920px) {
   .kanban-board {
-    flex-direction: row !important; /* Forzar layout horizontal */
+    flex-direction: row !important;
     overflow-x: hidden !important;
     overflow-y: auto !important;
-  }
-
-  .kanban-sidebar {
-    flex: 0 0 380px !important; /* Sidebar más ancha en pantallas grandes */
-    width: 380px !important;
-    max-width: 380px !important;
-    position: sticky !important;
-    top: var(--kanban-spacing-lg) !important;
-    align-self: flex-start !important;
-    max-height: calc(100vh - 8rem) !important;
+    gap: 1.5rem !important;
+    padding: 1.5rem !important;
+    min-height: calc(100vh - 4rem) !important;
   }
 
   .kanban-main {
     flex: 1 !important;
     display: flex !important;
     flex-direction: column !important;
-    gap: var(--kanban-spacing-lg) !important;
+    gap: 1rem !important; /* REDUCIDO */
     overflow-x: hidden !important;
     overflow-y: auto !important;
-    max-height: calc(100vh - 6rem) !important;
+    max-height: calc(100vh - 5rem) !important; /* AJUSTADO */
   }
 
   .projects-container {
     display: flex !important;
-    flex-direction: row !important; /* Forzar fila */
-    gap: var(--kanban-spacing-lg) !important;
+    flex-direction: row !important;
+    gap: 1rem !important; /* REDUCIDO */
     overflow-x: auto !important;
     overflow-y: hidden !important;
-    padding-bottom: var(--kanban-spacing-md) !important;
+    padding-bottom: 0.5rem !important;
+    min-height: 400px !important; /* AUMENTADO para pizarras Smart */
   }
 
   .project-column {
-    flex: 0 0 360px !important; /* Columnas más anchas en pantallas grandes */
-    max-width: 360px !important;
-    min-width: 360px !important;
-    min-height: 350px !important; /* REDUCIDO */
-    max-height: calc(45vh - 60px) !important; /* REDUCIDO para pizarras Smart */
-  }
-
-  /* Scrollbar más visible en pantallas grandes */
-  .projects-container::-webkit-scrollbar {
-    height: 16px !important;
-  }
-
-  .projects-container::-webkit-scrollbar-thumb {
-    background: linear-gradient(45deg, #6366f1, #8b5cf6) !important;
-    border-radius: 8px !important;
-    border: 3px solid var(--kanban-light-gray) !important;
+    flex: 0 0 320px !important; /* AJUSTADO */
+    max-width: 320px !important;
+    min-width: 320px !important;
+    min-height: 380px !important; /* AUMENTADO */
+    max-height: calc(48vh - 40px) !important; /* AUMENTADO para ver ambas filas */
   }
 
   .kanban-column {
-    max-height: calc(45vh - 100px) !important; /* REDUCIDO */
+    max-height: calc(48vh - 80px) !important; /* AUMENTADO */
     padding: 0.5rem !important;
   }
 
   .employee-card {
-    min-height: 55px !important; /* REDUCIDO */
+    min-height: 60px !important; /* AJUSTADO */
     padding: 0.5rem !important;
     margin-bottom: 0.5rem !important;
     font-size: 0.85rem !important;
   }
 
   .employee-name {
-    font-size: 0.85rem !important; /* REDUCIDO */
+    font-size: 0.85rem !important;
   }
 
   .employee-job {
-    font-size: 0.75rem !important; /* REDUCIDO */
+    font-size: 0.75rem !important;
   }
 
   .project-header {
-    min-height: 70px !important; /* REDUCIDO */
+    min-height: 75px !important; /* AJUSTADO */
     padding: 0.75rem !important;
   }
 
   .project-title {
-    font-size: 0.85rem !important; /* REDUCIDO */
-  }
-}
-
-/* Pantallas 4K específicamente */
-@media (min-width: 3840px) {
-  .kanban-board {
-    gap: var(--kanban-spacing-xl) !important;
-    padding: var(--kanban-spacing-xl) !important;
+    font-size: 0.85rem !important;
   }
 
   .kanban-sidebar {
-    flex: 0 0 420px !important;
-    width: 420px !important;
+    flex: 0 0 300px !important; /* REDUCIDO para dar más espacio al main */
+    width: 300px !important;
+    max-width: 300px !important;
+  }
+}
+
+/* Pantallas 4K específicamente (3840px+) */
+@media (min-width: 3840px) {
+  .kanban-board {
+    gap: 2rem !important;
+    padding: 2rem !important;
+    min-height: calc(100vh - 3rem) !important;
+  }
+
+  .kanban-main {
+    gap: 1.5rem !important;
+    max-height: calc(100vh - 4rem) !important;
+  }
+
+  .projects-container {
+    gap: 1.5rem !important;
+    min-height: 500px !important; /* AUMENTADO para 4K */
   }
 
   .project-column {
-    flex: 0 0 400px !important;
-    max-width: 400px !important;
-    min-width: 400px !important;
-    min-height: 400px !important;
-    max-height: calc(42vh - 50px) !important; /* REDUCIDO para 4K */
+    flex: 0 0 380px !important;
+    max-width: 380px !important;
+    min-width: 380px !important;
+    min-height: 480px !important; /* AUMENTADO */
+    max-height: calc(50vh - 30px) !important; /* AUMENTADO */
   }
 
-  .section-title h3 {
-    font-size: 1.5rem !important;
+  .kanban-column {
+    max-height: calc(50vh - 70px) !important; /* AUMENTADO */
+    padding: 0.75rem !important;
   }
 
   .employee-card {
-    min-height: 65px !important; /* REDUCIDO */
+    min-height: 70px !important;
     padding: 0.75rem !important;
     font-size: 0.9rem !important;
   }
 
   .employee-name {
-    font-size: 0.95rem !important; /* REDUCIDO */
+    font-size: 0.95rem !important;
   }
 
   .employee-job {
-    font-size: 0.8rem !important; /* REDUCIDO */
+    font-size: 0.8rem !important;
   }
 
   .project-header {
-    min-height: 80px !important; /* REDUCIDO */
+    min-height: 85px !important;
     padding: 1rem !important;
   }
 
   .project-title {
-    font-size: 0.95rem !important; /* REDUCIDO */
+    font-size: 0.95rem !important;
   }
 
-  .kanban-column {
-    max-height: calc(42vh - 80px) !important; /* REDUCIDO */
-    padding: 0.75rem !important;
+  .kanban-sidebar {
+    flex: 0 0 340px !important;
+    width: 340px !important;
   }
 
   .kanban-column::-webkit-scrollbar {
-    width: 6px; /* REDUCIDO */
+    width: 8px !important; /* Más visible en 4K */
   }
 }
 
-/* Tablet real (NO pizarras Smart) - Solo para dispositivos pequeños */
-@media (max-width: 1024px) and (max-height: 1366px) and (pointer: coarse) {
-  .kanban-board {
-    flex-direction: column;
-    overflow-y: auto;
-  }
-
-  .kanban-sidebar {
-    flex: none;
-    width: 100%;
-    max-width: 100%;
-    position: relative;
-    max-height: 300px;
-  }
-
-  .kanban-main {
-    max-height: none;
-    overflow-y: visible;
-  }
-
-  .projects-container {
-    overflow-x: auto;
-    padding-bottom: var(--kanban-spacing-md);
-  }
-
+/* Pantallas ultra anchas (más de 5K) */
+@media (min-width: 5120px) {
   .project-column {
-    flex: 0 0 280px;
-    max-width: 280px;
+    flex: 0 0 400px !important;
+    max-width: 400px !important;
+    min-width: 400px !important;
+    min-height: 600px !important;
+    max-height: calc(55vh - 30px) !important;
+  }
+
+  .kanban-column {
+    max-height: calc(55vh - 70px) !important;
+  }
+
+  .employee-card {
+    min-height: 80px !important;
+    font-size: 1rem !important;
+  }
+
+  .project-header {
+    min-height: 95px !important;
   }
 }
 
-/* Mobile real - Solo para teléfonos */
-@media (max-width: 768px) and (max-height: 1024px) {
-  .kanban-board {
-    flex-direction: column;
-    gap: var(--kanban-spacing-md);
-    padding: var(--kanban-spacing-sm);
-  }
-
-  .kanban-sidebar {
-    max-height: 250px;
-  }
-
-  .projects-container {
-    flex-direction: column;
-    overflow-x: visible;
-    overflow-y: auto;
-  }
-
-  .project-column {
-    flex: none;
-    max-width: 100%;
-    margin-bottom: var(--kanban-spacing-md);
-  }
-
-  .scroll-navigation {
-    display: none;
-  }
-}
-
-/* IMPORTANTE: Sobreescribir cualquier estilo que pueda afectar pizarras Smart */
-@media (min-width: 1920px) and (pointer: coarse) {
-  /* Incluso si es táctil, si es una pantalla grande, usar layout horizontal */
-  .kanban-board {
-    flex-direction: row !important;
-  }
-  
-  .projects-container {
-    flex-direction: row !important;
-    display: flex !important;
-  }
-  
-  .project-column {
-    flex: 0 0 360px !important;
-  }
-}
+/* Añadir al final del archivo */
 
 /* ==========================================================================
-   DETECCIÓN Y OPTIMIZACIÓN PARA PIZARRAS SMART
+   CONFIGURACIÓN ESPECÍFICA PARA DOBLE FILA (OBRAS Y PROYECTOS)
    ========================================================================== */
 
-/* Detectar pizarras Smart por resolución y aspect ratio */
-@media (min-width: 1920px) and (min-height: 1080px) {
-  body.smart-board {
-    --kanban-spacing-lg: 2rem;
-    --kanban-spacing-xl: 3rem;
+/* Asegurar que el main container tenga suficiente altura para ambas filas */
+@media (min-width: 1920px) {
+  .kanban-main {
+    min-height: calc(100vh - 6rem) !important;
   }
-  
-  .smart-board .kanban-board {
-    flex-direction: row !important;
-    gap: 2rem !important;
+
+  /* Forzar que cada sección tenga un tamaño máximo para permitir ambas */
+  .section-title + .projects-container {
+    max-height: calc(47vh - 30px) !important; /* Cada fila máximo 47% del viewport */
   }
-  
-  .smart-board .projects-container {
-    display: flex !important;
-    flex-direction: row !important;
-    gap: 2rem !important;
+
+  /* Espaciado entre secciones */
+  .section-title {
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+    padding: 0.5rem 1rem !important;
+    flex-shrink: 0;
   }
-  
-  .smart-board .project-column {
-    flex: 0 0 380px !important;
-    min-width: 380px !important;
-  }
-  
-  .smart-board .employee-card {
-    min-height: 100px !important;
-    font-size: 1.1rem !important;
+
+  .section-title h3 {
+    font-size: 1rem !important;
+    font-weight: 600 !important;
   }
 }
 
-/* Regla específica para resoluciones 4K */
-@media (min-width: 3840px) and (min-height: 2160px) {
-  .kanban-board {
-    flex-direction: row !important;
-    padding: 3rem !important;
+/* Para pantallas muy grandes, permitir más altura */
+@media (min-width: 3840px) {
+  .section-title + .projects-container {
+    max-height: calc(48vh - 30px) !important;
   }
-  
-  .projects-container {
-    display: flex !important;
-    flex-direction: row !important;
-    gap: 3rem !important;
-  }
-  
+}
+
+/* Configuración específica para pizarras Smart táctiles */
+@media (min-width: 1920px) and (pointer: coarse) {
   .project-column {
-    flex: 0 0 420px !important;
-    min-width: 420px !important;
+    min-height: 400px !important;
+    max-height: calc(46vh - 40px) !important;
+  }
+  
+  .kanban-column {
+    max-height: calc(46vh - 80px) !important;
+  }
+  
+  .employee-card {
+    min-height: 70px !important; /* Más grande para touch */
+    padding: 0.75rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+  
+  .project-header {
+    min-height: 80px !important;
+    padding: 1rem !important;
   }
 }
 
-/* Optimizaciones específicas para pantallas táctiles grandes */
-@media (pointer: coarse) and (min-width: 1920px) {
-  .touch-device .employee-card {
-    min-height: 100px !important;
-    padding: 1.25rem !important;
-    margin-bottom: 1.25rem !important;
-  }
-  
-  .touch-device .project-column {
-    padding: 1.5rem !important;
-  }
-  
-  /* Botones más grandes para tocar */
-  .touch-device a,
-  .touch-device button {
-    min-height: 50px !important;
-    min-width: 50px !important;
-    padding: 12px !important;
-  }
+/* Debugging - remover después de probar */
+.kanban-main > * {
+  border: 1px solid red !important; /* TEMPORAL - para ver los contenedores */
+}
+
+.projects-container {
+  border: 2px solid blue !important; /* TEMPORAL - para ver los contenedores */
 }
 
 /* ==========================================================================
@@ -920,22 +889,214 @@ nav .dropdown-menu {
 /* Buscar .kanban-header y actualizar */
 
 .kanban-header {
-  padding: 0.1rem 1rem !important; /* REDUCIDO */
-  min-height: 25px !important; /* REDUCIDO */
-  max-height: 25px !important;
+  padding: 0.5rem 1rem !important;
+  min-height: 50px !important;
+  max-height: 50px !important;
+  flex-shrink: 0 !important; /* No permitir que se encoja */
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 100 !important;
+  background: white !important;
+  border-bottom: 1px solid #e5e7eb !important;
 }
 
 .kanban-header .flex {
-  min-height: 20px !important; /* REDUCIDO */
+  min-height: 40px !important; /* REDUCIDO */
 }
 
 .kanban-header input[type="text"] {
-  height: 16px !important; /* REDUCIDO */
+  height: 32px !important; /* REDUCIDO */
   font-size: 0.8rem !important;
 }
 
 .kanban-header a {
-  height: 16px !important; /* REDUCIDO */
+  height: 32px !important; /* REDUCIDO */
   font-size: 0.8rem !important;
-  padding: 0.25rem 0.25rem !important;
+  padding: 0.25rem 0.75rem !important;
+}
+
+/* Para pantallas grandes, hacer el header aún más compacto */
+@media (min-width: 1920px) {
+  .kanban-header {
+    padding: 0.375rem 1.5rem !important;
+    min-height: 45px !important;
+    max-height: 45px !important;
+  }
+
+  .kanban-header input[type="text"] {
+    height: 36px !important;
+    font-size: 0.875rem !important;
+  }
+
+  .kanban-header a {
+    height: 36px !important;
+    font-size: 0.875rem !important;
+    padding: 0.375rem 1rem !important;
+  }
+}
+
+@media (min-width: 3840px) {
+  .kanban-header {
+    padding: 0.5rem 2rem !important;
+    min-height: 50px !important;
+    max-height: 50px !important;
+  }
+
+  .kanban-header input[type="text"] {
+    height: 40px !important;
+    font-size: 1rem !important;
+  }
+
+  .kanban-header a {
+    height: 40px !important;
+    font-size: 1rem !important;
+    padding: 0.5rem 1.25rem !important;
+  }
+}
+
+/* Añadir al final del archivo */
+
+/* ==========================================================================
+   CONFIGURACIÓN ESPECÍFICA PARA DOBLE FILA (OBRAS Y PROYECTOS)
+   ========================================================================== */
+
+/* Asegurar que el main container tenga suficiente altura para ambas filas */
+@media (min-width: 1920px) {
+  .kanban-main {
+    min-height: calc(100vh - 6rem) !important;
+  }
+
+  /* Forzar que cada sección tenga un tamaño máximo para permitir ambas */
+  .section-title + .projects-container {
+    max-height: calc(47vh - 30px) !important; /* Cada fila máximo 47% del viewport */
+  }
+
+  /* Espaciado entre secciones */
+  .section-title {
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+    padding: 0.5rem 1rem !important;
+    flex-shrink: 0;
+  }
+
+  .section-title h3 {
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+  }
+}
+
+/* Para pantallas muy grandes, permitir más altura */
+@media (min-width: 3840px) {
+  .section-title + .projects-container {
+    max-height: calc(48vh - 30px) !important;
+  }
+}
+
+/* Configuración específica para pizarras Smart táctiles */
+@media (min-width: 1920px) and (pointer: coarse) {
+  .project-column {
+    min-height: 400px !important;
+    max-height: calc(46vh - 40px) !important;
+  }
+  
+  .kanban-column {
+    max-height: calc(46vh - 80px) !important;
+  }
+  
+  .employee-card {
+    min-height: 70px !important; /* Más grande para touch */
+    padding: 0.75rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+  
+  .project-header {
+    min-height: 80px !important;
+    padding: 1rem !important;
+  }
+}
+
+/* Debugging - remover después de probar */
+.kanban-main > * {
+  border: 1px solid red !important; /* TEMPORAL - para ver los contenedores */
+}
+
+.projects-container {
+  border: 2px solid blue !important; /* TEMPORAL - para ver los contenedores */
+}
+
+/* Añadir al final del archivo */
+
+/* ==========================================================================
+   REGLAS ULTRA-ESPECÍFICAS PARA PRODUCCIÓN - PIZARRAS SMART
+   ========================================================================== */
+
+/* Forzar layout horizontal en cualquier pantalla >= 1920px */
+@media screen and (min-width: 1920px) {
+  body .kanban-board,
+  html body .kanban-board,
+  .kanban-container .kanban-board {
+    flex-direction: row !important;
+    display: flex !important;
+    min-height: calc(100vh - 4rem) !important;
+  }
+  
+  body .kanban-main,
+  html body .kanban-main,
+  .kanban-container .kanban-main {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1rem !important;
+    overflow-y: auto !important;
+    max-height: calc(100vh - 5rem) !important;
+  }
+  
+  body .projects-container,
+  html body .projects-container,
+  .kanban-container .projects-container {
+    display: flex !important;
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    max-height: calc(47vh - 30px) !important;
+    min-height: 350px !important;
+  }
+  
+  body .project-column,
+  html body .project-column,
+  .kanban-container .project-column {
+    flex: 0 0 320px !important;
+    min-width: 320px !important;
+    max-width: 320px !important;
+    min-height: 350px !important;
+    max-height: calc(47vh - 40px) !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+}
+
+/* Regla específica para detección de pizarras Smart por resolución */
+@media screen and (min-width: 1920px) and (min-height: 1080px) {
+  .project-column {
+    min-height: 380px !important;
+    max-height: calc(46vh - 30px) !important;
+  }
+  
+  .kanban-column {
+    max-height: calc(46vh - 70px) !important;
+  }
+}
+
+/* Para pantallas 4K */
+@media screen and (min-width: 3840px) and (min-height: 2160px) {
+  .project-column {
+    flex: 0 0 380px !important;
+    min-width: 380px !important;
+    max-width: 380px !important;
+    min-height: 450px !important;
+    max-height: calc(48vh - 30px) !important;
+  }
+  
+  .kanban-column {
+    max-height: calc(48vh - 70px) !important;
+  }
 }
