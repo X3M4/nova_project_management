@@ -1,234 +1,234 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Nova Cartografia Employee Management{% endblock %}</title>
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
-    
-    {% load static %}
-    <!-- Tailwind Config -->
-    <script src="{% static 'js/tailwind.config.js' %}"></script>
-    
-    <!-- Custom CSS -->
-    <style type="text/tailwindcss">
-        @layer utilities {
-            .content-container {
-                @apply w-full mx-auto px-4 sm:px-6 lg:px-8;
-            }
-        }
-    </style>
-    
-    {% block extra_css %}{% endblock %}
-</head>
-<body class="bg-gray-50 min-h-screen flex flex-col ">
-    <!-- Navigation -->
-    <nav class="navbar-drpdown-container bg-gray-100 shadow-md">
-        <div class="content-container">
-            <div class="flex justify-between h-16 ml-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0 flex items-center">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{% block title %}Nova Workers Management{% endblock %}</title>
+        
+        <!-- Tailwind CSS -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        
+        <!-- Font Awesome -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        
+        <!-- Alpine.js - IMPORTANTE: Debe estar ANTES del cierre del head -->
+        <script defer src="https://unpkg.com/@alpinejs/csp@3.x.x/dist/cdn.min.js"></script>
+        
+        <!-- Tu CSS personalizado -->
+        {% load static %}
+        <link rel="stylesheet" href="{% static 'css/base.css' %}">
+        
+        {% block extra_css %}{% endblock %}
+    </head>
+    <body class="bg-gray-50 min-h-screen flex flex-col ">
+        <!-- Navigation -->
+                <!-- Reemplazar los menús desplegables con esta versión -->
+        <nav class="bg-white shadow-sm">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 mr-4 order-first">
+                            {% load static %}
+                            <img src="{% static 'images/952.png' %}" alt="Nova Workers Logo" class="h-12 w-auto">
+                        </div>
                         
-                        <a href="{% url 'home' %}" class="text-orange-500 font-bold text-xl">
-                            <img class="mx-auto h-10 w-auto" src="{% static 'images/952.png' %}" alt="Nova Workers Management Logo">
-                        </a>
+                        <div class="hidden md:block">
+                            <div class="ml-10 flex items-baseline space-x-4">
+                                
+                                <!-- Employees Menu -->
+                                <div class="relative dropdown-container">
+                                    <button class="dropdown-toggle text-orange-500 hover:text-orange-700 border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
+                                        <span>Employees</span>
+                                        <svg class="ml-1 w-4 h-4 dropdown-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                        </svg>
+                                    </button>
+                                    <div class="dropdown-menu hidden origin-top-left absolute left-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
+                                        <a href="{% url 'employee_list' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">All Employees</a>
+                                        <a href="{% url 'employee_create' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Add Employee</a>
+                                        <a href="{% url 'employee_locations_list' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Manage Employee Locations</a>
+                                        <a href="{% url 'get_employee_locked_list' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Employee Locked List</a>
+                                        <a href="{% url 'import_employees_csv' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Import CSV</a>
+                                        <a href="{% url 'export_employees_csv' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Export CSV</a>
+                                        <a href="{% url 'employee_vacation_list' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Employee Vacations</a>
+                                    </div>
+                                </div>
+                                
+                                <!-- Projects Menu -->
+                                <div class="relative dropdown-container">
+                                    <button class="dropdown-toggle text-orange-500 hover:text-orange-700 border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
+                                        <span>Projects</span>
+                                        <svg class="ml-1 w-4 h-4 dropdown-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                        </svg>
+                                    </button>
+                                    <div class="dropdown-menu hidden origin-top-left absolute left-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
+                                        <a href="{% url 'project_list' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">All Projects</a>
+                                        <a href="{% url 'project_create' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Add Project</a>
+                                        <a href="{% url 'big_project_list' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Manage Big Project Locations</a>
+                                        <a href="{% url 'import_projects_csv' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Import CSV</a>
+                                        <a href="{% url 'export_projects_csv' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Export CSV</a>
+                                    </div>
+                                </div>
+        
+                                <!-- Employee Needs Menu -->
+                                <div class="relative dropdown-container">
+                                    <button class="dropdown-toggle text-orange-500 hover:text-orange-700 border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
+                                        <span>Employee Needs</span>
+                                        <svg class="ml-1 w-4 h-4 dropdown-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                        </svg>
+                                    </button>
+                                    <div class="dropdown-menu hidden origin-top-left absolute left-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
+                                        <a href="{% url 'employee_needed_list' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">All Requests</a>
+                                        <a href="{% url 'employee_needed_create' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Add Request</a>
+                                    </div>
+                                </div>
+                                
+                                <!-- Enlaces directos -->
+                                <a href="{% url 'movement_list' %}" class="text-orange-500 hover:text-orange-700 border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
+                                    Movements
+                                </a>
+                                
+                                <a href="{% url 'kanban_board' %}" class="text-orange-500 hover:text-orange-700 border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
+                                    Kanban Board
+                                </a>
+                                
+                                <a href="{% url 'project_map' %}" class="text-orange-500 hover:text-orange-700 border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
+                                    <i class="fas fa-map-marked-alt mr-1"></i> Map
+                                </a>
+                                
+                            </div>
+                        </div>
                     </div>
-                    <div class="hidden sm:ml-6 sm:flex sm:space-x-4">
-                        <!-- Main Navigation -->
-                        <div class="relative" x-data="{ navEmployeesOpen: false }">
-                            <button @click="navEmployeesOpen = !navEmployeesOpen" class="text-orange-500 hover:text-orange-700 border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
-                                <span>Employees</span>
-                                <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                            </button>
-                            <div @click.away="navEmployeesOpen = false" x-show="navEmployeesOpen" class="origin-top-left absolute left-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="transform opacity-0 scale-95" x-transition:enter-end="transform opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="transform opacity-100 scale-100" x-transition:leave-end="transform opacity-0 scale-95">
-                                <a href="{% url 'employee_list' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">All Employees</a>
-                                <a href="{% url 'employee_create' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Add Employee</a>
-                                <a href="{% url 'employee_locations_list' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Manage Employee Locations</a>
-                                <a href="{% url 'get_employee_locked_list' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Employee Locked List</a>
-                                <a href="{% url 'import_employees_csv' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Import CSV</a>
-                                <a href="{% url 'export_employees_csv' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Export CSV</a>
-                                <a href="{% url 'employee_vacation_list' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Employee Vacations</a>
-                            </div>
-                        </div>
-                        
-                        <div class="relative" x-data="{ navProjectsOpen: false }">
-                            <button @click="navProjectsOpen = !navProjectsOpen" class="text-orange-500 hover:text-orange-700 border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
-                                <span>Projects</span>
-                                <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                            </button>
-                            <div @click.away="navProjectsOpen = false" x-show="navProjectsOpen" class="origin-top-left absolute left-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
-                                <a href="{% url 'project_list' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">All Projects</a>
-                                <a href="{% url 'project_create' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Add Project</a>
-                                <a href="{% url 'big_project_list' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Manage Big Project Locations</a>
-                                <a href="{% url 'import_projects_csv' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Import CSV</a>
-                                <a href="{% url 'export_projects_csv' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Export CSV</a>
-                            </div>
-                        </div>
-
-                        <div class="relative" x-data="{ navNeedsOpen: false }">
-                            <button @click="navNeedsOpen = !navNeedsOpen" class="text-orange-500 hover:text-orange-700 border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
-                                <span>Employee Needs</span>
-                                <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                            </button>
-                            <div @click.away="navNeedsOpen = false" x-show="navNeedsOpen" class="origin-top-left absolute left-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
-                                <a href="{% url 'employee_needed_list' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">All Requests</a>
-                                <a href="{% url 'employee_needed_create' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-200">Add Request</a>
-                            </div>
-                        </div>
-                        
-                        <a href="{% url 'movement_list' %}" class="text-orange-500 hover:text-orange-700 border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
-                            Movements
-                        </a>
-                        
-                        <a href="{% url 'kanban_board' %}" class="text-orange-500 hover:text-orange-700 border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
-                            Kanban Board
-                        </a>
-                        <a href="{% url 'project_map' %}" class="text-orange-500 hover:text-orange-700 border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
-                            <i class="fas fa-map-marked-alt mr-1"></i> Map
-                        </a>
-                    </div>
-                </div>
-                <div class="hidden sm:ml-6 mr-6 sm:flex sm:items-center">
-                    {% if user.is_authenticated %}
-                        <div class="ml-3 relative" x-data="{ open: false }">
-                            <div>
-                                <button @click="open = !open" type="button" class="bg-orange-600 flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-primary-800 focus:ring-white">
-                                    <span class="sr-only">Open user menu</span>
-                                    <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-orange-500">
-                                        <span class="text-xs font-medium leading-none text-white">{{ user.username|slice:":1" }}</span>
-                                    </span>
+                    
+                    <!-- User menu -->
+                    <div class="flex items-center">
+                        {% if user.is_authenticated %}
+                            <div class="relative dropdown-container">
+                                <button class="dropdown-toggle flex items-center text-sm text-gray-500 hover:text-gray-700">
+                                    <span class="mr-2">{{ user.username }}</span>
+                                    <i class="fas fa-user-circle text-xl"></i>
                                 </button>
+                                <div class="dropdown-menu hidden origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
+                                    <a href="{% url 'logout' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Logout</a>
+                                </div>
                             </div>
-                            <div @click.away="open = false" x-show="open" class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
-                                <a href="{% url 'admin:index' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Admin</a>
-                                <a href="{% url 'login' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Logout</a>
-                            </div>
-                        </div>
-                    {% else %}
-                        <a href="{% url 'login' %}" class="text-gray-100 hover:text-white text-sm font-medium">Login</a>
-                    {% endif %}
-                </div>
-                <div class="-mr-2 flex items-center sm:hidden">
-                    <button type="button" @click="mobileMenuOpen = !mobileMenuOpen" class="inline-flex items-center justify-center p-2 rounded-md text-gray-100 hover:text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white">
-                        <span class="sr-only">Open main menu</span>
-                        <svg x-show="!mobileMenuOpen" class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                        </svg>
-                        <svg x-show="mobileMenuOpen" class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Mobile menu, toggle classes based on menu state -->
-        <div x-data="{ mobileMenuOpen: false }" x-show="mobileMenuOpen" class="sm:hidden">
-            <div class="pt-2 pb-3 space-y-1">
-                <div x-data="{ open: false }">
-                    <button @click="open = !open" class="w-full flex justify-between items-center text-gray-100 hover:text-white block pl-3 pr-4 py-2 border-l-4 border-transparent hover:border-white text-base font-medium">
-                        <span>Employees</span>
-                        <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                    </button>
-                    <div x-show="open" class="pl-4 pr-3">
-                        <a href="{% url 'employee_list' %}" class="text-gray-100 hover:text-white block py-2 text-sm">All Employees</a>
-                        <a href="{% url 'employee_create' %}" class="text-gray-100 hover:text-white block py-2 text-sm">Add Employee</a>
-                        <a href="{% url 'import_employees_csv' %}" class="text-gray-100 hover:text-white block py-2 text-sm">Import CSV</a>
-                        <a href="{% url 'export_employees_csv' %}" class="text-gray-100 hover:text-white block py-2 text-sm">Export CSV</a>
+                        {% endif %}
                     </div>
                 </div>
-                <div x-data="{ open: false }">
-                    <button @click="open = !open" class="w-full flex justify-between items-center text-gray-100 hover:text-white block pl-3 pr-4 py-2 border-l-4 border-transparent hover:border-white text-base font-medium">
-                        <span>Projects</span>
-                        <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                    </button>
-                    <div x-show="open" class="pl-4 pr-3">
-                        <a href="{% url 'project_list' %}" class="text-gray-100 hover:text-white block py-2 text-sm">All Projects</a>
-                        <a href="{% url 'project_create' %}" class="text-gray-100 hover:text-white block py-2 text-sm">Add Project</a>
-                        <a href="{% url 'import_projects_csv' %}" class="text-gray-100 hover:text-white block py-2 text-sm">Import CSV</a>
-                        <a href="{% url 'export_projects_csv' %}" class="text-gray-100 hover:text-white block py-2 text-sm">Export CSV</a>
-                    </div>
-                </div>
-                <a href="{% url 'movement_list' %}" class="text-gray-100 hover:text-white block pl-3 pr-4 py-2 border-l-4 border-transparent hover:border-white text-base font-medium">Movements</a>
-                <a href="{% url 'kanban_board' %}" class="text-gray-100 hover:text-white block pl-3 pr-4 py-2 border-l-4 border-transparent hover:border-white text-base font-medium">Kanban Board</a>
             </div>
-            <div class="pt-4 pb-3 border-t border-primary-700">
-                {% if user.is_authenticated %}
-                    <div class="flex items-center px-5">
-                        <div class="flex-shrink-0">
-                            <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-primary-500">
-                                <span class="text-xs font-medium leading-none text-white">{{ user.username|slice:":1" }}</span>
-                            </span>
-                        </div>
-                        <div class="ml-3">
-                            <div class="text-base font-medium leading-none text-white">{{ user.username }}</div>
-                        </div>
-                    </div>
-                    <div class="mt-3 space-y-1">
-                        <a href="{% url 'admin:index' %}" class="block px-4 py-2 text-base font-medium text-gray-100 hover:text-white hover:bg-primary-700">Admin</a>
-                        <a href="{% url 'logout' %}" class="block px-4 py-2 text-base font-medium text-gray-100 hover:text-white hover:bg-primary-700">Logout</a>
-                    </div>
-                {% else %}
-                    <div class="mt-3 space-y-1">
-                        <a href="{% url 'login' %}" class="block px-4 py-2 text-base font-medium text-gray-100 hover:text-white hover:bg-primary-700">Login</a>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-    </nav>
-
-    <!-- Messages -->
-    <div class="content-container py-4">
-        {% if messages %}
-        <div id="messages-container" class="fixed top-4 right-4 z-50 max-w-md">
-            {% for message in messages %}
-            <div class="message {{ message.tags }} bg-{{ message.level_tag|default:'green' }}-100 border-l-4 border-{{ message.level_tag|default:'green' }}-500 text-{{ message.level_tag|default:'green' }}-700 p-4 mb-2 rounded shadow-md flex justify-between transition-all duration-500 ease-in-out transform translate-x-0 opacity-100 bg-green-600 text-white" role="alert">
-                <div>{{ message }}</div>
-                <button class="text-gray-500 hover:text-gray-800 ml-2" onclick="this.parentNode.remove()">×</button>
-            </div>
-            {% endfor %}
-        </div>
-
+        </nav>
+        
+        <!-- JavaScript para los dropdowns -->
         <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                const messages = document.querySelectorAll('.message');
-                messages.forEach(function(message) {
-                    setTimeout(function() {
-                        message.classList.replace('translate-x-0', 'translate-x-full');
-                        message.classList.replace('opacity-100', 'opacity-0');
-                        
-                        setTimeout(function() {
-                            message.remove();
-                        }, 500);
-                    }, 4000); // 4 segundos antes de desaparecer
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Inicializando dropdowns...');
+            
+            // Manejar todos los dropdowns
+            const dropdownContainers = document.querySelectorAll('.dropdown-container');
+            
+            dropdownContainers.forEach(container => {
+                const toggle = container.querySelector('.dropdown-toggle');
+                const menu = container.querySelector('.dropdown-menu');
+                const arrow = container.querySelector('.dropdown-arrow');
+                
+                if (!toggle || !menu) return;
+                
+                // Toggle del menú
+                toggle.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    // Cerrar otros menús
+                    dropdownContainers.forEach(otherContainer => {
+                        if (otherContainer !== container) {
+                            const otherMenu = otherContainer.querySelector('.dropdown-menu');
+                            const otherArrow = otherContainer.querySelector('.dropdown-arrow');
+                            if (otherMenu) {
+                                otherMenu.classList.add('hidden');
+                            }
+                            if (otherArrow) {
+                                otherArrow.style.transform = 'rotate(0deg)';
+                            }
+                        }
+                    });
+                    
+                    // Toggle del menú actual
+                    const isHidden = menu.classList.contains('hidden');
+                    if (isHidden) {
+                        menu.classList.remove('hidden');
+                        if (arrow) arrow.style.transform = 'rotate(180deg)';
+                    } else {
+                        menu.classList.add('hidden');
+                        if (arrow) arrow.style.transform = 'rotate(0deg)';
+                    }
                 });
             });
+            
+            // Cerrar menús al hacer click fuera
+            document.addEventListener('click', function(e) {
+                dropdownContainers.forEach(container => {
+                    const menu = container.querySelector('.dropdown-menu');
+                    const arrow = container.querySelector('.dropdown-arrow');
+                    if (menu && !container.contains(e.target)) {
+                        menu.classList.add('hidden');
+                        if (arrow) arrow.style.transform = 'rotate(0deg)';
+                    }
+                });
+            });
+            
+            console.log(`Dropdowns inicializados: ${dropdownContainers.length}`);
+        });
         </script>
-        {% endif %}
-    </div>
 
-    <!-- Main Content -->
-    <main class="flex-grow">
-        <div class="content-container py-6">
-            {% block content %}{% endblock %}
+        <!-- Messages -->
+        <div class="content-container py-4">
+            {% if messages %}
+            <div id="messages-container" class="fixed top-4 right-4 z-50 max-w-md">
+                {% for message in messages %}
+                <div class="message {{ message.tags }} bg-{{ message.level_tag|default:'green' }}-100 border-l-4 border-{{ message.level_tag|default:'green' }}-500 text-{{ message.level_tag|default:'green' }}-700 p-4 mb-2 rounded shadow-md flex justify-between transition-all duration-500 ease-in-out transform translate-x-0 opacity-100 bg-green-600 text-white" role="alert">
+                    <div>{{ message }}</div>
+                    <button class="text-gray-500 hover:text-gray-800 ml-2" onclick="this.parentNode.remove()">×</button>
+                </div>
+                {% endfor %}
+            </div>
+
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    const messages = document.querySelectorAll('.message');
+                    messages.forEach(function(message) {
+                        setTimeout(function() {
+                            message.classList.replace('translate-x-0', 'translate-x-full');
+                            message.classList.replace('opacity-100', 'opacity-0');
+                            
+                            setTimeout(function() {
+                                message.remove();
+                            }, 500);
+                        }, 4000); // 4 segundos antes de desaparecer
+                    });
+                });
+            </script>
+            {% endif %}
         </div>
-    </main>
 
-    <!-- Footer -->
-    <footer class="bg-white border-t border-gray-200">
-        <div class="content-container py-6">
-            <p class="text-center text-sm text-gray-500">&copy; {% now "Y" %} Nova Cartografia Employee Management</p>
-        </div>
-    </footer>
+        <!-- Main Content -->
+        <main class="flex-grow">
+            <div class="content-container py-6">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
 
-    <!-- Alpine.js -->
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-    
-    {% block extra_js %}{% endblock %}
-</body>
+        <!-- Footer -->
+        <footer class="bg-white border-t border-gray-200">
+            <div class="content-container py-6">
+                <p class="text-center text-sm text-gray-500">&copy; {% now "Y" %} Nova Cartografia Employee Management</p>
+            </div>
+        </footer>
+
+        <!-- Alpine.js -->
+        <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+        
+        {% block extra_js %}{% endblock %}
+    </body>
 </html>

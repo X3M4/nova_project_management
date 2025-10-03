@@ -17,25 +17,35 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
+# BASE_DIR = Path(__file__).resolve().parent.parent
+#BASE DIR DESARROLLO
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Cargar .env desde la raíz del proyecto (un nivel por encima de BASE_DIR)
-load_dotenv(dotenv_path=BASE_DIR.parent / ".env")
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
+# Load environment variables from .env file
+load_dotenv(BASE_DIR / '.env')
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-key')
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-fallback-key')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
+DEBUG = os.getenv('DEBUG', 'True').lower() in ['true', '1', 'yes', 'on']
 
-ALLOWED_HOSTS = [h.strip() for h in os.getenv("ALLOWED_HOSTS","").split(",") if h.strip()]
-CSRF_TRUSTED_ORIGINS = [u.strip() for u in os.getenv("CSRF_TRUSTED_ORIGINS","").split(",") if u.strip()]
+# ALLOWED_HOSTS configuration
+ALLOWED_HOSTS_ENV = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1')
+if ALLOWED_HOSTS_ENV == '*':
+    ALLOWED_HOSTS = ['*']
+else:
+    ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_ENV.split(',') if host.strip()]
+
+# CSRF_TRUSTED_ORIGINS configuration
+CSRF_TRUSTED_ORIGINS_ENV = os.getenv('CSRF_TRUSTED_ORIGINS', '')
+if CSRF_TRUSTED_ORIGINS_ENV:
+    CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in CSRF_TRUSTED_ORIGINS_ENV.split(',') if origin.strip()]
+else:
+    CSRF_TRUSTED_ORIGINS = []
 
 # Application definition
-
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -44,15 +54,12 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "novacartografia_employee_management",
-    'project_maps',
-    'rest_framework.authtoken',
-    'corsheaders',
+    "project_maps",  # AÑADIR ESTA LÍNEA
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -60,59 +67,27 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:8000').split(',')
-
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
-    ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
-    ],
-}
-
 ROOT_URLCONF = "nova_workers_management.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [
-            os.path.join(BASE_DIR, 'templates'),
-        ],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [BASE_DIR / "templates"],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
-# Static files (CSS, JavaScript, Images)
-STATIC_URL = os.getenv('STATIC_URL', '/static/')
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),
-]
-STATIC_ROOT = os.getenv("STATIC_ROOT", str(BASE_DIR / "static"))
-
-# Media files (Uploaded files)
-MEDIA_URL = os.getenv('MEDIA_URL', '/media/')
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
-# Authentication URLs
-LOGIN_REDIRECT_URL = os.getenv('LOGIN_REDIRECT_URL', 'kanban_board')
-LOGOUT_REDIRECT_URL = os.getenv('LOGOUT_REDIRECT_URL', 'login')
-LOGIN_URL = os.getenv('LOGIN_URL', 'login')
-
 WSGI_APPLICATION = "nova_workers_management.wsgi.application"
 
 # Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
 DATABASES = {
     "default": {
         "ENGINE": os.getenv('DB_ENGINE', 'django.db.backends.sqlite3'),
@@ -121,8 +96,6 @@ DATABASES = {
 }
 
 # Password validation
-# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
@@ -139,28 +112,34 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # Internationalization
-# https://docs.djangoproject.com/en/5.2/topics/i18n/
-
 LANGUAGE_CODE = os.getenv('LANGUAGE_CODE', 'en-us')
-
 TIME_ZONE = os.getenv('TIME_ZONE', 'UTC')
-
 USE_I18N = True
-
 USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
+STATIC_URL = os.getenv('STATIC_URL', '/static/')
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
+STATIC_ROOT = os.getenv("STATIC_ROOT", str(BASE_DIR / "staticfiles"))
 
-STATIC_URL = "static/"
+# Media files (Uploaded files)
+MEDIA_URL = os.getenv('MEDIA_URL', '/media/')
+MEDIA_ROOT = os.getenv('MEDIA_ROOT', str(BASE_DIR / 'media'))
+
+# Authentication URLs
+LOGIN_REDIRECT_URL = os.getenv('LOGIN_REDIRECT_URL', 'kanban_board')
+LOGOUT_REDIRECT_URL = os.getenv('LOGOUT_REDIRECT_URL', 'login')
+LOGIN_URL = os.getenv('LOGIN_URL', 'login')
+
+# Security settings for production
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER_ENV = os.getenv('SECURE_PROXY_SSL_HEADER', '')
+    if SECURE_PROXY_SSL_HEADER_ENV:
+        header_parts = SECURE_PROXY_SSL_HEADER_ENV.split(',')
+        if len(header_parts) == 2:
+            SECURE_PROXY_SSL_HEADER = (header_parts[0].strip(), header_parts[1].strip())
 
 # Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
-
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
-USE_X_FORWARDED_HOST = True
-
-v = os.getenv("SECURE_PROXY_SSL_HEADER")
-if v:
-    SECURE_PROXY_SSL_HEADER = tuple(v.split(","))
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

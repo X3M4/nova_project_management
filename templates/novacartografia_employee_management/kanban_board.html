@@ -25,9 +25,9 @@
 {% block content %}
   <div class="kanban-header">
     <div class="flex justify-between items-center">
+
       <div>
-        <h2 class="text-xl font-bold text-gray-800">Kanban Board</h2>
-        <p class="text-sm text-gray-600">Drag and drop employees between projects</p>
+        <a href="{% url 'project_list' %}" class="ml-10 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-1 px-3 rounded flex items-center text-sm"><i class="fas fa-th-list mr-1"></i> Project List</a>
       </div>
 
       <!-- Search Bar -->
@@ -46,33 +46,11 @@
                 </a>
             {% endif %}
         </form>
-    </div>
-
-      <div>
-        <a href="{% url 'project_list' %}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-1 px-3 rounded flex items-center text-sm"><i class="fas fa-th-list mr-1"></i> Project List</a>
-      </div>
-
-{% comment %} <div class="refresh-controls">
-  <div class="mb-2">
-      <button id="manual-refresh-btn" class="btn btn-primary btn-sm">
-          <i class="fas fa-sync-alt"></i> Actualizar
-      </button>
-      <button id="refresh-toggle-btn" class="btn btn-secondary btn-sm" onclick="toggleAutoRefresh()">
-          <i class="fas fa-pause"></i> Pausar Auto-refresh
-      </button>
-  </div>
-  <div>
-      <small>Intervalo:</small><br>
-      <button class="refresh-interval-btn btn-sm btn-success" data-interval="15" onclick="setRefreshInterval(15)">15s</button>
-      <button class="refresh-interval-btn btn-sm btn-secondary active" data-interval="30" onclick="setRefreshInterval(30)">30s</button>
-      <button class="refresh-interval-btn btn-sm btn-secondary" data-interval="60" onclick="setRefreshInterval(60)">1m</button>
-      <button class="refresh-interval-btn btn-sm btn-secondary" data-interval="300" onclick="setRefreshInterval(300)">5m</button>
-  </div>
-</div>  {% endcomment %}
+  </div>  
 
 <!-- Contenedor de estadísticas actualizable -->
 {% if stats.employees_ending_soon > 0 or stats.employees_on_vacation > 0 %}
-<div class="stats-panel mb-3">
+<div class="stats-panel mb-3 mr-10">
   {% if stats.employees_ending_soon > 0 %}
       <div class="alert alert-warning">
           <i class="fas fa-exclamation-triangle"></i>
