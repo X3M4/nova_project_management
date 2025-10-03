@@ -165,9 +165,10 @@
   overflow: hidden;
   transition: all var(--kanban-transition-normal);
   position: relative;
-  min-height: 400px;
-  flex: 0 0 320px; /* Ancho fijo para cada columna */
-  max-width: 320px;
+  min-height: 300px !important; /* REDUCIDO de 500px a 300px */
+  max-height: calc(50vh - 80px) !important; /* REDUCIDO - máximo 50% de viewport */
+  display: flex !important;
+  flex-direction: column !important;
 }
 
 /* ==========================================================================
@@ -316,6 +317,8 @@
     flex: 0 0 360px !important; /* Columnas más anchas en pantallas grandes */
     max-width: 360px !important;
     min-width: 360px !important;
+    min-height: 350px !important; /* REDUCIDO */
+    max-height: calc(45vh - 60px) !important; /* REDUCIDO para pizarras Smart */
   }
 
   /* Scrollbar más visible en pantallas grandes */
@@ -327,6 +330,35 @@
     background: linear-gradient(45deg, #6366f1, #8b5cf6) !important;
     border-radius: 8px !important;
     border: 3px solid var(--kanban-light-gray) !important;
+  }
+
+  .kanban-column {
+    max-height: calc(45vh - 100px) !important; /* REDUCIDO */
+    padding: 0.5rem !important;
+  }
+
+  .employee-card {
+    min-height: 55px !important; /* REDUCIDO */
+    padding: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+    font-size: 0.85rem !important;
+  }
+
+  .employee-name {
+    font-size: 0.85rem !important; /* REDUCIDO */
+  }
+
+  .employee-job {
+    font-size: 0.75rem !important; /* REDUCIDO */
+  }
+
+  .project-header {
+    min-height: 70px !important; /* REDUCIDO */
+    padding: 0.75rem !important;
+  }
+
+  .project-title {
+    font-size: 0.85rem !important; /* REDUCIDO */
   }
 }
 
@@ -346,6 +378,8 @@
     flex: 0 0 400px !important;
     max-width: 400px !important;
     min-width: 400px !important;
+    min-height: 400px !important;
+    max-height: calc(42vh - 50px) !important; /* REDUCIDO para 4K */
   }
 
   .section-title h3 {
@@ -353,18 +387,35 @@
   }
 
   .employee-card {
-    min-height: 90px !important;
-    padding: 1rem !important;
-    margin-bottom: 1rem !important;
+    min-height: 65px !important; /* REDUCIDO */
+    padding: 0.75rem !important;
+    font-size: 0.9rem !important;
   }
 
-  /* Texto más grande para pantallas 4K */
   .employee-name {
-    font-size: 1.125rem !important;
+    font-size: 0.95rem !important; /* REDUCIDO */
   }
 
   .employee-job {
-    font-size: 1rem !important;
+    font-size: 0.8rem !important; /* REDUCIDO */
+  }
+
+  .project-header {
+    min-height: 80px !important; /* REDUCIDO */
+    padding: 1rem !important;
+  }
+
+  .project-title {
+    font-size: 0.95rem !important; /* REDUCIDO */
+  }
+
+  .kanban-column {
+    max-height: calc(42vh - 80px) !important; /* REDUCIDO */
+    padding: 0.75rem !important;
+  }
+
+  .kanban-column::-webkit-scrollbar {
+    width: 6px; /* REDUCIDO */
   }
 }
 
@@ -621,4 +672,270 @@
     flex-direction: row !important;
     display: flex !important;
   }
+}
+
+/* ==========================================================================
+   CORRECCIÓN PARA DROPDOWNS DEL NAV - CONFLICTOS DE Z-INDEX
+   ========================================================================== */
+
+/* Asegurar que el nav y sus dropdowns estén por encima del kanban */
+nav {
+  position: relative;
+  z-index: 2000 !important;
+}
+
+nav .dropdown-container {
+  position: relative;
+  z-index: 2001 !important;
+}
+
+nav .dropdown-menu {
+  position: absolute;
+  z-index: 2002 !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Reducir z-index del kanban para que no interfiera */
+.kanban-container,
+.kanban-board,
+.kanban-main,
+.kanban-sidebar,
+.project-column {
+  z-index: 1 !important;
+}
+
+.section-title {
+  z-index: 2 !important;
+}
+
+/* Headers sticky de proyectos */
+.project-header {
+  position: sticky;
+  top: 0;
+  z-index: 3 !important;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 0.5rem !important; /* REDUCIDO de 0.75rem */
+  min-height: 60px !important; /* REDUCIDO de 80px a 60px */
+}
+
+.project-title {
+  font-size: 0.8rem !important; /* REDUCIDO */
+  line-height: 1.1 !important;
+  margin-bottom: 0.125rem !important; /* REDUCIDO */
+}
+
+.project-meta {
+  font-size: 0.7rem !important; /* REDUCIDO */
+  line-height: 1.0 !important;
+}
+
+/* ==========================================================================
+   OPTIMIZACIÓN DE ALTURAS Y SCROLL EN COLUMNAS
+   ========================================================================== */
+
+/* Reducir altura de las tarjetas de empleados */
+.employee-card {
+  padding: 0.25rem !important; /* REDUCIDO de 0.5rem */
+  margin-bottom: 0.25rem !important; /* REDUCIDO de 0.5rem */
+  min-height: 45px !important; /* REDUCIDO de 60px a 45px */
+  font-size: 0.8rem !important; /* REDUCIDO tamaño de texto */
+  line-height: 1.1 !important;
+}
+
+.employee-name {
+  font-size: 0.8rem !important; /* REDUCIDO */
+  font-weight: 600 !important;
+  margin-bottom: 0.125rem !important; /* REDUCIDO */
+}
+
+.employee-job {
+  font-size: 0.7rem !important; /* REDUCIDO */
+  color: #6b7280 !important;
+  margin-bottom: 0.125rem !important; /* REDUCIDO */
+}
+
+.employee-skills {
+  font-size: 0.65rem !important; /* REDUCIDO */
+}
+
+/* Contenedor de empleados con scroll */
+.kanban-column {
+  max-height: calc(50vh - 120px) !important; /* REDUCIDO - altura máxima basada en viewport */
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 0.25rem !important; /* REDUCIDO padding */
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db #f3f4f6;
+}
+
+/* Scrollbar personalizada para columnas */
+.kanban-column::-webkit-scrollbar {
+  width: 6px;
+}
+
+.kanban-column::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border-radius: 3px;
+}
+
+.kanban-column::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+  transition: background 0.2s ease;
+}
+
+.kanban-column::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Altura optimizada para las columnas de proyecto */
+.project-column {
+  min-height: 300px !important; /* REDUCIDO de 500px a 300px */
+  max-height: calc(50vh - 80px) !important; /* REDUCIDO - máximo 50% de viewport */
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* El header del proyecto fijo arriba */
+.project-column .project-header {
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* El contenido scrolleable */
+.project-column .kanban-column {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem;
+}
+
+/* Optimización para pantallas grandes */
+@media (min-width: 1920px) {
+  .employee-card {
+    min-height: 55px !important; /* REDUCIDO */
+    padding: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+  
+  .employee-name {
+    font-size: 0.85rem !important; /* REDUCIDO */
+  }
+  
+  .employee-job {
+    font-size: 0.75rem !important; /* REDUCIDO */
+  }
+  
+  .project-header {
+    min-height: 70px !important; /* REDUCIDO */
+    padding: 0.75rem !important;
+  }
+  
+  .project-title {
+    font-size: 0.85rem !important; /* REDUCIDO */
+  }
+  
+  .kanban-column {
+    max-height: calc(45vh - 100px) !important; /* REDUCIDO */
+    padding: 0.5rem !important;
+  }
+}
+
+/* Optimización para pantallas 4K */
+@media (min-width: 3840px) {
+  .employee-card {
+    min-height: 65px !important; /* REDUCIDO */
+    padding: 0.75rem !important;
+    font-size: 0.9rem !important;
+  }
+  
+  .employee-name {
+    font-size: 0.95rem !important; /* REDUCIDO */
+  }
+  
+  .employee-job {
+    font-size: 0.8rem !important; /* REDUCIDO */
+  }
+  
+  .project-header {
+    min-height: 80px !important; /* REDUCIDO */
+    padding: 1rem !important;
+  }
+  
+  .project-title {
+    font-size: 0.95rem !important; /* REDUCIDO */
+  }
+  
+  .kanban-column {
+    max-height: calc(42vh - 80px) !important; /* REDUCIDO */
+    padding: 1rem !important;
+  }
+  
+  .kanban-column::-webkit-scrollbar {
+    width: 6px; /* REDUCIDO */
+  }
+}
+
+/* Indicadores de scroll para las columnas */
+.kanban-column::before {
+  content: '';
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 10px;
+  background: linear-gradient(to bottom, rgba(255,255,255,1), rgba(255,255,255,0));
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.kanban-column.has-scroll::before {
+  opacity: 1;
+}
+
+.kanban-column::after {
+  content: '';
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 10px;
+  background: linear-gradient(to top, rgba(255,255,255,1), rgba(255,255,255,0));
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.kanban-column.has-scroll::after {
+  opacity: 1;
+}
+
+/* Buscar .kanban-header y actualizar */
+
+.kanban-header {
+  padding: 0.1rem 1rem !important; /* REDUCIDO */
+  min-height: 25px !important; /* REDUCIDO */
+  max-height: 25px !important;
+}
+
+.kanban-header .flex {
+  min-height: 20px !important; /* REDUCIDO */
+}
+
+.kanban-header input[type="text"] {
+  height: 16px !important; /* REDUCIDO */
+  font-size: 0.8rem !important;
+}
+
+.kanban-header a {
+  height: 16px !important; /* REDUCIDO */
+  font-size: 0.8rem !important;
+  padding: 0.25rem 0.25rem !important;
 }

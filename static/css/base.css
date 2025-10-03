@@ -132,3 +132,67 @@ pre {
     opacity: 0.5;
     cursor: not-allowed;
 }
+
+/* Añadir al final del archivo */
+
+/* Estilos mejorados para dropdowns en cualquier página */
+nav {
+  position: relative;
+  z-index: 2000 !important;
+}
+
+.dropdown-container {
+  position: relative;
+  z-index: 2001 !important;
+}
+
+.dropdown-menu {
+  position: absolute !important;
+  z-index: 2002 !important;
+  transition: all 0.2s ease-in-out !important;
+  transform-origin: top !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  background: white !important;
+}
+
+.dropdown-menu.hidden {
+  opacity: 0 !important;
+  transform: scaleY(0.95) !important;
+  pointer-events: none !important;
+  display: none !important;
+}
+
+.dropdown-menu:not(.hidden) {
+  opacity: 1 !important;
+  transform: scaleY(1) !important;
+  pointer-events: auto !important;
+  display: block !important;
+}
+
+.dropdown-arrow {
+  transition: transform 0.2s ease-in-out !important;
+}
+
+/* Asegurar que los dropdowns funcionen sobre cualquier contenido */
+body.kanban-page nav,
+body.kanban-page .dropdown-container,
+body.kanban-page .dropdown-menu {
+  z-index: 2000 !important;
+}
+
+/* Mejorar visibilidad en pantallas táctiles */
+@media (pointer: coarse) {
+  .dropdown-menu a {
+    padding: 0.75rem 1rem !important;
+    font-size: 0.95rem !important;
+    min-height: 48px !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+  
+  .dropdown-toggle {
+    min-height: 48px !important;
+    padding: 0.5rem 1rem !important;
+  }
+}

@@ -120,67 +120,135 @@
             </div>
         </nav>
         
-        <!-- JavaScript para los dropdowns -->
         <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('Inicializando dropdowns...');
-            
-            // Manejar todos los dropdowns
-            const dropdownContainers = document.querySelectorAll('.dropdown-container');
-            
-            dropdownContainers.forEach(container => {
-                const toggle = container.querySelector('.dropdown-toggle');
-                const menu = container.querySelector('.dropdown-menu');
-                const arrow = container.querySelector('.dropdown-arrow');
+            document.addEventListener('DOMContentLoaded', function() {
+                console.log('Inicializando dropdowns mejorados...');
                 
-                if (!toggle || !menu) return;
+                // Manejar todos los dropdowns
+                const dropdownContainers = document.querySelectorAll('.dropdown-container');
                 
-                // Toggle del menú
-                toggle.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
+                dropdownContainers.forEach(container => {
+                    const toggle = container.querySelector('.dropdown-toggle');
+                    const menu = container.querySelector('.dropdown-menu');
+                    const arrow = container.querySelector('.dropdown-arrow');
                     
-                    // Cerrar otros menús
-                    dropdownContainers.forEach(otherContainer => {
-                        if (otherContainer !== container) {
-                            const otherMenu = otherContainer.querySelector('.dropdown-menu');
-                            const otherArrow = otherContainer.querySelector('.dropdown-arrow');
-                            if (otherMenu) {
-                                otherMenu.classList.add('hidden');
+                    if (!toggle || !menu) return;
+                    
+                    // Asegurar z-index correcto
+                    menu.style.zIndex = '2002';
+                    container.style.zIndex = '2001';
+                    
+                    // Toggle del menú
+                    toggle.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        // Cerrar otros menús
+                        dropdownContainers.forEach(otherContainer => {
+                            if (otherContainer !== container) {
+                                const otherMenu = otherContainer.querySelector('.dropdown-menu');
+                                const otherArrow = otherContainer.querySelector('.dropdown-arrow');
+                                if (otherMenu) {
+                                    otherMenu.classList.add('hidden');
+                                    otherMenu.style.display = 'none';
+                                }
+                                if (otherArrow) {
+                                    otherArrow.style.transform = 'rotate(0deg)';
+                                }
                             }
-                            if (otherArrow) {
-                                otherArrow.style.transform = 'rotate(0deg)';
-                            }
+                        });
+                        
+                        // Toggle del menú actual
+                        const isHidden = menu.classList.contains('hidden');
+                        if (isHidden) {
+                            menu.classList.remove('hidden');
+                            menu.style.display = 'block';
+                            menu.style.position = 'absolute';
+                            menu.style.zIndex = '2002';
+                            if (arrow) arrow.style.transform = 'rotate(180deg)';
+                            
+                            // Asegurar posicionamiento correcto
+                            setTimeout(() => {
+                                const rect = toggle.getBoundingClientRect();
+                                const menuRect = menu.getBoundingClientRect();
+                                
+                                // Si se sale por la derecha, ajustar
+                                if (rect.left + menuRect.width > window.innerWidth) {
+                                    menu.style.left = 'auto';
+                                    menu.style.right = '0';
+                                }
+                                
+                                // Si se sale por abajo, ajustar
+                                if (rect.bottom + menuRect.height > window.innerHeight) {
+                                    menu.style.top = 'auto';
+                                    menu.style.bottom = '100%';
+                                    menu.style.marginBottom = '0.5rem';
+                                }
+                            }, 10);
+                        } else {
+                            menu.classList.add('hidden');
+                            menu.style.display = 'none';
+                            if (arrow) arrow.style.transform = 'rotate(0deg)';
                         }
                     });
                     
-                    // Toggle del menú actual
-                    const isHidden = menu.classList.contains('hidden');
-                    if (isHidden) {
-                        menu.classList.remove('hidden');
-                        if (arrow) arrow.style.transform = 'rotate(180deg)';
-                    } else {
-                        menu.classList.add('hidden');
-                        if (arrow) arrow.style.transform = 'rotate(0deg)';
+                    // Mejorar hover para tablets/touch
+                    if ('ontouchstart' in window) {
+                        toggle.addEventListener('touchstart', function(e) {
+                            e.preventDefault();
+                            toggle.click();
+                        });
                     }
                 });
-            });
-            
-            // Cerrar menús al hacer click fuera
-            document.addEventListener('click', function(e) {
-                dropdownContainers.forEach(container => {
-                    const menu = container.querySelector('.dropdown-menu');
-                    const arrow = container.querySelector('.dropdown-arrow');
-                    if (menu && !container.contains(e.target)) {
-                        menu.classList.add('hidden');
-                        if (arrow) arrow.style.transform = 'rotate(0deg)';
+                
+                // Cerrar menús al hacer click fuera
+                document.addEventListener('click', function(e) {
+                    dropdownContainers.forEach(container => {
+                        const menu = container.querySelector('.dropdown-menu');
+                        const arrow = container.querySelector('.dropdown-arrow');
+                        if (menu && !container.contains(e.target)) {
+                            menu.classList.add('hidden');
+                            menu.style.display = 'none';
+                            if (arrow) arrow.style.transform = 'rotate(0deg)';
+                        }
+                    });
+                });
+                
+                // Cerrar menús con escape
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') {
+                        dropdownContainers.forEach(container => {
+                            const menu = container.querySelector('.dropdown-menu');
+                            const arrow = container.querySelector('.dropdown-arrow');
+                            if (menu) {
+                                menu.classList.add('hidden');
+                                menu.style.display = 'none';
+                                if (arrow) arrow.style.transform = 'rotate(0deg)';
+                            }
+                        });
                     }
                 });
+                
+                console.log(`Dropdowns mejorados inicializados: ${dropdownContainers.length}`);
+                
+                // Detectar scroll en columnas kanban para mostrar indicadores
+                const kanbanColumns = document.querySelectorAll('.kanban-column');
+                kanbanColumns.forEach(column => {
+                    function updateScrollIndicators() {
+                        const hasScroll = column.scrollHeight > column.clientHeight;
+                        if (hasScroll) {
+                            column.classList.add('has-scroll');
+                        } else {
+                            column.classList.remove('has-scroll');
+                        }
+                    }
+                    
+                    updateScrollIndicators();
+                    column.addEventListener('scroll', updateScrollIndicators);
+                    window.addEventListener('resize', updateScrollIndicators);
+                });
             });
-            
-            console.log(`Dropdowns inicializados: ${dropdownContainers.length}`);
-        });
-        </script>
+            </script>
 
         <!-- Messages -->
         <div class="content-container py-4">
