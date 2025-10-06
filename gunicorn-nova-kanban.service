@@ -1,0 +1,22 @@
+[Unit]
+Description=Gunicorn daemon for Nova Kanban Board
+After=network.target
+
+[Service]
+Type=exec
+# the specific user that our service will run as
+User=www-data
+Group=www-data
+RuntimeDirectory=gunicorn
+WorkingDirectory=/srv/nova_project_management/nova_project_management
+ExecStart=/srv/nova_project_management/venv/bin/gunicorn \
+          --config /srv/nova_project_management/nova_project_management/gunicorn.conf.py \
+          nova_workers_management.wsgi:application
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=5
+PrivateTmp=true
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

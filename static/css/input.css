@@ -1,0 +1,204 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Componentes personalizados */
+@layer components {
+  .kanban-container {
+    @apply font-sans text-gray-900 bg-gray-50;
+  }
+  
+  .kanban-board {
+    @apply flex flex-row gap-6 p-6 min-h-screen overflow-hidden;
+  }
+  
+  .kanban-sidebar {
+    @apply flex-none w-80 bg-white rounded-xl shadow-md overflow-hidden sticky top-6 self-start max-h-screen;
+  }
+  
+  .kanban-main {
+    @apply flex-1 flex flex-col gap-4 overflow-x-hidden overflow-y-auto max-h-screen pr-2;
+  }
+  
+  .projects-container {
+    @apply flex gap-4 overflow-x-auto overflow-y-hidden pb-2 min-h-96 pr-2;
+  }
+  
+  .project-column {
+    @apply bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 relative min-h-72 max-h-96 flex flex-col flex-none w-72 max-w-72;
+  }
+  
+  .project-header {
+    @apply sticky top-0 z-10 bg-white shadow-sm p-3 min-h-16;
+  }
+  
+  .project-title {
+    @apply text-sm font-semibold text-gray-900 leading-tight mb-1;
+  }
+  
+  .project-meta {
+    @apply text-xs text-gray-600 leading-tight;
+  }
+  
+  .kanban-column {
+    @apply overflow-y-auto overflow-x-hidden p-2 flex-1;
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db #f3f4f6;
+  }
+  
+  .employee-card {
+    @apply bg-gray-50 rounded-lg p-2 mb-2 border border-gray-200 cursor-move transition-all duration-200 hover:shadow-md hover:bg-white min-h-12 text-sm;
+  }
+  
+  .employee-name {
+    @apply text-sm font-semibold text-gray-900 leading-tight;
+  }
+  
+  .employee-job {
+    @apply text-xs text-gray-600 leading-tight mt-1;
+  }
+  
+  .employee-skills {
+    @apply text-xs text-gray-500 leading-tight mt-1;
+  }
+  
+  .section-title {
+    @apply sticky left-0 z-20 bg-gray-50 bg-opacity-95 p-2 mb-2 backdrop-blur-sm rounded-lg shadow-sm;
+  }
+  
+  .section-title h3 {
+    @apply text-lg font-semibold text-violet-700 flex items-center gap-2 m-0;
+  }
+  
+  .scroll-btn {
+    @apply bg-gradient-to-r from-blue-500 to-purple-600 text-white border-0 rounded-lg px-3 py-1 cursor-pointer opacity-80 transition-all duration-150 text-sm font-medium flex items-center gap-1 min-w-20 justify-center;
+  }
+  
+  .scroll-btn:hover {
+    @apply opacity-100 transform -translate-y-0.5 shadow-lg;
+  }
+  
+  .scroll-btn:disabled {
+    @apply opacity-30 cursor-not-allowed transform-none shadow-none;
+  }
+  
+  .scroll-navigation {
+    @apply flex justify-center items-center gap-2 my-2 p-1 bg-white bg-opacity-90 rounded-xl backdrop-blur-sm border border-gray-100;
+  }
+}
+
+/* Utilities adicionales */
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db #f3f4f6;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 12px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    @apply bg-gray-100 rounded;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-gray-400 rounded;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-500;
+  }
+  
+  .kanban-responsive {
+    @apply block;
+  }
+  
+  @screen lg {
+    .kanban-responsive {
+      @apply flex;
+    }
+  }
+}
+
+/* Media queries específicas para pizarras Smart */
+@media (min-width: 1920px) {
+  .kanban-board {
+    @apply gap-8 p-8;
+  }
+  
+  .project-column {
+    @apply w-80 max-w-80 min-h-96 max-h-112;
+  }
+  
+  .kanban-column {
+    @apply p-3;
+  }
+  
+  .employee-card {
+    @apply p-3 mb-3 text-base min-h-16;
+  }
+  
+  .employee-name {
+    @apply text-base;
+  }
+  
+  .employee-job {
+    @apply text-sm;
+  }
+  
+  .project-header {
+    @apply p-4 min-h-20;
+  }
+  
+  .project-title {
+    @apply text-base;
+  }
+  
+  .project-meta {
+    @apply text-sm;
+  }
+  
+  .kanban-sidebar {
+    @apply w-96;
+  }
+}
+
+@media (min-width: 3840px) {
+  .kanban-board {
+    @apply gap-12 p-12;
+  }
+  
+  .project-column {
+    @apply w-96 max-w-96 min-h-120 max-h-144;
+  }
+  
+  .employee-card {
+    @apply p-4 mb-4 text-lg min-h-20;
+  }
+  
+  .employee-name {
+    @apply text-lg;
+  }
+  
+  .employee-job {
+    @apply text-base;
+  }
+  
+  .project-header {
+    @apply p-6 min-h-24;
+  }
+  
+  .project-title {
+    @apply text-lg;
+  }
+  
+  .project-meta {
+    @apply text-base;
+  }
+  
+  .kanban-sidebar {
+    @apply w-112;
+  }
+}

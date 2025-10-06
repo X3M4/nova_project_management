@@ -1,4 +1,3 @@
-<!-- filepath: /home/p102/django_projects/nova_workers_management/templates/novacartografia_employee_management/kanban_board.html -->
 {% extends 'base.html' %}
 {% load employee_filters %}
 
@@ -13,954 +12,243 @@
 
 {% block extra_js %}
   {% load static %}
-  {% comment %} <script src="{% static 'js/kanban.js' %}"></script>
-  <!-- Añade SortableJS antes de tus scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-  <!-- Reemplaza el script original por el nuevo -->
-  <script src="{% static 'js/touch_kanban.js' %}"></script> {% endcomment %}
   <script src="{% static 'js/drag_drop.js' %}"></script>
- 
 {% endblock %}
 
 {% block content %}
-  <div class="kanban-header">
+<div class="kanban-container">
+  
+  <!-- Header with search and controls -->
+  <div class="kanban-header bg-white shadow-sm mb-4 p-4 rounded-lg">
     <div class="flex justify-between items-center">
-
       <div>
-        <a href="{% url 'project_list' %}" class="ml-10 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-1 px-3 rounded flex items-center text-sm"><i class="fas fa-th-list mr-1"></i> Project List</a>
+        <a href="{% url 'project_list' %}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded flex items-center text-sm">
+          <i class="fas fa-th-list mr-2"></i> Project List
+        </a>
       </div>
 
       <!-- Search Bar -->
-      <div class="flex-1 max-w-md md:ml-6 mt-4 md:mt-0">
+      <div class="flex-1 max-w-md mx-6">
         <form method="GET" class="relative" id="search-form">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <i class="fas fa-search text-gray-400"></i>
-            </div>
-            <input type="text" name="search" value="{{ request.GET.search }}" 
-                   placeholder="Buscar proyectos, managers, empleados..." 
-                   class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
-                   id="search-input" />
-            {% if request.GET.search %}
-                <a href="{% url 'kanban_board' %}" class="absolute inset-y-0 right-0 pr-3 flex items-center">
-                    <i class="fas fa-times text-gray-400 hover:text-gray-600"></i>
-                </a>
-            {% endif %}
+          <input type="text" name="search" value="{{ request.GET.search }}" 
+                 id="search-input"
+                 class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                 placeholder="Buscar proyectos, managers, empleados..." />
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <i class="fas fa-search text-gray-400"></i>
+          </div>
+          {% if request.GET.search %}
+            <a href="{% url 'kanban_board' %}" class="absolute inset-y-0 right-0 pr-3 flex items-center">
+              <i class="fas fa-times text-gray-400 hover:text-gray-600"></i>
+            </a>
+          {% endif %}
         </form>
-  </div>  
+      </div>
 
-<!-- Contenedor de estadísticas actualizable -->
-{% if stats.employees_ending_soon > 0 or stats.employees_on_vacation > 0 %}
-<div class="stats-panel mb-3 mr-10">
-  {% if stats.employees_ending_soon > 0 %}
-      <div class="alert alert-warning">
-          <i class="fas fa-exclamation-triangle"></i>
-          <span id="stat-ending-soon">{{ stats.employees_ending_soon }}</span> empleado{{ stats.employees_ending_soon|pluralize }} con obra/contrato terminando en 7 días
+      <!-- Statistics -->
+      {% if stats.employees_ending_soon > 0 or stats.employees_on_vacation > 0 %}
+      <div class="stats-panel">
+        {% if stats.employees_ending_soon > 0 %}
+          <div class="alert alert-warning text-sm">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span id="stat-ending-soon">{{ stats.employees_ending_soon }}</span> empleado{{ stats.employees_ending_soon|pluralize }} terminando pronto
+          </div>
+        {% endif %}
+        
+        {% if stats.employees_on_vacation > 0 %}
+          <div class="alert alert-info text-sm">
+            <i class="fas fa-umbrella-beach"></i>
+            <span id="stat-on-vacation">{{ stats.employees_on_vacation }}</span> empleado{{ stats.employees_on_vacation|pluralize }} de vacaciones
+          </div>
+        {% endif %}
       </div>
-  {% endif %}
-  
-  {% if stats.employees_on_vacation > 0 %}
-      <div class="alert alert-info">
-          <i class="fas fa-umbrella-beach"></i>
-          <span id="stat-on-vacation">{{ stats.employees_on_vacation }}</span> empleado{{ stats.employees_on_vacation|pluralize }} de vacaciones
-      </div>
-  {% endif %}
-</div>
-{% endif %}
+      {% endif %}
     </div>
-    
-    <!-- Controles de Auto-refresh -->
-
-    <!-- Mobile toggle for sidebar -->
-    <button class="toggle-sidebar w-full bg-gray-100 py-1 px-4 text-left mt-2 rounded flex justify-between items-center md:hidden text-sm">
-      <span>EL PUCHERO</span>
-      <i class="fas fa-chevron-down"></i>
-    </button>
   </div>
 
-  <!-- Main layout with sidebar -->
-  <div class="kanban-board mb-28">
-    <!-- Sidebar with unassigned employees (IZQUIERDA) -->
-    <div class="kanban-sidebar bg-gray-50 shadow-lg rounded-lg p-4">
-      <div>
-        <h3 class="text-md font-bold text-gray-700 mb-2 text-center text-xl">EL PUCHERO</h3>
-        <div class="bg-white shadow rounded-lg">
-          <div class="bg-gray-100 px-3 py-1 border-b border-gray-200 rounded-t-lg">
+  <!-- Main Kanban Layout -->
+  <div class="kanban-board">
+    
+    <!-- Sidebar with unassigned employees -->
+    <div class="kanban-sidebar">
+      <div class="p-4">
+        <h3 class="text-lg font-bold text-gray-700 mb-4 text-center">EL PUCHERO</h3>
+        <div class="bg-white shadow rounded-lg overflow-hidden">
+          <div class="bg-gray-100 px-3 py-2 border-b border-gray-200">
             <div class="flex justify-between items-center">
-              <div>
-                <h3 class="text-sm font-medium text-gray-800">Ingredientes</h3>
-              </div>
-              <span class="bg-gray-200 text-xs font-medium rounded-full px-2 py-1 text-gray-800"><span class="text-sm text-gray-600">({{ employees|count_unassigned }})</span></span>
+              <h4 class="text-sm font-medium text-gray-800">Disponibles</h4>
+              <span class="bg-gray-200 text-xs font-medium rounded-full px-2 py-1 text-gray-800">
+                ({{ employees|count_unassigned }})
+              </span>
             </div>
           </div>
-          <div class="p-3 kanban-column" id="project-{{ project.id }}-column" data-project-id="{{ project.id }}" style="max-height: calc(100vh - 240px); overflow-y: auto; overflow-x: hidden;">
+          <div class="kanban-column" id="unassigned-column" data-project-id="null">
             {% for employee in employees %}
-              {% if employee.project_id == project and 'TOPÓGRAFO' in employee.job or employee.project_id == project and 'Topógrafo' in employee.job %}
-                <div class="employee-card p-2 {% if employee.locked == False %}bg-green-200{% else %}bg-gray-300{% endif %} border border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
+              {% if not employee.project_id and employee.active %}
+                <div class="employee-card {% if employee.locked == False %}bg-green-100 hover:bg-green-200{% else %}bg-gray-200{% endif %} border border-gray-300 rounded-md shadow-sm mb-2 cursor-move" 
+                     data-employee-id="{{ employee.id }}" draggable="true">
                   <div class="flex justify-between items-start">
-                    <div>
-                      <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
+                    <div class="flex-1">
+                      <h4 class="employee-name">{{ employee.name }}</h4>
+                      <p class="employee-job">{{ employee.job }}</p>
+                      {% if employee.city %}
+                        <p class="text-xs text-gray-500 mt-1">
+                          <i class="fas fa-map-marker-alt mr-1"></i>{{ employee.city }}
+                        </p>
+                      {% endif %}
                     </div>
-                    <a href="{% url 'employee_update' employee.id %}" class="text-green-500 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
+                    <div class="flex flex-col items-end">
+                      <a href="{% url 'employee_update' employee.id %}" class="text-blue-600 hover:text-blue-800">
+                        <i class="fas fa-external-link-alt text-xs"></i>
+                      </a>
+                    </div>
                   </div>
-                  <div class="flex justify-between">
-                    <div class="{% if employee.driver_license == False %}text-red-500{% else %}text-green-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                      <i class="fa-solid fa-id-card text-base"></i>
+                  
+                  <!-- Employee skills indicators -->
+                  <div class="flex justify-between mt-2 text-xs">
+                    <div class="{% if employee.driver_license %}text-green-600{% else %}text-red-500{% endif %}">
+                      <i class="fas fa-id-card"></i>
                     </div>
-                    <div class="{% if employee.twenty_hours %}text-green-600{% else %}text-red-500{% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                      <i class="fa-solid fa-2 text-base"></i>
-                      <i class="fa-solid fa-0 text-base"></i>
+                    <div class="{% if employee.twenty_hours %}text-green-600{% else %}text-red-500{% endif %}">
+                      <span>20h</span>
                     </div>
-                    <div class="{% if employee.sixty_hours %}text-green-600{% else %}text-red-500{% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                      <i class="fa-solid fa-6 text-base"></i>
-                      <i class="fa-solid fa-0 text-base"></i>
+                    <div class="{% if employee.sixty_hours %}text-green-600{% else %}text-red-500{% endif %}">
+                      <span>60h</span>
                     </div>
-                    <div class="{% if employee.confine %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                      <i class="fa-solid fa-square-person-confined text-base"></i>
+                    <div class="{% if employee.confine %}text-green-600{% else %}text-red-500{% endif %}">
+                      <i class="fas fa-square-person-confined"></i>
                     </div>
-                    <div class="{% if employee.height %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                      <i class="fa-solid fa-person-falling text-base"></i>
-                    </div>
-                    {% if employee.end_contract %}
-                    <div class="text-purple-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                      <i class="fa-solid fa-skull-crossbones text-xl"></i>
-                    </div>
-                    {% endif %}
-                  </div>
-                </div>
-              {% endif %}
-
-              {% if employee.project_id == project and 'Auxiliar' in employee.job or employee.project_id == project and 'Técnico GIS' in employee.job %}
-                <div class="employee-card p-2 {% if employee.locked == False %}
-                    
-                     bg-yellow-200
-
-                  {% else %}
-                    
-                     bg-gray-300
-
-                  {% endif %} 
-                 border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
-                  <div class="flex justify-between items-start">
-                    <div>
-                      <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
-                      <p class="text-xs text-gray-500">{{ employee.get_state_display }}</p>
-                    </div>
-                    <a href="{% url 'employee_update' employee.id %}" class="text-yellow-500 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
-                  </div>
-                  <div class="flex justify-between">
-                    <div class="{% if employee.driver_license == False %}
-                        
-                        
-                        text-red-500
-
-
-                      {% else %}
-                        
-                        
-                         text-green-500
-
-
-                      {% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                      <i class="fa-solid fa-id-card text-base"></i>
-                    </div>
-                    <div class="{% if employee.twenty_hours %}
-                        
-                        
-                        text-green-600
-
-
-                      {% else %}
-                        
-                        
-                        text-red-500
-
-
-                      {% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                      <i class="fa-solid fa-2 text-base"></i>
-                      <i class="fa-solid fa-0 text-base"></i>
-                    </div>
-                    <div class="{% if employee.sixty_hours %}
-                        
-                        
-                        text-green-600
-
-
-                      {% else %}
-                        
-                        
-                        text-red-500
-
-
-                      {% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                      <i class="fa-solid fa-6 text-base"></i>
-                      <i class="fa-solid fa-0 text-base"></i>
-                    </div>
-                    <div class="{% if employee.confine %}
-                        
-                        
-                        text-green-600
-
-
-                      {% else %}
-                        
-                        
-                        text-red-500
-
-
-                      {% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                      <i class="fa-solid fa-square-person-confined text-base"></i>
-                    </div>
-                    <div class="{% if employee.height %}
-                        
-                        
-                        text-green-600
-
-
-                      {% else %}
-                        
-                        
-                        text-red-500
-
-
-                      {% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                      {% if employee.end_contract %}
-                    <div class="text-purple-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                      <i class="fa-solid fa-skull-crossbones text-xl"></i>
-                    </div>
-                    {% endif %}
-                      <i class="fa-solid fa-person-falling text-base"></i>
+                    <div class="{% if employee.height %}text-green-600{% else %}text-red-500{% endif %}">
+                      <i class="fas fa-person-falling"></i>
                     </div>
                   </div>
                 </div>
               {% endif %}
-
-              {% if employee.project_id == project and 'Piloto' in employee.job %}
-                <div class="employee-card p-2 
-                {% if employee.locked == False %}
-                    
-                     bg-blue-200
-
-                  {% else %}
-                    
-                     bg-gray-300
-
-                  {% endif %} 
-                border border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
-                  <div class="flex justify-between items-start">
-                    <div>
-                      <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
-                      <p class="text-xs text-gray-500">{{ employee.get_state_display }}</p>
-                    </div>
-                    <a href="{% url 'employee_update' employee.id %}" class="text-blue-600 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
-                  </div>
-                  <div class="flex justify-between">
-                    <div class="{% if employee.driver_license == False %}
-                        
-                        
-                        text-red-500
-
-
-                      {% else %}
-                        
-                        
-                         text-green-500
-
-
-                      {% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                      <i class="fa-solid fa-id-card text-base"></i>
-                    </div>
-                    <div class="{% if employee.twenty_hours %}
-                        
-                        
-                        text-green-600
-
-
-                      {% else %}
-                        
-                        
-                        text-red-500
-
-
-                      {% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                      <i class="fa-solid fa-2 text-base"></i>
-                      <i class="fa-solid fa-0 text-base"></i>
-                    </div>
-                    <div class="{% if employee.sixty_hours %}
-                        
-                        
-                        text-green-600
-
-
-                      {% else %}
-                        
-                        
-                        text-red-500
-
-
-                      {% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                      <i class="fa-solid fa-6 text-base"></i>
-                      <i class="fa-solid fa-0 text-base"></i>
-                    </div>
-                    <div class="{% if employee.confine %}
-                        
-                        
-                        text-green-600
-
-
-                      {% else %}
-                        
-                        
-                        text-red-500
-
-
-                      {% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                      <i class="fa-solid fa-square-person-confined text-base"></i>
-                    </div>
-                    <div class="{% if employee.height %}
-                        
-                        
-                        text-green-600
-
-
-                      {% else %}
-                        
-                        
-                        text-red-500
-
-
-                      {% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                      {% if employee.end_contract %}
-                    <div class="text-purple-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                      <i class="fa-solid fa-skull-crossbones text-xl"></i>
-                    </div>
-                    {% endif %}
-                      <i class="fa-solid fa-person-falling text-base"></i>
-                    </div>
-                  </div>
-                </div>
-              {% endif %}
-
-              {% if employee.project_id == project and 'Proyectos' in employee.job %}
-                <div class="employee-card p-2  {% if employee.locked == False %}
-                    
-                     bg-orange-300
-
-                  {% else %}
-                    
-                     bg-gray-300
-
-                  {% endif %}  border border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
-                  <div class="flex justify-between items-start">
-                    <div>
-                      <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
-                      <p class="text-xs text-gray-500">{{ employee.get_state_display }}</p>
-                    </div>
-                    <a href="{% url 'employee_update' employee.id %}" class="text-orange-600 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
-                  </div>
-                  <div class="flex justify-between">
-                    <div class="{% if employee.driver_license == False %}
-                        
-                        
-                        text-red-500
-
-
-                      {% else %}
-                        
-                        
-                         text-green-500
-
-
-                      {% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                      <i class="fa-solid fa-id-card text-base"></i>
-                    </div>
-                    <div class="{% if employee.twenty_hours %}
-                        
-                        
-                        text-green-600
-
-
-                      {% else %}
-                        
-                        
-                        text-red-500
-
-
-                      {% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                      <i class="fa-solid fa-2 text-base"></i>
-                      <i class="fa-solid fa-0 text-base"></i>
-                    </div>
-                    <div class="{% if employee.sixty_hours %}
-                        
-                        
-                        text-green-600
-
-
-                      {% else %}
-                        
-                        
-                        text-red-500
-
-
-                      {% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                      <i class="fa-solid fa-6 text-base"></i>
-                      <i class="fa-solid fa-0 text-base"></i>
-                    </div>
-                    <div class="{% if employee.confine %}
-                        
-                        
-                        text-green-600
-
-
-                      {% else %}
-                        
-                        
-                        text-red-500
-
-
-                      {% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                      <i class="fa-solid fa-square-person-confined text-base"></i>
-                    </div>
-                    <div class="{% if employee.height %}
-                        
-                        
-                        text-green-600
-
-
-                      {% else %}
-                        
-                        
-                        text-red-500
-
-
-                      {% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                      {% if employee.end_contract %}
-                    <div class="text-purple-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                      <i class="fa-solid fa-skull-crossbones text-xl"></i>
-                    </div>
-                    {% endif %}
-                      <i class="fa-solid fa-person-falling text-base"></i>
-                    </div>
-                  </div>
-                </div>
-              {% endif %}
-            {% empty %}
-              <p class="text-xs text-gray-500 italic">No employees assigned</p>
             {% endfor %}
           </div>
         </div>
       </div>
     </div>
 
-  <!-- Mantener todo el contenido existente hasta kanban-main -->
-
-    <!-- Main content with project boards (DERECHA) -->
+    <!-- Main content with project boards -->
     <div class="kanban-main">
-      <!-- OBRAS Projects (PRIMERA FILA) -->
+      
+      <!-- OBRAS Section (First Row) -->
       <div class="mb-6">
         <div class="section-title">
-          <h3 class="text-lg font-bold text-violet-700">
-            <i class="fas fa-hard-hat"></i>
-            Obras
+          <h3>
+            <i class="fas fa-hard-hat mr-2"></i>
+            OBRAS
           </h3>
         </div>
         
         <div class="projects-container" id="obras-container">
-          {% comment %} <div class="project-column bg-pruple-100 shadow rounded-lg">
-            <div class="bg-purple-300 px-3 py-1 border-b-4 border-purple-500 rounded-t-lg">
-              <div class="flex justify-between items-center">
-                <div>
-                  <h3 class="text-sm font-medium text-purple-700">
-                    <i class="fas fa-umbrella-beach mr-2"></i>Vacaciones
-                  </h3>
-                  <p class="text-xs text-gray-600">Empleados en periodo vacacional</p>
-                </div>
-                <div class="flex space-x-3">
-                  {% if can_edit %}
-                    <i class="fas fa-calendar-alt text-purple-600" title="Gestionar vacaciones"></i>
-                  {% endif %}
-                </div>
-              </div>
-            </div>
-            <div class="p-3 kanban-column vacation-column" id="vacation-column" data-vacation="true" style="max-height: calc(100vh - 240px); overflow-y: auto; overflow-x: hidden;">
-              {% for employee in employees %}
-                {% if employee.vacations_from or employee.vacations_to %}
-                  {% now "Y-m-d" as today %}
-                  {% if employee.vacations_from|date:"Y-m-d" <= today and employee.vacations_to|date:"Y-m-d" >= today or not employee.project_id %}
-                    <div class="employee-card p-2 bg-purple-200 border border-purple-300 rounded-md shadow-sm mb-2" 
-                         data-employee-id="{{ employee.id }}" 
-                         {% if can_edit %}draggable="true"{% else %}draggable="false"{% endif %}>
-                      <div class="flex justify-between items-start">
-                        <div class="flex-1">
-                          <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
-                          <p class="text-xs text-purple-600">
-                            <i class="fas fa-umbrella-beach mr-1"></i>{{ employee.job }}
-                          </p>
-                          {% if employee.vacations_from and employee.vacations_to %}
-                            <div class="text-xs text-gray-600 mt-1">
-                              <i class="fas fa-calendar mr-1"></i>
-                              <span class="font-medium">Desde:</span> {{ employee.vacations_from|date:"d/m/Y" }}
-                              <br>
-                              <i class="fas fa-calendar mr-1"></i>
-                              <span class="font-medium">Hasta:</span> {{ employee.vacations_to|date:"d/m/Y" }}
-                            </div>
-                          {% elif employee.vacations_from %}
-                            <div class="text-xs text-gray-600 mt-1">
-                              <i class="fas fa-calendar mr-1"></i>
-                              <span class="font-medium">Desde:</span> {{ employee.vacations_from|date:"d/m/Y" }}
-                            </div>
-                          {% elif employee.vacations_to %}
-                            <div class="text-xs text-gray-600 mt-1">
-                              <i class="fas fa-calendar mr-1"></i>
-                              <span class="font-medium">Hasta:</span> {{ employee.vacations_to|date:"d/m/Y" }}
-                            </div>
-                          {% endif %}
-                        </div>
-                        <div class="flex flex-col items-end">
-                          <a href="{% url 'employee_update' employee.id %}" class="text-purple-600 hover:text-gray-600">
-                            <i class="fas fa-external-link-alt text-xs"></i>
-                          </a>
-                          {% if can_edit %}
-                            <button class="text-purple-500 hover:text-purple-700 mt-1" 
-                                    onclick="editVacations({{ employee.id }})" 
-                                    title="Editar vacaciones">
-                              <i class="fas fa-edit text-xs"></i>
-                            </button>
-                          {% endif %}
-                        </div>
-                      </div>
-                      
-                      <!-- Indicadores de habilidades -->
-                      <div class="flex justify-between mt-2">
-                        <div class="{% if employee.driver_license == False %}text-red-500{% else %}text-green-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-id-card text-base"></i>
-                        </div>
-                        <div class="{% if employee.twenty_hours %}text-green-600{% else %}text-red-500{% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-2 text-base"></i>
-                          <i class="fa-solid fa-0 text-base"></i>
-                        </div>
-                        <div class="{% if employee.sixty_hours %}text-green-600{% else %}text-red-500{% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-6 text-base"></i>
-                          <i class="fa-solid fa-0 text-base"></i>
-                        </div>
-                        <div class="{% if employee.confine %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-square-person-confined text-base"></i>
-                        </div>
-                        <div class="{% if employee.height %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-person-falling text-base"></i>
-                        </div>
-                      </div>
-                      
-                      <!-- Indicador del estado de vacaciones -->
-                      <div class="mt-2 px-2 py-1 rounded-full text-xs text-center {% if employee.vacations_from|date:'Y-m-d' <= today and employee.vacations_to|date:'Y-m-d' >= today %}bg-purple-500 text-white{% else %}bg-purple-200 text-purple-700{% endif %}">
-                        {% if employee.vacations_from|date:"Y-m-d" <= today and employee.vacations_to|date:"Y-m-d" >= today %}
-                          <i class="fas fa-check-circle mr-1"></i>En vacaciones
-                        {% elif employee.vacations_from|date:"Y-m-d" > today %}
-                          <i class="fas fa-clock mr-1"></i>Programadas
-                        {% elif employee.vacations_to|date:"Y-m-d" < today %}
-                          <i class="fas fa-history mr-1"></i>Finalizadas
-                        {% else %}
-                          <i class="fas fa-question-circle mr-1"></i>Estado indefinido
-                        {% endif %}
-                      </div>
-                    </div>
-                  {% endif %}
-                {% endif %}
-              {% empty %}
-                <div class="text-center py-8">
-                  <i class="fas fa-umbrella-beach text-4xl text-purple-300 mb-3"></i>
-                  <p class="text-xs text-purple-500 italic">No hay empleados en vacaciones</p>
-                </div>
-              {% endfor %}
-            </div>
-          </div> {% endcomment %}
-          <!-- Indicadores de scroll -->
-          <div class="scroll-indicator left">
-            <i class="fas fa-chevron-left"></i>
-          </div>
-          <div class="scroll-indicator right">
-            <i class="fas fa-chevron-right"></i>
-          </div>
-          
           {% for project in projects %}
             {% if project.type|lower == 'external' %}
-              <div class="project-column bg-violet-100 shadow rounded-lg">
-                <!-- Header del proyecto -->
-                <div class="bg-violet-200 px-3 py-1 border-b-4 
+              <div class="project-column">
+                <!-- Project Header -->
+                <div class="project-header bg-violet-200 border-b-4
                      {% if project.manager == 'Jose Cuesta Mejías' %}border-emerald-400
                      {% elif project.manager == 'Javier Marín Gimeno' %}border-orange-400
                      {% elif project.manager == 'Guillermo Boscá Gómez' %}border-yellow-400
                      {% elif project.manager == 'Miguel Ángel Martínez García' %}border-violet-400
                      {% elif project.manager == 'Óscar López Valverde' %}border-rose-500
-                     {% endif %} rounded-t-lg">
-                  <div class="justify-between items-center">
-                    <div class="w-full">
-                      <h3 class="text-sm font-medium text-rose-700 w-full">{{ project.name }}</h3>
-                      <p class="text-xs text-gray-500 w-full">
+                     {% else %}border-gray-400
+                     {% endif %}">
+                  <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                      <h3 class="project-title text-violet-800">{{ project.name }}</h3>
+                      <div class="project-meta text-gray-600">
                         {% if project.date_from %}
-                          <span>From: {{ project.date_from|date:"d/m/Y" }}</span>
+                          <div class="text-xs">
+                            <i class="fas fa-calendar mr-1"></i>
+                            Desde: {{ project.date_from|date:"d/m/Y" }}
+                          </div>
                         {% endif %}
                         {% if project.date_to %}
-                          <span class="ml-2">To: {{ project.date_to|date:"d/m/Y" }}</span>
-                        {% endif %}
-                        {% if project.description %}
-                          <div class="mt-2 mb-1 p-2 rounded-lg border-l-2 border-rose-400 bg-red-400 w-full">
-                            <p class="text-sm text-white font-medium leading-relaxed w-full">{{ project.description }}</p>
+                          <div class="text-xs">
+                            <i class="fas fa-calendar-check mr-1"></i>
+                            Hasta: {{ project.date_to|date:"d/m/Y" }}
                           </div>
                         {% endif %}
-                      </p>
-                      <div class="flex items-center justify-between w-full mt-2 gap-1">
-                        <a href="{% url 'project_detail' project.id %}" 
-                           class="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-100 flex-1 text-center" 
-                           title="Ver detalles del proyecto">
-                          <i class="fas fa-eye text-lg"></i>
-                        </a>
-                        <a href="{% url 'project_update' project.id %}" 
-                           class="text-green-600 hover:text-green-800 p-1 rounded hover:bg-green-100 flex-1 text-center" 
-                           title="Editar proyecto">
-                          <i class="fas fa-edit text-lg"></i>
-                        </a>
-                        <a href="{% url 'project_assign_employees' project.id %}" 
-                           class="text-purple-600 hover:text-purple-800 p-1 rounded hover:bg-purple-100 flex-1 text-center" 
-                           title="Asignar empleados">
-                          <i class="fas fa-user-plus text-lg"></i>
-                        </a>
-                        <a href="{% url 'employee_needed_create' %}?project={{ project.id }}" 
-                           class="text-orange-600 hover:text-orange-800 p-1 rounded hover:bg-orange-100 flex-1 text-center" 
-                           title="Crear necesidad de empleado">
-                          <i class="fas fa-user-clock text-lg"></i>
-                        </a>
-                        <a href="{% url 'get_employee_locked_create' %}?project={{ project.id }}" 
-                           class="text-indigo-600 hover:text-indigo-800 p-1 rounded hover:bg-indigo-100 flex-1 text-center" 
-                           title="Reservar empleado">
-                          <i class="fas fa-lock text-lg"></i>
-                        </a>
-                        <a href="{% url 'project_delete' project.id %}" 
-                           class="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-100 flex-1 text-center" 
-                           title="Eliminar proyecto"
-                           onclick="return confirm('¿Estás seguro de que quieres eliminar este proyecto?')">
-                          <i class="fas fa-trash text-lg"></i>
-                        </a>
+                        {% if project.manager %}
+                          <div class="text-xs font-medium mt-1">
+                            <i class="fas fa-user-tie mr-1"></i>
+                            {{ project.manager }}
+                          </div>
+                        {% endif %}
                       </div>
+                    </div>
+                    <div class="flex flex-col items-end">
+                      <a href="{% url 'project_detail' project.id %}" class="text-violet-600 hover:text-violet-800">
+                        <i class="fas fa-external-link-alt text-sm"></i>
+                      </a>
                     </div>
                   </div>
-
                 </div>
-                
-                <!-- Contenido de empleados del proyecto -->
-                <div class="p-3 kanban-column" id="project-{{ project.id }}-column" data-project-id="{{ project.id }}" 
-                     style="max-height: calc(100vh - 320px); overflow-y: auto; overflow-x: hidden;">
-                  
-                  <!-- Todo el contenido de empleados exactamente como lo tienes -->
+
+                <!-- Employees in this project -->
+                <div class="kanban-column" id="project-{{ project.id }}-column" data-project-id="{{ project.id }}">
                   {% for employee in employees %}
-                    {% if employee.project_id == project and 'TOPÓGRAFO' in employee.job or employee.project_id == project and 'Topógrafo' in employee.job %}
-                      <div class="employee-card p-2 {% if employee.locked == False %}bg-green-200{% else %}bg-gray-300{% endif %} border border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
+                    {% if employee.project_id == project and employee.active %}
+                      <div class="employee-card
+                        {% if employee.locked == False %}
+                          {% if 'Topógrafo' in employee.job or 'Topógrafa' in employee.job %}
+                            bg-green-300
+                          {% elif 'Auxiliar' in employee.job or 'auxiliar' in employee.job %}
+                            bg-yellow-200
+                          {% elif 'Proyectos' in employee.job or 'Proyecto' in employee.job %}
+                            bg-orange-300
+                          {% elif 'Piloto' in employee.job or 'piloto' in employee.job %}
+                            bg-blue-300
+                          {% else %}
+                            bg-green-100 hover:bg-green-200
+                          {% endif %}
+                        {% else %}
+                          bg-gray-200
+                        {% endif %}
+                        border border-gray-300 rounded-md shadow-sm mb-2 cursor-move"
+                         data-employee-id="{{ employee.id }}" draggable="true">
                         <div class="flex justify-between items-start">
-                          <div>
-                            <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
-                            <p class="text-xs text-gray-500">{{ employee.get_state_display }}</p>
-                            <p class="text-xs text-gray-500">{{ employee.start_date }}</p>
-                            <p class="text-xs text-gray-500">{{ employee.end_date }}</p>
-                          </div>
-                          <a href="{% url 'employee_update' employee.id %}" class="text-green-500 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
-                        </div>
-                        <!-- Resto del contenido del empleado como lo tienes -->
-                        <div class="flex justify-between w-full">
-                          <div class="{% if employee.driver_license == False %}text-red-500{% else %}text-green-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-id-card text-base"></i>
-                          </div>
-                          <div class="{% if employee.twenty_hours %}text-green-600{% else %}text-red-500{% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-2 text-base"></i>
-                            <i class="fa-solid fa-0 text-base"></i>
-                          </div>
-                          <div class="{% if employee.sixty_hours %}text-green-600{% else %}text-red-500{% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-6 text-base"></i>
-                            <i class="fa-solid fa-0 text-base"></i>
-                          </div>
-                          <div class="{% if employee.confine %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-square-person-confined text-base"></i>
-                          </div>
-                          <div class="{% if employee.height %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-person-falling text-base"></i>
-                          </div>
-                          {% if employee.end_contract %}
-                          <div class="text-purple-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-skull-crossbones text-xl"></i>
-                          </div>
+                        <div class="flex-1">
+                          <h4 class="employee-name">{{ employee.name }}</h4>
+                          <p class="employee-job">{{ employee.job }}</p>
+                          {% if employee.city %}
+                          <p class="text-xs text-gray-500 mt-1">
+                            <i class="fas fa-map-marker-alt mr-1"></i>{{ employee.city }}
+                          </p>
                           {% endif %}
-                          {% if employee.vacation_status == 'soon_vacation' %}
-                          <div class="text-blue-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-umbrella-beach text-base"></i>
-                          </div>
-                          {% elif employee.vacation_status == 'on_vacation' %}
-                          <div class="text-purple-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-umbrella-beach text-3xl"></i>
-                          </div>
-                          {% endif %}
-                        </div>
-                        
-                      </div>
-                      
-                    {% endif %}
-
-                    <!-- Repetir para otros tipos de empleados: Auxiliar, Piloto, Proyectos -->
-                    {% if employee.project_id == project and 'Auxiliar' in employee.job or employee.project_id == project and 'Técnico GIS' in employee.job %}
-                      <!-- Contenido del auxiliar como lo tienes -->
-                      <div class="employee-card p-2 {% if employee.locked == False %}bg-yellow-200{% else %}bg-gray-300{% endif %} border border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
-                        <div class="flex justify-between items-start">
-                          <div>
-                            <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
-                            <p class="text-xs text-gray-500">{{ employee.get_state_display }}</p>
-                            <p class="text-xs text-gray-500">{{ employee.start_date }}</p>
-                            <p class="text-xs text-gray-500">{{ employee.end_date }}</p>
-                          </div>
-                          <a href="{% url 'employee_update' employee.id %}" class="text-green-500 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
-                        </div>
-                        <!-- Resto del contenido del empleado como lo tienes -->
-                        <div class="flex justify-between w-full">
-                          <div class="{% if employee.driver_license == False %}text-red-500{% else %}text-green-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-id-card text-base"></i>
-                          </div>
-                          <div class="{% if employee.twenty_hours %}text-green-600{% else %}text-red-500{% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-2 text-base"></i>
-                            <i class="fa-solid fa-0 text-base"></i>
-                          </div>
-                          <div class="{% if employee.sixty_hours %}text-green-600{% else %}text-red-500{% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-6 text-base"></i>
-                            <i class="fa-solid fa-0 text-base"></i>
-                          </div>
-                          <div class="{% if employee.confine %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-square-person-confined text-base"></i>
-                          </div>
-                          <div class="{% if employee.height %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-person-falling text-base"></i>
-                          </div>
-                          {% if employee.end_contract %}
-                          <div class="text-purple-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-skull-crossbones text-xl"></i>
-                          </div>
-                          {% endif %}
-                          {% if employee.vacation_status == 'soon_vacation' %}
-                          <div class="text-blue-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-umbrella-beach text-base"></i>
-                          </div>
-                          {% elif employee.vacation_status == 'on_vacation' %}
-                          <div class="text-purple-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-umbrella-beach text-3xl"></i>
-                          </div>
-                          {% endif %}
-                        </div>
-                        
-                      </div>
-                    {% endif %}
-
-                    {% if employee.project_id == project and 'Piloto' in employee.job %}
-                    <div class="employee-card p-2 {% if employee.locked == False %}bg-blue-200{% else %}bg-gray-300{% endif %} border border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
-                      <div class="flex justify-between items-start">
-                        <div>
-                          <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
-                          <p class="text-xs text-gray-500">{{ employee.get_state_display }}</p>
-                          <p class="text-xs text-gray-500">{{ employee.start_date }}</p>
-                          <p class="text-xs text-gray-500">{{ employee.end_date }}</p>
-                        </div>
-                        <a href="{% url 'employee_update' employee.id %}" class="text-green-500 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
-                      </div>
-                      <!-- Resto del contenido del empleado como lo tienes -->
-                      <div class="flex justify-between w-full">
-                        <div class="{% if employee.driver_license == False %}text-red-500{% else %}text-green-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-id-card text-base"></i>
-                        </div>
-                        <div class="{% if employee.twenty_hours %}text-green-600{% else %}text-red-500{% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-2 text-base"></i>
-                          <i class="fa-solid fa-0 text-base"></i>
-                        </div>
-                        <div class="{% if employee.sixty_hours %}text-green-600{% else %}text-red-500{% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-6 text-base"></i>
-                          <i class="fa-solid fa-0 text-base"></i>
-                        </div>
-                        <div class="{% if employee.confine %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-square-person-confined text-base"></i>
-                        </div>
-                        <div class="{% if employee.height %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-person-falling text-base"></i>
-                        </div>
-                        {% if employee.end_contract %}
-                        <div class="text-purple-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-skull-crossbones text-xl"></i>
-                        </div>
-                        {% endif %}
-                        {% if employee.vacation_status == 'soon_vacation' %}
-                        <div class="text-blue-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-umbrella-beach text-base"></i>
-                        </div>
-                        {% elif employee.vacation_status == 'on_vacation' %}
-                        <div class="text-purple-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-umbrella-beach text-3xl"></i>
-                        </div>
-                        {% endif %}
-                      </div>
-                      
-                    </div>
-                    
-                      <!-- Contenido del piloto como lo tienes -->
-                    {% endif %}
-
-                    {% if employee.project_id == project and 'Proyectos' in employee.job %}
-                    <div class="employee-card p-2 {% if employee.locked == False %}bg-orange-300{% else %}bg-gray-300{% endif %} border border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
-                      <div class="flex justify-between items-start">
-                        <div>
-                          <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
-                          <p class="text-xs text-gray-500">{{ employee.get_state_display }}</p>
-                          <p class="text-xs text-gray-500">{{ employee.start_date }}</p>
-                          <p class="text-xs text-gray-500">{{ employee.end_date }}</p>
-                        </div>
-                        <a href="{% url 'employee_update' employee.id %}" class="text-green-500 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
-                      </div>
-                      <!-- Resto del contenido del empleado como lo tienes -->
-                      <div class="flex justify-between w-full">
-                        <div class="{% if employee.driver_license == False %}text-red-500{% else %}text-green-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-id-card text-base"></i>
-                        </div>
-                        <div class="{% if employee.twenty_hours %}text-green-600{% else %}text-red-500{% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-2 text-base"></i>
-                          <i class="fa-solid fa-0 text-base"></i>
-                        </div>
-                        <div class="{% if employee.sixty_hours %}text-green-600{% else %}text-red-500{% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-6 text-base"></i>
-                          <i class="fa-solid fa-0 text-base"></i>
-                        </div>
-                        <div class="{% if employee.confine %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-square-person-confined text-base"></i>
-                        </div>
-                        <div class="{% if employee.height %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-person-falling text-base"></i>
-                        </div>
-                        {% if employee.end_contract %}
-                        <div class="text-purple-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-skull-crossbones text-xl"></i>
-                        </div>
-                        {% endif %}
-                        {% if employee.vacation_status == 'soon_vacation' %}
-                        <div class="text-blue-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-umbrella-beach text-base"></i>
-                        </div>
-                        {% elif employee.vacation_status == 'on_vacation' %}
-                        <div class="text-purple-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-umbrella-beach text-3xl"></i>
-                        </div>
-                        {% endif %}
-                      </div>
-                      
-                    </div>
-                      <!-- Contenido de proyectos como lo tienes -->
-                    {% endif %}
-                  {% endfor %}
-
-                  <!-- Needs y Locks como los tienes -->
-                  {% for need in needs %}
-                    {% if need.project_id == project %}
-                      <div class="need-card p-2 bg-red-300 border border-gray-300 rounded-md shadow-sm mb-2">
-                        <div class="flex justify-between items-start">
-                          <div>
-                            <h4 class="text-sm font-medium text-gray-900">{{ need.job }}</h4>
-                            <p class="text-xs text-gray-500">{{ need.description }}</p>
-                            <span class="text-xs text-red-600 font-medium">{{ need.quantity }} {{need.type}}</span>
-                          </div>
-                          <div class="flex flex-col items-end">
-                            {% if need.date_needed %}
-                              <span class="text-xs text-gray-500">{{ need.date_needed|date:"d/m/Y" }}</span>
-                            {% endif %}
-                          </div>
-                        </div>
-                        <div class="flex justify-between mt-2">
-                          <div class="text-xs text-gray-600">
+                          {% if employee.end_date %}
+                          <p class="text-xs text-red-600 mt-1">
                             <i class="fas fa-clock mr-1"></i>
-                            Creado: {{ need.created_at|date:"d/m/Y" }}
-                          </div>
-                          {% if need.skills_required %}
-                            <div class="text-xs text-blue-600">
-                              <i class="fas fa-star mr-1"></i>
-                              Skills requeridas
-                            </div>
+                            Hasta: {{ employee.end_date|date:"d/m/Y" }}
+                          </p>
                           {% endif %}
                         </div>
-                        <!-- Contenido del need como lo tienes -->
-                      </div>
-                    {% endif %}
-                  {% endfor %}
-
-                  {% for lock in locks %}
-                    {% if lock.next_project == project %}
-                      <div class="lock-card p-2 bg-indigo-500 border border-gray-300 rounded-md shadow-sm mb-2">
-                        <!-- Contenido del lock como lo tienes -->
-                        <div class="flex justify-between items-start">
-                          <div class="flex-1">
-                            <h4 class="text-sm font-medium text-white">{{ lock.employee.name }}</h4>
-                            <p class="text-xs text-indigo-200">
-                              <i class="fas fa-lock mr-1"></i>{{ lock.employee.job }}
-                            </p>
-                            {% if lock.expected_start_date %}
-                              <div class="text-xs text-indigo-200 mt-1">
-                                <i class="fas fa-calendar mr-1"></i>
-                                <span class="font-medium">Inicio previsto:</span> {{ lock.expected_start_date|date:"d/m/Y" }}
-                              </div>
-                            {% endif %}
-                            {% if lock.created_at %}
-                              <div class="text-xs text-indigo-300 mt-1">
-                                <i class="fas fa-clock mr-1"></i>
-                                <span class="font-medium">Reservado:</span> {{ lock.created_at|date:"d/m/Y H:i" }}
-                              </div>
-                            {% endif %}
-                          </div>
-                          <div class="flex flex-col items-end">
-                            <a href="{% url 'employee_update' lock.employee.id %}" class="text-indigo-200 hover:text-white">
-                              <i class="fas fa-external-link-alt text-xs"></i>
-                            </a>
-                            {% if can_edit %}
-                              <button class="text-indigo-200 hover:text-white mt-1" 
-                                      onclick="removeLock({{ lock.id }})" 
-                                      title="Quitar reserva">
-                                <i class="fas fa-unlock text-xs"></i>
-                              </button>
-                            {% endif %}
-                          </div>
+                        <div class="flex flex-col items-end">
+                          <a href="{% url 'employee_update' employee.id %}" class="text-blue-600 hover:text-blue-800">
+                          <i class="fas fa-external-link-alt text-xs"></i>
+                          </a>
                         </div>
-
-                        <!-- Indicadores de habilidades del empleado reservado -->
-                        <div class="flex justify-between mt-2">
-                          <div class="{% if lock.employee.driver_license == False %}text-red-300{% else %}text-green-300{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-id-card text-base"></i>
-                          </div>
-                          <div class="{% if lock.employee.twenty_hours %}text-green-300{% else %}text-red-300{% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-2 text-base"></i>
-                            <i class="fa-solid fa-0 text-base"></i>
-                          </div>
-                          <div class="{% if lock.employee.sixty_hours %}text-green-300{% else %}text-red-300{% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-6 text-base"></i>
-                            <i class="fa-solid fa-0 text-base"></i>
-                          </div>
-                          <div class="{% if lock.employee.confine %}text-green-300{% else %}text-red-300{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-square-person-confined text-base"></i>
-                          </div>
-                          <div class="{% if lock.employee.height %}text-green-300{% else %}text-red-300{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-person-falling text-base"></i>
-                          </div>
                         </div>
-
-                        <!-- Indicador del estado de la reserva -->
-                        <div class="mt-2 px-2 py-1 rounded-full text-xs text-center bg-indigo-600 text-white flex items-center justify-center">
-                          <i class="fas fa-lock mr-1"></i>Empleado reservado
-                          <div class="mt-1 ml-2 flex space-x-1">
-                            <button onclick="fulfillEmployeeNeed({{ lock.id }}, {{ project.id }})" 
-                                class="text-green-400 hover:text-green-200 p-1 rounded hover:bg-green-700"
-                                title="Marcar como cumplida">
-                              <i class="fas fa-check text-xl"></i>
-                            </button>
-                            <button onclick="deleteEmployeeNeed({{ lock.id }})" 
-                                class="text-red-400 hover:text-red-200 p-1 rounded hover:bg-red-700"
-                                title="Eliminar necesidad">
-                              <i class="fas fa-trash text-xl"></i>
-                            </button>
-                            </div>
+                        
+                        <!-- Employee skills indicators -->
+                        <div class="flex justify-between mt-2 text-xs">
+                        <div class="{% if employee.driver_license %}text-green-600{% else %}text-red-500{% endif %}">
+                          <i class="fas fa-id-card"></i>
+                        </div>
+                        <div class="{% if employee.twenty_hours %}text-green-600{% else %}text-red-500{% endif %}">
+                          <span>20h</span>
+                        </div>
+                        <div class="{% if employee.sixty_hours %}text-green-600{% else %}text-red-500{% endif %}">
+                          <span>60h</span>
+                        </div>
+                        <div class="{% if employee.confine %}text-green-600{% else %}text-red-500{% endif %}">
+                          <i class="fas fa-square-person-confined"></i>
+                        </div>
+                        <div class="{% if employee.height %}text-green-600{% else %}text-red-500{% endif %}">
+                          <i class="fas fa-person-falling"></i>
+                        </div>
                         </div>
                       </div>
                     {% endif %}
@@ -970,533 +258,108 @@
             {% endif %}
           {% endfor %}
         </div>
-        
-        <!-- Navegación horizontal para Obras -->
-        {% comment %} <div class="scroll-navigation">
-          <button class="scroll-btn" onclick="scrollProjects('obras', -320)">
-            <i class="fas fa-chevron-left"></i> Anterior
-          </button>
-          <span class="text-sm text-gray-600">Deslizar horizontalmente</span>
-          <button class="scroll-btn" onclick="scrollProjects('obras', 320)">
-            Siguiente <i class="fas fa-chevron-right"></i>
-          </button>
-        </div> {% endcomment %}
       </div>
 
-      <!-- PROYECTOS (SEGUNDA FILA) -->
+      <!-- PROYECTOS Section (Second Row) -->
       <div class="mb-6">
         <div class="section-title">
-          <h3 class="text-lg font-bold text-green-700">
-            <i class="fas fa-hard-hat"></i>
+          <h3>
+            <i class="fas fa-project-diagram mr-2"></i>
             PROYECTOS
           </h3>
         </div>
         
-        <div class="projects-container" id="obras-container">
-          {% comment %} <div class="project-column bg-orange-100 shadow rounded-lg">
-            <div class="bg-orange-300 px-3 py-1 border-b-4 border-orange-500 rounded-t-lg">
-              <div class="flex justify-between items-center">
-                <div>
-                  <h3 class="text-sm font-medium text-orange-700">
-                    <i class="fas fa-umbrella-beach mr-2"></i>Bajas
-                  </h3>
-                  <p class="text-xs text-gray-600">Empleados de baja</p>
-                </div>
-                <div class="flex space-x-3">
-                  {% if can_edit %}
-                    <i class="fas fa-calendar-alt text-orange-600" title="Gestionar Bajas"></i>
-                  {% endif %}
-                </div>
-              </div>
-            </div>
-            <div class="p-3 kanban-column vacation-column" id="vacation-column" data-vacation="true" style="max-height: calc(100vh - 240px); overflow-y: auto; overflow-x: hidden;">
-              {% for employee in employees %}
-                {% if employee.leave_from or employee.leave_to %}
-                  {% now "Y-m-d" as today %}
-                  {% if employee.leave_from|date:"Y-m-d" <= today and employee.leave_to|date:"Y-m-d" >= today or not employee.project_id %}
-                    <div class="employee-card p-2 bg-orange-200 border border-orange-300 rounded-md shadow-sm mb-2" 
-                         data-employee-id="{{ employee.id }}" 
-                         {% if can_edit %}draggable="true"{% else %}draggable="false"{% endif %}>
-                      <div class="flex justify-between items-start">
-                        <div class="flex-1">
-                          <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
-                          <p class="text-xs text-orange-600">
-                            <i class="fas fa-suitcase-medical mr-1"></i>{{ employee.job }}
-                          Baja Médica/Paternidad
-                          </p>
-                          {% if employee.leave_from and employee.leave_to %}
-                            <div class="text-xs text-gray-600 mt-1">
-                              <i class="fas fa-calendar mr-1"></i>
-                              <span class="font-medium">Desde:</span> {{ employee.leave_from|date:"d/m/Y" }}
-                              <br>
-                              <i class="fas fa-calendar mr-1"></i>
-                              <span class="font-medium">Hasta:</span> {{ employee.leave_to|date:"d/m/Y" }}
-                            </div>
-                          {% elif employee.leave_from %}
-                            <div class="text-xs text-gray-600 mt-1">
-                              <i class="fas fa-calendar mr-1"></i>
-                              <span class="font-medium">Desde:</span> {{ employee.leave_from|date:"d/m/Y" }}
-                            </div>
-                          {% elif employee.leave_to %}
-                            <div class="text-xs text-gray-600 mt-1">
-                              <i class="fas fa-calendar mr-1"></i>
-                              <span class="font-medium">Hasta:</span> {{ employee.leave_to|date:"d/m/Y" }}
-                            </div>
-                          {% endif %}
-                        </div>
-                        <div class="flex flex-col items-end space-y-1 ml-2">
-                          <a href="{% url 'employee_update' employee.id %}" 
-                             class="text-orange-600 hover:text-gray-600 p-1 rounded hover:bg-orange-100" 
-                             title="Ver detalles">
-                            <i class="fas fa-external-link-alt text-sm"></i>
-                          </a>
-                          {% if can_edit %}
-                            <button class="text-blue-500 hover:text-blue-700 p-1 rounded hover:bg-blue-100 border border-blue-200" 
-                                    onclick="editLeave({{ employee.id }})" 
-                                    title="Editar fechas de baja">
-                              <i class="fas fa-edit text-sm"></i>
-                            </button>
-                            <button class="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-100 border border-red-200" 
-                                    onclick="clearLeave({{ employee.id }})" 
-                                    title="Limpiar fechas de baja">
-                              <i class="fas fa-trash text-sm"></i>
-                            </button>
-                          {% endif %}
-                        </div>
-                      </div>
-                      
-                      <!-- Indicadores de habilidades -->
-                      <div class="flex justify-between mt-2">
-                        <div class="{% if employee.driver_license == False %}text-red-500{% else %}text-green-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-id-card text-base"></i>
-                        </div>
-                        <div class="{% if employee.twenty_hours %}text-green-600{% else %}text-red-500{% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-2 text-base"></i>
-                          <i class="fa-solid fa-0 text-base"></i>
-                        </div>
-                        <div class="{% if employee.sixty_hours %}text-green-600{% else %}text-red-500{% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-6 text-base"></i>
-                          <i class="fa-solid fa-0 text-base"></i>
-                        </div>
-                        <div class="{% if employee.confine %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-square-person-confined text-base"></i>
-                        </div>
-                        <div class="{% if employee.height %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-person-falling text-base"></i>
-                        </div>
-                      </div>
-                      
-                      <!-- Indicador del estado de bajas -->
-                      <div class="mt-2 px-2 py-1 rounded-full text-xs text-center {% if employee.leave_from|date:'Y-m-d' <= today and employee.leave_to|date:'Y-m-d' >= today %}bg-orange-500 text-white{% else %}bg-purple-200 text-purple-700{% endif %}">
-                        {% if employee.leave_from|date:"Y-m-d" <= today and employee.leave_to|date:"Y-m-d" >= today %}
-                          <i class="fas fa-check-circle mr-1"></i>De baja
-                        {% elif employee.leave_from|date:"Y-m-d" > today %}
-                          <i class="fas fa-clock mr-1"></i>Baja Programada
-                        {% elif employee.leave_to|date:"Y-m-d" < today %}
-                          <i class="fas fa-history mr-1"></i>Finalizada
-                        {% else %}
-                          <i class="fas fa-question-circle mr-1"></i>Estado indefinido
-                        {% endif %}
-                      </div>
-                    </div>
-                  {% endif %}
-                {% endif %}
-              {% empty %}
-                <div class="text-center py-8">
-                  <i class="fas fa-umbrella-beach text-4xl text-purple-300 mb-3"></i>
-                  <p class="text-xs text-purple-500 italic">No hay empleados en vacaciones</p>
-                </div>
-              {% endfor %}
-            </div>
-          </div> {% endcomment %}
-          <!-- Indicadores de scroll -->
-          <div class="scroll-indicator left">
-            <i class="fas fa-chevron-left"></i>
-          </div>
-          <div class="scroll-indicator right">
-            <i class="fas fa-chevron-right"></i>
-          </div>
-          
+        <div class="projects-container" id="proyectos-container">
           {% for project in projects %}
             {% if project.type|lower == 'project' %}
-              <div class="project-column bg-lime-100 shadow rounded-lg">
-                <!-- Header del proyecto -->
-                <div class="bg-lime-300 px-3 py-1 border-b-4 
+              <div class="project-column">
+                <!-- Project Header -->
+                <div class="project-header bg-green-200 border-b-4
                      {% if project.manager == 'Jose Cuesta Mejías' %}border-emerald-400
                      {% elif project.manager == 'Javier Marín Gimeno' %}border-orange-400
                      {% elif project.manager == 'Guillermo Boscá Gómez' %}border-yellow-400
                      {% elif project.manager == 'Miguel Ángel Martínez García' %}border-violet-400
                      {% elif project.manager == 'Óscar López Valverde' %}border-rose-500
-                     {% endif %} rounded-t-lg">
-                     <div class="justify-between items-center">
-                      <div class="w-full">
-                        <h3 class="text-sm font-medium text-green-800 w-full">{{ project.name }}</h3>
-                        <p class="text-xs text-gray-500 w-full">
-                          {% if project.date_from %}
-                            <span>From: {{ project.date_from|date:"d/m/Y" }}</span>
-                          {% endif %}
-                          {% if project.date_to %}
-                            <span class="ml-2">To: {{ project.date_to|date:"d/m/Y" }}</span>
-                          {% endif %}
-                          {% if project.description %}
-                            <div class="mt-2 mb-1 p-2 rounded-lg border-l-2 border-rose-400 bg-red-400 w-full">
-                              <p class="text-sm text-white font-medium leading-relaxed w-full">{{ project.description }}</p>
-                            </div>
-                          {% endif %}
-                        </p>
-                        <div class="flex items-center justify-between w-full mt-2 gap-1">
-                          <a href="{% url 'project_detail' project.id %}" 
-                             class="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-100 flex-1 text-center" 
-                             title="Ver detalles del proyecto">
-                            <i class="fas fa-eye text-lg"></i>
-                          </a>
-                          <a href="{% url 'project_update' project.id %}" 
-                             class="text-green-600 hover:text-green-800 p-1 rounded hover:bg-green-100 flex-1 text-center" 
-                             title="Editar proyecto">
-                            <i class="fas fa-edit text-lg"></i>
-                          </a>
-                          <a href="{% url 'project_assign_employees' project.id %}" 
-                             class="text-purple-600 hover:text-purple-800 p-1 rounded hover:bg-purple-100 flex-1 text-center" 
-                             title="Asignar empleados">
-                            <i class="fas fa-user-plus text-lg"></i>
-                          </a>
-                          <a href="{% url 'employee_needed_create' %}?project={{ project.id }}" 
-                             class="text-orange-600 hover:text-orange-800 p-1 rounded hover:bg-orange-100 flex-1 text-center" 
-                             title="Crear necesidad de empleado">
-                            <i class="fas fa-user-clock text-lg"></i>
-                          </a>
-                          <a href="{% url 'get_employee_locked_create' %}?project={{ project.id }}" 
-                             class="text-indigo-600 hover:text-indigo-800 p-1 rounded hover:bg-indigo-100 flex-1 text-center" 
-                             title="Reservar empleado">
-                            <i class="fas fa-lock text-lg"></i>
-                          </a>
-                          <a href="{% url 'project_delete' project.id %}" 
-                             class="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-100 flex-1 text-center" 
-                             title="Eliminar proyecto"
-                             onclick="return confirm('¿Estás seguro de que quieres eliminar este proyecto?')">
-                            <i class="fas fa-trash text-lg"></i>
-                          </a>
-                        </div>
+                     {% else %}border-gray-400
+                     {% endif %}">
+                  <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                      <h3 class="project-title text-green-800">{{ project.name }}</h3>
+                      <div class="project-meta text-gray-600">
+                        {% if project.date_from %}
+                          <div class="text-xs">
+                            <i class="fas fa-calendar mr-1"></i>
+                            Desde: {{ project.date_from|date:"d/m/Y" }}
+                          </div>
+                        {% endif %}
+                        {% if project.date_to %}
+                          <div class="text-xs">
+                            <i class="fas fa-calendar-check mr-1"></i>
+                            Hasta: {{ project.date_to|date:"d/m/Y" }}
+                          </div>
+                        {% endif %}
+                        {% if project.manager %}
+                          <div class="text-xs font-medium mt-1">
+                            <i class="fas fa-user-tie mr-1"></i>
+                            {{ project.manager }}
+                          </div>
+                        {% endif %}
                       </div>
                     </div>
-
+                    <div class="flex flex-col items-end">
+                      <a href="{% url 'project_detail' project.id %}" class="text-green-600 hover:text-green-800">
+                        <i class="fas fa-external-link-alt text-sm"></i>
+                      </a>
+                    </div>
+                  </div>
                 </div>
-                
-                <!-- Contenido de empleados del proyecto -->
-                <div class="p-3 kanban-column" id="project-{{ project.id }}-column" data-project-id="{{ project.id }}" 
-                     style="max-height: calc(100vh - 320px); overflow-y: auto; overflow-x: hidden;">
-                  
-                  <!-- Todo el contenido de empleados exactamente como lo tienes -->
+
+                <!-- Employees in this project -->
+                <div class="kanban-column" id="project-{{ project.id }}-column" data-project-id="{{ project.id }}">
                   {% for employee in employees %}
-                    {% if employee.project_id == project and 'TOPÓGRAFO' in employee.job or employee.project_id == project and 'Topógrafo' in employee.job %}
-                      <div class="employee-card p-2 {% if employee.locked == False %}bg-green-200{% else %}bg-gray-300{% endif %} border border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
-                        <div class="flex justify-between items-start">
-                          <div>
-                            <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
-                            <p class="text-xs text-gray-500">{{ employee.get_state_display }}</p>
-                            <p class="text-xs text-gray-500">{{ employee.start_date }}</p>
-                            <p class="text-xs text-gray-500">{{ employee.end_date }}</p>
-                          </div>
-                          <a href="{% url 'employee_update' employee.id %}" class="text-green-500 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
-                        </div>
-                        <!-- Resto del contenido del empleado como lo tienes -->
-                        <div class="flex justify-between w-full">
-                          <div class="{% if employee.driver_license == False %}text-red-500{% else %}text-green-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-id-card text-base"></i>
-                          </div>
-                          <div class="{% if employee.twenty_hours %}text-green-600{% else %}text-red-500{% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-2 text-base"></i>
-                            <i class="fa-solid fa-0 text-base"></i>
-                          </div>
-                          <div class="{% if employee.sixty_hours %}text-green-600{% else %}text-red-500{% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-6 text-base"></i>
-                            <i class="fa-solid fa-0 text-base"></i>
-                          </div>
-                          <div class="{% if employee.confine %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-square-person-confined text-base"></i>
-                          </div>
-                          <div class="{% if employee.height %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-person-falling text-base"></i>
-                          </div>
-                          {% if employee.end_contract %}
-                          <div class="text-purple-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-skull-crossbones text-xl"></i>
-                          </div>
-                          {% endif %}
-                          {% if employee.vacation_status == 'soon_vacation' %}
-                          <div class="text-blue-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-umbrella-beach text-base"></i>
-                          </div>
-                          {% elif employee.vacation_status == 'on_vacation' %}
-                          <div class="text-purple-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-umbrella-beach text-3xl"></i>
-                          </div>
-                          {% endif %}
-                        </div>
-                        
-                      </div>
-                      
-                    {% endif %}
-
-                    <!-- Repetir para otros tipos de empleados: Auxiliar, Piloto, Proyectos -->
-                    {% if employee.project_id == project and 'Auxiliar' in employee.job or employee.project_id == project and 'Técnico GIS' in employee.job %}
-                      <!-- Contenido del auxiliar como lo tienes -->
-                      <div class="employee-card p-2 {% if employee.locked == False %}bg-yellow-200{% else %}bg-gray-300{% endif %} border border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
-                        <div class="flex justify-between items-start">
-                          <div>
-                            <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
-                            <p class="text-xs text-gray-500">{{ employee.get_state_display }}</p>
-                            <p class="text-xs text-gray-500">{{ employee.start_date }}</p>
-                            <p class="text-xs text-gray-500">{{ employee.end_date }}</p>
-                          </div>
-                          <a href="{% url 'employee_update' employee.id %}" class="text-green-500 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
-                        </div>
-                        <!-- Resto del contenido del empleado como lo tienes -->
-                        <div class="flex justify-between w-full">
-                          <div class="{% if employee.driver_license == False %}text-red-500{% else %}text-green-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-id-card text-base"></i>
-                          </div>
-                          <div class="{% if employee.twenty_hours %}text-green-600{% else %}text-red-500{% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-2 text-base"></i>
-                            <i class="fa-solid fa-0 text-base"></i>
-                          </div>
-                          <div class="{% if employee.sixty_hours %}text-green-600{% else %}text-red-500{% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-6 text-base"></i>
-                            <i class="fa-solid fa-0 text-base"></i>
-                          </div>
-                          <div class="{% if employee.confine %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-square-person-confined text-base"></i>
-                          </div>
-                          <div class="{% if employee.height %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-person-falling text-base"></i>
-                          </div>
-                          {% if employee.end_contract %}
-                          <div class="text-purple-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-skull-crossbones text-xl"></i>
-                          </div>
-                          {% endif %}
-                          {% if employee.vacation_status == 'soon_vacation' %}
-                          <div class="text-blue-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-umbrella-beach text-base"></i>
-                          </div>
-                          {% elif employee.vacation_status == 'on_vacation' %}
-                          <div class="text-purple-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-umbrella-beach text-3xl"></i>
-                          </div>
-                          {% endif %}
-                        </div>
-                        
-                      </div>
-                    {% endif %}
-
-                    {% if employee.project_id == project and 'Piloto' in employee.job %}
-                    <div class="employee-card p-2 {% if employee.locked == False %}bg-blue-200{% else %}bg-gray-300{% endif %} border border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
-                      <div class="flex justify-between items-start">
-                        <div>
-                          <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
-                          <p class="text-xs text-gray-500">{{ employee.get_state_display }}</p>
-                          <p class="text-xs text-gray-500">{{ employee.start_date }}</p>
-                          <p class="text-xs text-gray-500">{{ employee.end_date }}</p>
-                        </div>
-                        <a href="{% url 'employee_update' employee.id %}" class="text-green-500 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
-                      </div>
-                      <!-- Resto del contenido del empleado como lo tienes -->
-                      <div class="flex justify-between w-full">
-                        <div class="{% if employee.driver_license == False %}text-red-500{% else %}text-green-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-id-card text-base"></i>
-                        </div>
-                        <div class="{% if employee.twenty_hours %}text-green-600{% else %}text-red-500{% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-2 text-base"></i>
-                          <i class="fa-solid fa-0 text-base"></i>
-                        </div>
-                        <div class="{% if employee.sixty_hours %}text-green-600{% else %}text-red-500{% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-6 text-base"></i>
-                          <i class="fa-solid fa-0 text-base"></i>
-                        </div>
-                        <div class="{% if employee.confine %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-square-person-confined text-base"></i>
-                        </div>
-                        <div class="{% if employee.height %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-person-falling text-base"></i>
-                        </div>
-                        {% if employee.end_contract %}
-                        <div class="text-purple-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-skull-crossbones text-xl"></i>
-                        </div>
-                        {% endif %}
-                        {% if employee.vacation_status == 'soon_vacation' %}
-                        <div class="text-blue-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-umbrella-beach text-base"></i>
-                        </div>
-                        {% elif employee.vacation_status == 'on_vacation' %}
-                        <div class="text-purple-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-umbrella-beach text-3xl"></i>
-                        </div>
-                        {% endif %}
-                      </div>
-                      
-                    </div>
-                    
-                      <!-- Contenido del piloto como lo tienes -->
-                    {% endif %}
-
-                    {% if employee.project_id == project and 'Proyectos' in employee.job %}
-                    <div class="employee-card p-2 {% if employee.locked == False %}bg-orange-300{% else %}bg-gray-300{% endif %} border border-gray-200 rounded-md shadow-sm mb-2" data-employee-id="{{ employee.id }}" draggable="true">
-                      <div class="flex justify-between items-start">
-                        <div>
-                          <h4 class="text-sm font-medium text-gray-900">{{ employee.name }}</h4>
-                          <p class="text-xs text-gray-500">{{ employee.get_state_display }}</p>
-                          <p class="text-xs text-gray-500">{{ employee.start_date }}</p>
-                          <p class="text-xs text-gray-500">{{ employee.end_date }}</p>
-                        </div>
-                        <a href="{% url 'employee_update' employee.id %}" class="text-green-500 hover:text-gray-600"><i class="fas fa-external-link-alt text-xs"></i></a>
-                      </div>
-                      <!-- Resto del contenido del empleado como lo tienes -->
-                      <div class="flex justify-between w-full">
-                        <div class="{% if employee.driver_license == False %}text-red-500{% else %}text-green-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-id-card text-base"></i>
-                        </div>
-                        <div class="{% if employee.twenty_hours %}text-green-600{% else %}text-red-500{% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-2 text-base"></i>
-                          <i class="fa-solid fa-0 text-base"></i>
-                        </div>
-                        <div class="{% if employee.sixty_hours %}text-green-600{% else %}text-red-500{% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-6 text-base"></i>
-                          <i class="fa-solid fa-0 text-base"></i>
-                        </div>
-                        <div class="{% if employee.confine %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-square-person-confined text-base"></i>
-                        </div>
-                        <div class="{% if employee.height %}text-green-600{% else %}text-red-500{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-person-falling text-base"></i>
-                        </div>
-                        {% if employee.end_contract %}
-                        <div class="text-purple-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-skull-crossbones text-xl"></i>
-                        </div>
-                        {% endif %}
-                        {% if employee.vacation_status == 'soon_vacation' %}
-                        <div class="text-blue-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-umbrella-beach text-base"></i>
-                        </div>
-                        {% elif employee.vacation_status == 'on_vacation' %}
-                        <div class="text-purple-500 mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                          <i class="fa-solid fa-umbrella-beach text-3xl"></i>
-                        </div>
-                        {% endif %}
-                      </div>
-                      
-                    </div>
-                      <!-- Contenido de proyectos como lo tienes -->
-                    {% endif %}
-                  {% endfor %}
-
-                  <!-- Needs y Locks como los tienes -->
-                  {% for need in needs %}
-                    {% if need.project_id == project %}
-                      <div class="need-card p-2 bg-red-300 border border-gray-300 rounded-md shadow-sm mb-2">
-                        <div class="flex justify-between items-start">
-                          <div>
-                            <h4 class="text-sm font-medium text-gray-900">{{ need.job }}</h4>
-                            <p class="text-xs text-gray-500">{{ need.description }}</p>
-                            <span class="text-xs text-red-600 font-medium">{{ need.quantity }} {{need.type}}</span>
-                          </div>
-                          <div class="flex flex-col items-end">
-                            {% if need.date_needed %}
-                              <span class="text-xs text-gray-500">{{ need.date_needed|date:"d/m/Y" }}</span>
-                            {% endif %}
-                          </div>
-                        </div>
-                        <div class="flex justify-between mt-2">
-                          <div class="text-xs text-gray-600">
-                            <i class="fas fa-clock mr-1"></i>
-                            Creado: {{ need.created_at|date:"d/m/Y" }}
-                          </div>
-                          {% if need.skills_required %}
-                            <div class="text-xs text-blue-600">
-                              <i class="fas fa-star mr-1"></i>
-                              Skills requeridas
-                            </div>
-                          {% endif %}
-                        </div>
-                        <!-- Contenido del need como lo tienes -->
-                      </div>
-                    {% endif %}
-                  {% endfor %}
-
-                  {% for lock in locks %}
-                    {% if lock.next_project == project %}
-                      <div class="lock-card p-2 bg-indigo-500 border border-gray-300 rounded-md shadow-sm mb-2">
-                        <!-- Contenido del lock como lo tienes -->
+                    {% if employee.project_id == project and employee.active %}
+                      <div class="employee-card {% if employee.locked == False %}bg-green-100 hover:bg-green-200{% else %}bg-gray-200{% endif %} border border-gray-300 rounded-md shadow-sm mb-2 cursor-move" 
+                           data-employee-id="{{ employee.id }}" draggable="true">
                         <div class="flex justify-between items-start">
                           <div class="flex-1">
-                            <h4 class="text-sm font-medium text-white">{{ lock.employee.name }}</h4>
-                            <p class="text-xs text-indigo-200">
-                              <i class="fas fa-lock mr-1"></i>{{ lock.employee.job }}
-                            </p>
-                            {% if lock.expected_start_date %}
-                              <div class="text-xs text-indigo-200 mt-1">
-                                <i class="fas fa-calendar mr-1"></i>
-                                <span class="font-medium">Inicio previsto:</span> {{ lock.expected_start_date|date:"d/m/Y" }}
-                              </div>
+                            <h4 class="employee-name">{{ employee.name }}</h4>
+                            <p class="employee-job">{{ employee.job }}</p>
+                            {% if employee.city %}
+                              <p class="text-xs text-gray-500 mt-1">
+                                <i class="fas fa-map-marker-alt mr-1"></i>{{ employee.city }}
+                              </p>
                             {% endif %}
-                            {% if lock.created_at %}
-                              <div class="text-xs text-indigo-300 mt-1">
+                            {% if employee.end_date %}
+                              <p class="text-xs text-red-600 mt-1">
                                 <i class="fas fa-clock mr-1"></i>
-                                <span class="font-medium">Reservado:</span> {{ lock.created_at|date:"d/m/Y H:i" }}
-                              </div>
+                                Hasta: {{ employee.end_date|date:"d/m/Y" }}
+                              </p>
                             {% endif %}
                           </div>
                           <div class="flex flex-col items-end">
-                            <a href="{% url 'employee_update' lock.employee.id %}" class="text-indigo-200 hover:text-white">
+                            <a href="{% url 'employee_update' employee.id %}" class="text-blue-600 hover:text-blue-800">
                               <i class="fas fa-external-link-alt text-xs"></i>
                             </a>
-                            {% if can_edit %}
-                              <button class="text-indigo-200 hover:text-white mt-1" 
-                                      onclick="removeLock({{ lock.id }})" 
-                                      title="Quitar reserva">
-                                <i class="fas fa-unlock text-xs"></i>
-                              </button>
-                            {% endif %}
                           </div>
                         </div>
-
-                        <!-- Indicadores de habilidades del empleado reservado -->
-                        <div class="flex justify-between mt-2">
-                          <div class="{% if lock.employee.driver_license == False %}text-red-300{% else %}text-green-300{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-id-card text-base"></i>
+                        
+                        <!-- Employee skills indicators -->
+                        <div class="flex justify-between mt-2 text-xs">
+                          <div class="{% if employee.driver_license %}text-green-600{% else %}text-red-500{% endif %}">
+                            <i class="fas fa-id-card"></i>
                           </div>
-                          <div class="{% if lock.employee.twenty_hours %}text-green-300{% else %}text-red-300{% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-2 text-base"></i>
-                            <i class="fa-solid fa-0 text-base"></i>
+                          <div class="{% if employee.twenty_hours %}text-green-600{% else %}text-red-500{% endif %}">
+                            <span>20h</span>
                           </div>
-                          <div class="{% if lock.employee.sixty_hours %}text-green-300{% else %}text-red-300{% endif %} flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-6 text-base"></i>
-                            <i class="fa-solid fa-0 text-base"></i>
+                          <div class="{% if employee.sixty_hours %}text-green-600{% else %}text-red-500{% endif %}">
+                            <span>60h</span>
                           </div>
-                          <div class="{% if lock.employee.confine %}text-green-300{% else %}text-red-300{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-square-person-confined text-base"></i>
+                          <div class="{% if employee.confine %}text-green-600{% else %}text-red-500{% endif %}">
+                            <i class="fas fa-square-person-confined"></i>
                           </div>
-                          <div class="{% if lock.employee.height %}text-green-300{% else %}text-red-300{% endif %} mr-3 flex-shrink-0 w-3 h-4 flex items-center justify-center">
-                            <i class="fa-solid fa-person-falling text-base"></i>
+                          <div class="{% if employee.height %}text-green-600{% else %}text-red-500{% endif %}">
+                            <i class="fas fa-person-falling"></i>
                           </div>
-                        </div>
-
-                        <!-- Indicador del estado de la reserva -->
-                        <div class="mt-2 px-2 py-1 rounded-full text-xs text-center bg-indigo-600 text-white flex items-center justify-center">
-                          <i class="fas fa-lock mr-1"></i>Empleado reservado
-                          <div class="mt-1 ml-2 flex space-x-1">
-                            <button onclick="fulfillEmployeeNeed({{ lock.id }}, {{ project.id }})" 
-                                class="text-green-400 hover:text-green-200 p-1 rounded hover:bg-green-700"
-                                title="Marcar como cumplida">
-                              <i class="fas fa-check text-xl"></i>
-                            </button>
-                            <button onclick="deleteEmployeeNeed({{ lock.id }})" 
-                                class="text-red-400 hover:text-red-200 p-1 rounded hover:bg-red-700"
-                                title="Eliminar necesidad">
-                              <i class="fas fa-trash text-xl"></i>
-                            </button>
-                            </div>
                         </div>
                       </div>
                     {% endif %}
@@ -1505,594 +368,114 @@
               </div>
             {% endif %}
           {% endfor %}
-
-      <!-- AUSENCIAS (TERCERA FILA) -->
-      
-  
-      <!-- Columna de Empleados con ausencia (bajas médicas, paternidad, etc)-->
-      
+        </div>
+      </div>
 
     </div>
   </div>
-
 </div>
 
-<!-- Modal para editar vacaciones (opcional) -->
-{% if can_edit %}
-<div id="vacation-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
-  <div class="flex items-center justify-center min-h-screen">
-    <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-      <h3 class="text-lg font-medium text-gray-900 mb-4">
-        <i class="fas fa-umbrella-beach mr-2 text-purple-600"></i>
-        Editar Vacaciones
-      </h3>
-      <form id="vacation-form">
-        {% csrf_token %}
-        <input type="hidden" id="employee-id" name="employee_id">
-        
-        <div class="mb-4">
-          <label for="vacations-from" class="block text-sm font-medium text-gray-700">Fecha inicio</label>
-          <input type="date" id="vacations-from" name="vacations_from" 
-                 class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-        </div>
-        
-        <div class="mb-4">
-          <label for="vacations-to" class="block text-sm font-medium text-gray-700">Fecha fin</label>
-          <input type="date" id="vacations-to" name="vacations_to" 
-                 class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-        </div>
-        
-        <div class="flex justify-end space-x-3">
-          <button type="button" onclick="closeVacationModal()" 
-                  class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
-            Cancelar
-          </button>
-          <button type="submit" 
-                  class="px-4 py-2 bg-purple-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-purple-700">
-            Guardar
-          </button>
-        </div>
-      </form>
-    </div>
+<!-- Loading indicator -->
+<div id="loading-indicator" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 hidden">
+  <div class="bg-white p-4 rounded-lg flex flex-col items-center">
+    <svg class="animate-spin h-8 w-8 text-blue-600 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
+    <span class="text-gray-700">Actualizando...</span>
   </div>
 </div>
+
+<!-- Toast notification -->
+<div id="toast-notification" class="fixed bottom-4 right-4 p-3 rounded-md shadow-lg text-white transform translate-y-full opacity-0 transition-all duration-300 z-50 text-sm"></div>
+
+<!-- CSRF Token for AJAX -->
+{% csrf_token %}
 
 <script>
-function editVacations(employeeId) {
-    document.getElementById('employee-id').value = employeeId;
-    document.getElementById('vacation-modal').classList.remove('hidden');
-}
-
-function closeVacationModal() {
-    document.getElementById('vacation-modal').classList.add('hidden');
-}
-
-document.getElementById('vacation-form').addEventListener('submit', function(e) {
-    e.preventDefault();
-    // Aquí puedes añadir la lógica AJAX para guardar las vacaciones
-    // Por ahora, simplemente cerrar el modal
-    closeVacationModal();
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Kanban Board inicializado');
+    
+    // Auto-refresh cada 60 segundos
+    setInterval(function() {
+        console.log('🔄 Auto-refreshing...');
+        window.location.reload();
+    }, 60000);
+    
+    // Función para mostrar notificaciones
+    function showToast(message, type = 'success') {
+        const toast = document.getElementById('toast-notification');
+        toast.textContent = message;
+        toast.className = `fixed bottom-4 right-4 p-3 rounded-md shadow-lg text-white transition-all duration-300 z-50 text-sm ${
+            type === 'success' ? 'bg-green-500' : 
+            type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+        }`;
+        
+        // Mostrar
+        toast.style.transform = 'translateY(0)';
+        toast.style.opacity = '1';
+        
+        // Ocultar después de 3 segundos
+        setTimeout(() => {
+            toast.style.transform = 'translateY(100%)';
+            toast.style.opacity = '0';
+        }, 3000);
+    }
+    
+    // Asignar función global para usar desde drag_drop.js
+    window.showToast = showToast;
 });
 </script>
-{% endif %}
 
-
-    </div>
-  </div>
-
-  <!-- Loading spinner -->
-  <div id="loading-indicator" class="fixed inset-0 flex items-center justify-center bg-opacity-50 z-50 hidden">
-    <div class="bg-white p-4 rounded-lg flex flex-col items-center">
-      <svg class="animate-spin h-8 w-8 text-blue-600 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-      </svg>
-    </div>
-  </div>
-
-  <!-- Toast notification -->
-  <div id="toast-notification" class="fixed bottom-4 right-4 p-3 rounded-md shadow-lg text-white transform translate-y-full opacity-0 transition-all duration-300 z-50 text-sm"></div>
-
-  <!-- CSRF Token for AJAX -->
-  <!-- CSRF Token for AJAX -->
-  {% csrf_token %}
-
-  <!-- CSRF Token for AJAX -->
-  {% csrf_token %}
-  
-
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      // Corregir específicamente el problema de las barras de desplazamiento duplicadas
-      const sidebar = document.querySelector('.sidebar')
-      const sidebarContent = sidebar.querySelector('.p-4')
-      const employeesPool = sidebar.querySelector('.bg-white.shadow.rounded-lg')
-    
-      if (sidebar && sidebarContent && employeesPool) {
-        // Forzar que el sidebar principal NO tenga scroll
-        sidebar.style.overflow = 'hidden'
-    
-        // Forzar que el contenedor intermedio tampoco tenga scroll
-        sidebarContent.style.overflow = 'hidden'
-        sidebarContent.style.height = '100%'
-    
-        // Solo permitir scroll en el contenedor de empleados
-        employeesPool.style.maxHeight = 'calc(100vh - 220px)'
-        employeesPool.style.overflowY = 'auto'
-        employeesPool.style.overflowX = 'hidden'
-    
-        // Esto es importante para que la barra sea más estrecha
-        const styleElement = document.createElement('style')
-        styleElement.textContent = `
-                .sidebar .bg-white.shadow.rounded-lg::-webkit-scrollbar {
-                  width: 8px !important;
-                  height: 8px !important;
-                }
-                .sidebar .bg-white.shadow.rounded-lg::-webkit-scrollbar-thumb {
-                  background-color: rgba(156, 163, 175, 0.5) !important;
-                  border-radius: 4px !important;
-                }
-        
-                /* Deshabilitar selección de texto en todo el kanban */
-              .kanban-container, .kanban-container * {
-                -webkit-user-select: none !important;
-                -moz-user-select: none !important;
-                -ms-user-select: none !important;
-                user-select: none !important;
-              }
-              
-              /* Permitir selección solo en inputs y textareas si los hay */
-              .kanban-container input, .kanban-container textarea {
-                -webkit-user-select: text !important;
-                -moz-user-select: text !important;
-                -ms-user-select: text !important;
-                user-select: text !important;
-              }
-        
-              /* Mejorar el cursor para elementos draggables */
-              .draggable-employee {
-                  cursor: grab !important;
-              }
-                
-              .draggable-employee.dragging {
-                  cursor: grabbing !important;
-                  opacity: 0.8 !important;
-                }
-        
-                /* Evitar que las imágenes y otros elementos interfieran */
-                .draggable-employee img, .draggable-employee * {
-                  pointer-events: none !important;
-                }
-                
-              `
-        document.head.appendChild(styleElement)
-    
-        console.log('Barras de desplazamiento corregidas en la sidebar')
-      }
-    })
-  </script>
-
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('🔍 Inicializando búsqueda expandida...');
-        
-        // Variables para la búsqueda
-        const searchInput = document.getElementById('search-input');
-        const searchForm = document.getElementById('search-form');
-        let searchTimeout;
-        
-        // Función para scroll automático al proyecto del empleado encontrado
-        function scrollToEmployeeProject() {
-            {% if employee_found_project_id %}
-                console.log('🎯 Empleado encontrado en proyecto ID: {{ employee_found_project_id }}');
-                
-                // Destacar el proyecto del empleado encontrado
-                setTimeout(() => {
-                    const projectElement = document.querySelector('[data-project-id="{{ employee_found_project_id }}"]');
-                    if (projectElement) {
-                        console.log('📍 Haciendo scroll al proyecto del empleado...');
-                        
-                        // Scroll al proyecto
-                        projectElement.scrollIntoView({
-                            behavior: 'smooth',
-                            block: 'center'
-                        });
-                        
-                        // Destacar temporalmente
-                        projectElement.style.transition = 'box-shadow 0.3s ease, transform 0.3s ease';
-                        projectElement.style.boxShadow = '0 0 30px rgba(34, 197, 94, 0.8)';
-                        projectElement.style.transform = 'scale(1.02)';
-                        
-                        // Buscar y destacar al empleado específico
-                        const employeeCards = projectElement.querySelectorAll('.employee-card');
-                        const searchTerm = '{{ search_query|lower }}';
-                        
-                        employeeCards.forEach(card => {
-                            const employeeName = card.querySelector('.employee-name')?.textContent?.toLowerCase() || '';
-                            const employeeJob = card.querySelector('.employee-job')?.textContent?.toLowerCase() || '';
-                            
-                            if (employeeName.includes(searchTerm) || employeeJob.includes(searchTerm)) {
-                                // Destacar el empleado específico
-                                card.style.transition = 'all 0.3s ease';
-                                card.style.backgroundColor = '#dcfce7';
-                                card.style.border = '2px solid #22c55e';
-                                card.style.transform = 'scale(1.05)';
-                                
-                                // Remover highlight del empleado después de un tiempo
-                                setTimeout(() => {
-                                    card.style.backgroundColor = '';
-                                    card.style.border = '';
-                                    card.style.transform = '';
-                                }, 5000);
-                            }
-                        });
-                        
-                        // Remover highlight del proyecto después de un tiempo
-                        setTimeout(() => {
-                            projectElement.style.boxShadow = '';
-                            projectElement.style.transform = '';
-                        }, 4000);
-                    } else {
-                        console.warn('⚠️ No se encontró el elemento del proyecto');
-                    }
-                }, 500);
-            {% else %}
-                console.log('ℹ️ No hay empleado específico para destacar');
-            {% endif %}
-        }
-        
-        // Función para búsqueda en tiempo real (opcional)
-        function setupLiveSearch() {
-            if (searchInput) {
-                searchInput.addEventListener('input', function() {
-                    clearTimeout(searchTimeout);
-                    const query = this.value.trim();
-                    
-                    if (query.length >= 2) {
-                        searchTimeout = setTimeout(() => {
-                            console.log(`🔍 Búsqueda en tiempo real: "${query}"`);
-                            highlightMatchingElements(query);
-                        }, 300);
-                    } else {
-                        clearHighlights();
-                    }
-                });
-            }
-        }
-        
-        // Función para destacar elementos que coinciden con la búsqueda
-        function highlightMatchingElements(query) {
-            const queryLower = query.toLowerCase();
-            
-            // Limpiar highlights anteriores
-            clearHighlights();
-            
-            // Buscar en títulos de proyectos
-            document.querySelectorAll('.project-title').forEach(title => {
-                if (title.textContent.toLowerCase().includes(queryLower)) {
-                    title.style.backgroundColor = '#fef3c7';
-                    title.style.padding = '2px 4px';
-                    title.style.borderRadius = '3px';
-                    title.classList.add('search-highlight');
-                }
-            });
-            
-            // Buscar en nombres de empleados
-            document.querySelectorAll('.employee-name').forEach(name => {
-                if (name.textContent.toLowerCase().includes(queryLower)) {
-                    const card = name.closest('.employee-card');
-                    if (card) {
-                        card.style.backgroundColor = '#dcfce7';
-                        card.style.border = '1px solid #22c55e';
-                        card.classList.add('search-highlight');
-                    }
-                }
-            });
-            
-            // Buscar en trabajos de empleados
-            document.querySelectorAll('.employee-job').forEach(job => {
-                if (job.textContent.toLowerCase().includes(queryLower)) {
-                    const card = job.closest('.employee-card');
-                    if (card) {
-                        card.style.backgroundColor = '#dbeafe';
-                        card.style.border = '1px solid #3b82f6';
-                        card.classList.add('search-highlight');
-                    }
-                }
-            });
-        }
-        
-        // Función para limpiar highlights
-        function clearHighlights() {
-            document.querySelectorAll('.search-highlight').forEach(element => {
-                element.style.backgroundColor = '';
-                element.style.border = '';
-                element.style.padding = '';
-                element.style.borderRadius = '';
-                element.classList.remove('search-highlight');
-            });
-        }
-        
-        // Función para mejorar el placeholder dinámico
-        function setupDynamicPlaceholder() {
-            if (searchInput) {
-                const placeholders = [
-                    'Buscar proyectos, managers, empleados...',
-                    'Ej: Juan Pérez, Electricista...',
-                    'Ej: Proyecto Alpha, Manager...',
-                    'Buscar por nombre, trabajo, ciudad...'
-                ];
-                
-                let currentIndex = 0;
-                
-                setInterval(() => {
-                    if (!searchInput.value && document.activeElement !== searchInput) {
-                        currentIndex = (currentIndex + 1) % placeholders.length;
-                        searchInput.placeholder = placeholders[currentIndex];
-                    }
-                }, 3000);
-            }
-        }
-        
-        // Inicializar todas las funcionalidades
-        scrollToEmployeeProject();
-        setupLiveSearch();
-        setupDynamicPlaceholder();
-        
-        // Limpiar highlights al limpiar búsqueda
-        const clearButton = document.querySelector('a[href="{% url "kanban_board" %}"]');
-        if (clearButton) {
-            clearButton.addEventListener('click', () => {
-                clearHighlights();
-            });
-        }
-        
-        console.log('✅ Búsqueda expandida inicializada');
-    });
-    </script>
-
-  <!-- Remover los controles existentes y agregar solo esto -->
-<script>
-  // Auto-refresh simple cada 30 segundos
-  let autoRefreshTimer;
-  const REFRESH_INTERVAL = 60000; // 30 segundos
-  
-  function refreshKanbanPage() {
-      console.log('🔄 Auto-refreshing kanban board...');
-      
-      // Mostrar indicador visual sutil
-      const body = document.body;
-      body.style.opacity = '0.95';
-      body.style.transition = 'opacity 0.3s ease';
-      
-      // Recargar la página completa
-      window.location.reload();
-  }
-  
-  function startAutoRefresh() {
-      // Limpiar timer existente si hay uno
-      if (autoRefreshTimer) {
-          clearInterval(autoRefreshTimer);
-      }
-      
-      // Iniciar nuevo timer
-      autoRefreshTimer = setInterval(refreshKanbanPage, REFRESH_INTERVAL);
-      console.log('✅ Auto-refresh iniciado: cada 30 segundos');
-  }
-  
-  // Pausar cuando la ventana no está visible (optimización)
-  document.addEventListener('visibilitychange', function() {
-      if (document.hidden) {
-          // Pausar cuando no está visible
-          if (autoRefreshTimer) {
-              clearInterval(autoRefreshTimer);
-              console.log('⏸️ Auto-refresh pausado (ventana oculta)');
-          }
-      } else {
-          // Reanudar cuando vuelve a ser visible
-          startAutoRefresh();
-          console.log('▶️ Auto-refresh reanudado (ventana visible)');
-      }
-  });
-  
-  // Inicializar cuando se carga la página
-  document.addEventListener('DOMContentLoaded', function() {
-      // Esperar 2 segundos antes del primer refresh para que la página se cargue completamente
-      setTimeout(startAutoRefresh, 2000);
-      
-      console.log('🚀 Kanban board cargado - auto-refresh en 30 segundos');
-  });
-  
-  // Limpiar timer al salir de la página
-  window.addEventListener('beforeunload', function() {
-      if (autoRefreshTimer) {
-          clearInterval(autoRefreshTimer);
-          console.log('🛑 Auto-refresh detenido (saliendo de página)');
-      }
-  });
-  
-  // Opcional: Mostrar countdown visual (discreto)
-  function showRefreshCountdown() {
-      let timeLeft = REFRESH_INTERVAL / 1000; // 30 segundos
-      
-      const updateCountdown = () => {
-          timeLeft--;
-          
-          // Mostrar en consola cada 10 segundos
-          if (timeLeft % 10 === 0 && timeLeft > 0) {
-              console.log(`⏱️ Auto-refresh en ${timeLeft} segundos`);
-          }
-          
-          if (timeLeft <= 0) {
-              clearInterval(countdownTimer);
-              return;
-          }
-      };
-      
-      const countdownTimer = setInterval(updateCountdown, 1000);
-  }
-  
-  // Inicializar countdown después del primer refresh
-  setTimeout(showRefreshCountdown, 2000);
-  </script>
-
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Detectar pizarras Smart por resolución y características
-        function detectSmartBoard() {
-            const width = window.screen.width;
-            const height = window.screen.height;
-            const isLargeScreen = width >= 1920 && height >= 1080;
-            const isTouch = 'ontouchstart' in window;
-            const hasHighDPI = window.devicePixelRatio > 1;
-            
-            // Criterios para detectar pizarra Smart:
-            // - Pantalla grande (mínimo Full HD)
-            // - Táctil
-            // - Resolución alta
-            const isSmartBoard = isLargeScreen && isTouch && hasHighDPI;
-            
-            if (isSmartBoard) {
-                document.body.classList.add('smart-board');
-                console.log('🖥️ Pizarra Smart detectada:', {
-                    resolution: `${width}x${height}`,
-                    dpi: window.devicePixelRatio,
-                    touch: isTouch
-                });
-                
-                // Forzar layout horizontal
-                const kanbanBoard = document.querySelector('.kanban-board');
-                if (kanbanBoard) {
-                    kanbanBoard.style.flexDirection = 'row';
-                }
-                
-                const projectsContainers = document.querySelectorAll('.projects-container');
-                projectsContainers.forEach(container => {
-                    container.style.display = 'flex';
-                    container.style.flexDirection = 'row';
-                });
-            }
-            
-            console.log('📺 Información de pantalla:', {
-                resolution: `${width}x${height}`,
-                devicePixelRatio: window.devicePixelRatio,
-                isTouch: isTouch,
-                isSmartBoard: isSmartBoard,
-                userAgent: navigator.userAgent.substring(0, 100)
-            });
-        }
-        
-        // Ejecutar detección
-        detectSmartBoard();
-        
-        // Re-ejecutar si cambia el tamaño de pantalla
-        window.addEventListener('resize', detectSmartBoard);
-        
-        // Forzar layout horizontal en pantallas grandes
-        function forceHorizontalLayout() {
-            const width = window.innerWidth;
-            if (width >= 1920) {
-                const kanbanBoard = document.querySelector('.kanban-board');
-                if (kanbanBoard) {
-                    kanbanBoard.style.flexDirection = 'row';
-                    kanbanBoard.style.display = 'flex';
-                }
-                
-                const projectsContainers = document.querySelectorAll('.projects-container');
-                projectsContainers.forEach(container => {
-                    container.style.display = 'flex';
-                    container.style.flexDirection = 'row';
-                    container.style.overflowX = 'auto';
-                    container.style.overflowY = 'hidden';
-                });
-                
-                console.log('🔧 Layout horizontal forzado para pantalla grande');
-            }
-        }
-        
-        // Ejecutar inmediatamente y al redimensionar
-        forceHorizontalLayout();
-        window.addEventListener('resize', forceHorizontalLayout);
-        
-        // Debugging: Mostrar información de layout actual
-        setTimeout(() => {
-            const kanbanBoard = document.querySelector('.kanban-board');
-            const projectsContainer = document.querySelector('.projects-container');
-            
-            if (kanbanBoard && projectsContainer) {
-                console.log('📐 Layout actual:', {
-                    kanbanBoard: {
-                        flexDirection: getComputedStyle(kanbanBoard).flexDirection,
-                        display: getComputedStyle(kanbanBoard).display
-                    },
-                    projectsContainer: {
-                        flexDirection: getComputedStyle(projectsContainer).flexDirection,
-                        display: getComputedStyle(projectsContainer).display
-                    }
-                });
-            }
-        }, 1000);
-    });
-    </script>
-  
-  <!-- Opcional: Indicador visual discreto -->
-  <div id="refresh-indicator" style="
-      position: fixed;
-      bottom: 10px;
-      right: 10px;
-      background: rgba(0,0,0,0.7);
-      color: white;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 12px;
-      display: none;
-      z-index: 1000;
-  ">
-      <i class="fas fa-sync-alt fa-spin"></i> Actualizando...
-  </div>
-  
-  <style>
-  /* Suave transición al refrescar */
-  body.refreshing {
-      opacity: 0.95;
-      transition: opacity 0.3s ease;
-  }
-  
-  /* Opcional: Indicador de última actualización */
-  .last-update-indicator {
-      position: fixed;
-      bottom: 10px;
-      left: 10px;
-      background: rgba(40, 167, 69, 0.1);
-      color: #28a745;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 11px;
-      border: 1px solid rgba(40, 167, 69, 0.3);
-  }
-
-  .search-highlight {
-    transition: all 0.3s ease !important;
+<style>
+/* Estilos adicionales para mejor presentación */
+.alert {
+    @apply px-3 py-2 rounded-md text-sm font-medium;
 }
 
-.employee-card.search-highlight {
-    transform: scale(1.02);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+.alert-warning {
+    @apply bg-yellow-100 text-yellow-800 border border-yellow-200;
 }
 
-.project-title.search-highlight {
-    font-weight: bold;
+.alert-info {
+    @apply bg-blue-100 text-blue-800 border border-blue-200;
 }
 
-/* Mejorar el input de búsqueda */
-#search-input:focus {
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    border-color: #3b82f6;
+.stats-panel {
+    @apply flex flex-col gap-2;
 }
 
-/* Animación para el scroll */
-.smooth-highlight {
-    animation: highlightPulse 2s ease-in-out;
+/* Asegurar que el kanban sea responsive */
+@media (max-width: 768px) {
+    .kanban-board {
+        @apply flex-col;
+    }
+    
+    .kanban-sidebar {
+        @apply w-full max-h-64;
+    }
+    
+    .projects-container {
+        @apply flex-col;
+    }
+    
+    .project-column {
+        @apply w-full max-w-none;
+    }
 }
-  </style>
+
+/* Efectos de drag and drop */
+.employee-card.dragging {
+    @apply opacity-50 transform rotate-2;
+}
+
+.kanban-column.drag-over {
+    @apply bg-blue-50 border-2 border-blue-300 border-dashed;
+}
+
+.project-column.highlight {
+    @apply ring-2 ring-blue-400;
+}
+</style>
+
 {% endblock %}

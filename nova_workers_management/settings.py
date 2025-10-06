@@ -59,6 +59,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # Para servir archivos estáticos en producción
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -119,10 +120,33 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = os.getenv('STATIC_URL', '/static/')
-STATICFILES_DIRS = [
-    BASE_DIR / 'static',
+
+# En desarrollo, servir desde la carpeta static del proyecto
+# En producción, los archivos se recolectan en STATIC_ROOT
+if DEBUG:
+    STATICFILES_DIRS = [
+        BASE_DIR / 'static',
+    ]
+else:
+    # En producción, no usar STATICFILES_DIRS, solo STATIC_ROOT
+    STATICFILES_DIRS = []
+
+STATIC_ROOT = os.getenv("STATIC_ROOT", str(BASE_DIR.parent / "static"))
+
+# Configuración adicional para archivos estáticos
+STATICFILES_FINDERS = [
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 ]
-STATIC_ROOT = os.getenv("STATIC_ROOT", str(BASE_DIR / "staticfiles"))
+
+# Configuración de archivos estáticos en producción
+if not DEBUG:
+    # Usar WhiteNoise para servir archivos estáticos en producción
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    
+    # Configuración adicional de WhiteNoise
+    WHITENOISE_USE_FINDERS = True
+    WHITENOISE_AUTOREFRESH = True
 
 # Media files (Uploaded files)
 MEDIA_URL = os.getenv('MEDIA_URL', '/media/')
