@@ -32,6 +32,9 @@ urlpatterns = [
     path('kanban/data/', views.kanban_board_data, name='kanban_board_data'),
     path('api/update-employee-project/', views.update_employee_project, name='update_employee_project'),
     
+    # Página de prueba de colores Tailwind
+    path('colors/', views.color_palette, name='color_palette'),
+    
     # Rutas para empleados necesitados
     path('employee-needed/', views.employee_needed_list, name='employee_needed_list'),
     path('employee-needed/create/', views.employee_needed_create, name='employee_needed_create'),

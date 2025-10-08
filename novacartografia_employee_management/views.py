@@ -868,11 +868,21 @@ def kanban_board(request):
     
     # **Anotar empleados con estado de vacaciones Y proximidad a end_date**
     employees = Employee.objects.annotate(
-        # Determinar si está de vacaciones HOY
-        is_on_vacation=Case(
+        # Determinar si está de vacaciones HOY (usando campos directos del Employee)
+        on_vacation=Case(
             When(
                 vacations_from__lte=today,
                 vacations_to__gte=today,
+                then=Value(True)
+            ),
+            default=Value(False),
+            output_field=BooleanField(),
+        ),
+        # Determinar si tiene vacaciones próximas (empiezan en los próximos 7 días)
+        upcoming_vacation=Case(
+            When(
+                vacations_from__gt=today,
+                vacations_from__lte=today + timedelta(days=7),
                 then=Value(True)
             ),
             default=Value(False),
@@ -1981,8 +1991,13 @@ def kanban_board_data(request):
             project_id__isnull=True,
             active=True
         ).annotate(
-            is_on_vacation=Case(
+            on_vacation=Case(
                 When(vacations_from__lte=today, vacations_to__gte=today, then=Value(True)),
+                default=Value(False),
+                output_field=BooleanField(),
+            ),
+            upcoming_vacation=Case(
+                When(vacations_from__gt=today, vacations_from__lte=today + timedelta(days=7), then=Value(True)),
                 default=Value(False),
                 output_field=BooleanField(),
             ),
@@ -2003,19 +2018,23 @@ def kanban_board_data(request):
         # Estadísticas actualizadas
         stats = {
             'employees_ending_soon': Employee.objects.filter(
-                end_date__isnull=False,
-                end_date__lte=today + timedelta(days=7),
-                end_date__gte=today,
-                active=True
+            end_date__isnull=False,
+            end_date__lte=today + timedelta(days=7),
+            end_date__gte=today,
+            active=True
             ).count(),
             'employees_on_vacation': Employee.objects.filter(
-                vacations_from__lte=today,
-                vacations_to__gte=today,
-                active=True
+            vacations_from__lte=today,
+            vacations_to__gte=today,
+            active=True
             ).count(),
             'unassigned_employees': Employee.objects.filter(
-                project_id__isnull=True,
-                active=True
+            project_id__isnull=True,
+            active=True
+            ).count(),
+            'employees_with_end_contract': Employee.objects.filter(
+            end_contract__isnull=False,
+            active=True
             ).count(),
         }
         
@@ -2129,3 +2148,9 @@ def unassign_employees_from_project(request):
         return JsonResponse({'success': False, 'error': 'Datos JSON inválidos'})
     except Exception as e:
         return JsonResponse({'success': False, 'error': f'Error interno: {str(e)}'})
+
+
+@login_required
+def color_palette(request):
+    """Vista para mostrar la paleta de colores Tailwind CSS personalizada"""
+    return render(request, 'novacartografia_employee_management/color_palette.html')

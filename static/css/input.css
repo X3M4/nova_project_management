@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Importar CSS personalizado */
+@import './kanban.css';
+
 /* Componentes personalizados */
 @layer components {
   .kanban-container {
@@ -200,5 +203,28 @@
   
   .kanban-sidebar {
     @apply w-112;
+  }
+}
+
+/* Reglas específicas para alturas de columnas del proyecto */
+/* Estas reglas deben ir al final para asegurar máxima prioridad */
+.project-column {
+  min-height: 700px !important;
+  max-height: calc(100vh - 100px) !important;
+  height: 700px !important;
+}
+
+/* Media queries para pantallas grandes */
+@media (min-width: 1920px) {
+  .project-column {
+    min-height: 800px !important;
+    height: 800px !important;
+  }
+}
+
+@media (min-width: 3840px) {
+  .project-column {
+    min-height: 900px !important;
+    height: 900px !important;
   }
 }

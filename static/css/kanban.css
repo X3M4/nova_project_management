@@ -98,7 +98,7 @@
   gap: var(--kanban-spacing-md);
   overflow-x: hidden;
   overflow-y: auto;
-  max-height: calc(100vh - 6rem);
+  max-height: calc(120vh - 2rem);
   padding-right: 10px; /* Espacio para scrollbar */
 }
 
@@ -165,10 +165,13 @@
   overflow: hidden;
   transition: all var(--kanban-transition-normal);
   position: relative;
-  min-height: 300px !important; /* REDUCIDO de 500px a 300px */
-  max-height: calc(50vh - 80px) !important; /* REDUCIDO - máximo 50% de viewport */
+  min-height: 700px !important; /* AUMENTADO AÚN MÁS para mostrar más tarjetas */
+  max-height: calc(90vh - 60px) !important; /* AUMENTADO - máximo 90% de viewport */
+  height: 700px !important; /* NUEVA PROPIEDAD - altura fija mayor */
   display: flex !important;
   flex-direction: column !important;
+  flex: 0 0 280px !important;
+  max-width: 280px !important;
 }
 
 /* ==========================================================================
@@ -288,11 +291,12 @@
   position: relative;
   display: flex !important;
   flex-direction: column !important;
-  /* Alturas base - serán sobrescritas por media queries */
-  min-height: 250px !important;
-  max-height: calc(45vh - 60px) !important;
-  flex: 0 0 280px;
-  max-width: 280px;
+  /* Alturas base - aumentadas significativamente */
+  min-height: 700px !important; /* AUMENTADO AÚN MÁS para mostrar más tarjetas */
+  max-height: calc(90vh - 60px) !important; /* AUMENTADO para mostrar más tarjetas */
+  height: 700px !important; /* NUEVA PROPIEDAD - altura fija mayor */
+  flex: 0 0 280px !important;
+  max-width: 280px !important;
 }
 
 .kanban-column {
@@ -302,7 +306,7 @@
   scrollbar-width: thin;
   scrollbar-color: #d1d5db #f3f4f6;
   /* Altura base - será sobrescrita */
-  max-height: calc(45vh - 100px) !important;
+  max-height: calc(80vh - 100px) !important; /* AUMENTADO para mostrar más tarjetas */
 }
 
 /* Pizarras Smart y pantallas grandes (1920px+) */
@@ -323,7 +327,7 @@
     gap: 1rem !important; /* REDUCIDO */
     overflow-x: hidden !important;
     overflow-y: auto !important;
-    max-height: calc(100vh - 5rem) !important; /* AJUSTADO */
+    max-height: calc(100vh - 2rem) !important; /* AJUSTADO */
   }
 
   .projects-container {
@@ -340,12 +344,12 @@
     flex: 0 0 320px !important; /* AJUSTADO */
     max-width: 320px !important;
     min-width: 320px !important;
-    min-height: 380px !important; /* AUMENTADO */
-    max-height: calc(48vh - 40px) !important; /* AUMENTADO para ver ambas filas */
+    min-height: 600px !important; /* AUMENTADO para mostrar más tarjetas */
+    max-height: calc(85vh - 40px) !important; /* AUMENTADO para mostrar más tarjetas */
   }
 
   .kanban-column {
-    max-height: calc(48vh - 80px) !important; /* AUMENTADO */
+    max-height: calc(85vh - 80px) !important; /* AUMENTADO para mostrar más tarjetas */
     padding: 0.5rem !important;
   }
 
@@ -390,7 +394,7 @@
 
   .kanban-main {
     gap: 1.5rem !important;
-    max-height: calc(100vh - 4rem) !important;
+    max-height: calc(100vh - 2rem) !important;
   }
 
   .projects-container {
@@ -477,7 +481,7 @@
 /* Asegurar que el main container tenga suficiente altura para ambas filas */
 @media (min-width: 1920px) {
   .kanban-main {
-    min-height: calc(100vh - 6rem) !important;
+    min-height: calc(100vh - 2rem) !important;
   }
 
   /* Forzar que cada sección tenga un tamaño máximo para permitir ambas */
@@ -963,7 +967,7 @@ nav .dropdown-menu {
 /* Asegurar que el main container tenga suficiente altura para ambas filas */
 @media (min-width: 1920px) {
   .kanban-main {
-    min-height: calc(100vh - 6rem) !important;
+    min-height: calc(100vh - 2rem) !important;
   }
 
   /* Forzar que cada sección tenga un tamaño máximo para permitir ambas */
@@ -995,7 +999,7 @@ nav .dropdown-menu {
 /* Configuración específica para pizarras Smart táctiles */
 @media (min-width: 1920px) and (pointer: coarse) {
   .project-column {
-    min-height: 400px !important;
+    min-height: 500px !important;
     max-height: calc(46vh - 40px) !important;
   }
   
@@ -1047,7 +1051,7 @@ nav .dropdown-menu {
     flex-direction: column !important;
     gap: 1rem !important;
     overflow-y: auto !important;
-    max-height: calc(100vh - 5rem) !important;
+    max-height: calc(100vh - 2rem) !important;
   }
   
   body .projects-container,
@@ -1098,5 +1102,57 @@ nav .dropdown-menu {
   
   .kanban-column {
     max-height: calc(48vh - 70px) !important;
+  }
+}
+
+/* ==========================================================================
+   REGLAS DE ALTA ESPECIFICIDAD PARA FORZAR ESTIRAMIENTO DE COLUMNAS
+   ========================================================================== */
+
+/* Reglas específicas para forzar altura de columnas - ÚLTIMA PALABRA */
+.kanban-container .project-column,
+.kanban-board .project-column,
+body .kanban-container .project-column,
+html body .kanban-container .project-column {
+  min-height: 800px !important;
+  max-height: calc(95vh - 40px) !important;
+  height: 800px !important;
+}
+
+/* Asegurar que el contenedor de empleados también se estire */
+.kanban-container .kanban-column,
+.kanban-board .kanban-column,
+body .kanban-container .kanban-column,
+html body .kanban-container .kanban-column {
+  max-height: calc(95vh - 120px) !important;
+  overflow-y: auto !important;
+  flex: 1 !important;
+}
+
+/* Para dispositivos móviles y tablets */
+@media (max-width: 1919px) {
+  .kanban-container .project-column,
+  .kanban-board .project-column,
+  body .kanban-container .project-column {
+    min-height: 600px !important;
+    max-height: calc(85vh - 40px) !important;
+    height: 600px !important;
+  }
+}
+
+/* Para pantallas grandes (1920px+) */
+@media (min-width: 1920px) {
+  .kanban-container .project-column,
+  .kanban-board .project-column,
+  body .kanban-container .project-column {
+    min-height: 900px !important;
+    max-height: calc(98vh - 40px) !important;
+    height: 900px !important;
+  }
+  
+  .kanban-container .kanban-column,
+  .kanban-board .kanban-column,
+  body .kanban-container .kanban-column {
+    max-height: calc(98vh - 140px) !important;
   }
 }
