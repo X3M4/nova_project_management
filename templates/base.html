@@ -8,7 +8,7 @@
         <!-- Tailwind CSS - PRODUCCIÓN: Usar archivo compilado -->
         {% load static %}
         <!-- En producción: CSS compilado optimizado -->
-        <link rel="stylesheet" href="{% static 'css/output.css' %}?v=20251007145035">
+        <link rel="stylesheet" href="{% static 'css/output.css' %}?v=20251010125733">
         
         <!-- Font Awesome -->
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -96,6 +96,10 @@
                                     Kanban Board
                                 </a>
                                 
+                                <a href="{% url 'meeting_view' %}" class="text-orange-500 hover:text-orange-700 border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
+                                    <i class="fas fa-users mr-1"></i> Reunión
+                                </a>
+                                
                                 <a href="{% url 'project_map' %}" class="text-orange-500 hover:text-orange-700 border-transparent inline-flex items-center px-1 pt-1 text-lg font-bold">
                                     <i class="fas fa-map-marked-alt mr-1"></i> Map
                                 </a>
@@ -113,7 +117,10 @@
                                     <i class="fas fa-user-circle text-xl"></i>
                                 </button>
                                 <div class="dropdown-menu hidden origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
-                                    <a href="{% url 'logout' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Logout</a>
+                                    <form method="post" action="{% url 'logout' %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Logout</button>
+                                    </form>
                                 </div>
                             </div>
                         {% endif %}

@@ -5,9 +5,9 @@
 {% block content %}
 
 <div class="bg-white shadow overflow-hidden sm:rounded-lg">
-    <div class="px-4 py-5 sm:px-6 bg-primary-600 {% if 'TOPÓGRAFO' in employee.job  %} bg-green-500 {% elif 'Auxiliar' in employee.job %} bg-yellow-400 {% elif 'Piloto' in employee.job %}bg-indigo-500 {% else %} bg-orange-500 {% endif %}">
+    <div class="px-4 py-5 sm:px-6 bg-orange-500 {% if 'TOPÓGRAFO' in employee.job  %} bg-green-500 {% elif 'Auxiliar' in employee.job %} bg-yellow-400 {% elif 'Piloto' in employee.job %}bg-indigo-500 {% else %} bg-orange-500 {% endif %}">
         <h1 class="text-3xl leading-6 font-medium text-gray-700 {% if 'Auxiliar' in employee.job %} {% else %} text-white {% endif %}">
-            <a href="{% url 'employee_update' employee.id %}" class="text-primary-600 hover:text-primary-800">
+            <a href="{% url 'employee_update' employee.id %}" class="text-white hover:text-primary-800">
                 {{ employee.name }}
             </a>
         </h1>
@@ -68,7 +68,7 @@
 
 <!-- Certifications & Qualifications -->
 <div class="mt-8 bg-white shadow overflow-hidden sm:rounded-lg">
-    <div class="px-4 py-5 sm:px-6 bg-primary-600 {% if 'TOPÓGRAFO' in employee.job  %} bg-green-500 {% elif 'Auxiliar' in employee.job %} bg-yellow-400 {% elif 'Piloto' in employee.job %}bg-indigo-500 {% else %} bg-orange-500 {% endif %}">
+    <div class="px-4 py-5 sm:px-6 bg-orange-500 {% if 'TOPÓGRAFO' in employee.job  %} bg-green-500 {% elif 'Auxiliar' in employee.job %} bg-yellow-400 {% elif 'Piloto' in employee.job %}bg-indigo-500 {% else %} bg-orange-500 {% endif %}">
         <h3 class="text-lg leading-6 font-medium text-gray-700 {% if 'Auxiliar' in employee.job %} {% else %} text-white {% endif %}">Certifications & Skills</h3>
         <p class="mt-1 max-w-2xl text-base text-gray-600 {% if 'Auxiliar' in employee.job %} {% else %} text-white {% endif %}">Qualifications and technical skills</p>
     </div>

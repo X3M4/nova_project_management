@@ -45,6 +45,19 @@
                 </div>
             </div>
 
+            <!-- Buscador de Empleados -->
+            <div class="px-6 py-3 border-b border-green-200 bg-green-25">
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-search text-gray-400"></i>
+                    </div>
+                    <input type="text" 
+                           id="search-available-employees" 
+                           class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-green-500 focus:border-green-500 text-sm" 
+                           placeholder="Buscar empleados por nombre, trabajo o ubicación...">
+                </div>
+            </div>
+
             <!-- Lista de Empleados Disponibles -->
             <div class="p-4 max-h-96 overflow-y-auto" id="available-employees">
                 {% for employee in unassigned_employees %}
@@ -169,6 +182,14 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const assignText = document.getElementById('assign-text');
     const unassignText = document.getElementById('unassign-text');
+    const searchInput = document.getElementById('search-available-employees');
+    
+    // Configurar buscador de empleados
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            filterAvailableEmployees(this.value.toLowerCase());
+        });
+    }
     
     // Configurar event listeners para tarjetas y checkboxes
     setupEmployeeCards();
@@ -230,14 +251,82 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Filtrar empleados disponibles
+    function filterAvailableEmployees(searchTerm) {
+        const availableCards = document.querySelectorAll('#available-employees .employee-card');
+        let visibleCount = 0;
+        
+        availableCards.forEach(card => {
+            const employeeName = card.querySelector('h4').textContent.toLowerCase();
+            const employeeJob = card.querySelector('.fa-briefcase').parentElement.textContent.toLowerCase();
+            const employeeLocation = card.querySelector('.fa-map-marker-alt')?.parentElement.textContent.toLowerCase() || '';
+            
+            const searchContent = `${employeeName} ${employeeJob} ${employeeLocation}`;
+            const isVisible = searchContent.includes(searchTerm);
+            
+            if (isVisible) {
+                card.style.display = '';
+                visibleCount++;
+            } else {
+                card.style.display = 'none';
+                // Desmarcar si estaba seleccionado y ya no es visible
+                const checkbox = card.querySelector('.employee-checkbox');
+                if (checkbox.checked) {
+                    checkbox.checked = false;
+                    updateCardStyle(card, false);
+                }
+            }
+        });
+        
+        // Actualizar contador en el header
+        const headerElement = document.querySelector('.bg-green-50 h2');
+        if (headerElement) {
+            const originalText = headerElement.textContent;
+            const baseText = originalText.split('(')[0];
+            if (searchTerm) {
+                headerElement.innerHTML = `${baseText}(${visibleCount} encontrados de {{ unassigned_employees|length }} disponibles)`;
+            } else {
+                headerElement.innerHTML = `${baseText}({{ unassigned_employees|length }} disponibles)`;
+            }
+        }
+        
+        // Actualizar estados de botones después del filtrado
+        updateButtonStates();
+        
+        // Mostrar mensaje si no hay resultados
+        let noResultsMsg = document.getElementById('no-results-message');
+        if (visibleCount === 0 && searchTerm) {
+            if (!noResultsMsg) {
+                noResultsMsg = document.createElement('div');
+                noResultsMsg.id = 'no-results-message';
+                noResultsMsg.className = 'text-center py-8 text-gray-500';
+                noResultsMsg.innerHTML = `
+                    <i class="fas fa-search text-3xl mb-3"></i>
+                    <p>No se encontraron empleados que coincidan con "${searchTerm}"</p>
+                    <p class="text-sm mt-2">Intenta con otros términos de búsqueda</p>
+                `;
+                document.getElementById('available-employees').appendChild(noResultsMsg);
+            } else {
+                noResultsMsg.querySelector('p').textContent = `No se encontraron empleados que coincidan con "${searchTerm}"`;
+                noResultsMsg.style.display = '';
+            }
+        } else if (noResultsMsg) {
+            noResultsMsg.style.display = 'none';
+        }
+    }
+    
     // Seleccionar todos
     function selectAll(type) {
         const container = type === 'available' ? '#available-employees' : '#current-employees';
         const checkboxes = document.querySelectorAll(`${container} .employee-checkbox`);
         
         checkboxes.forEach(checkbox => {
-            checkbox.checked = true;
-            updateCardStyle(checkbox.closest('.employee-card'), true);
+            // Solo seleccionar empleados visibles
+            const card = checkbox.closest('.employee-card');
+            if (card.style.display !== 'none') {
+                checkbox.checked = true;
+                updateCardStyle(card, true);
+            }
         });
         
         updateButtonStates();
@@ -249,8 +338,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const checkboxes = document.querySelectorAll(`${container} .employee-checkbox`);
         
         checkboxes.forEach(checkbox => {
-            checkbox.checked = false;
-            updateCardStyle(checkbox.closest('.employee-card'), false);
+            // Solo limpiar empleados visibles
+            const card = checkbox.closest('.employee-card');
+            if (card.style.display !== 'none') {
+                checkbox.checked = false;
+                updateCardStyle(card, false);
+            }
         });
         
         updateButtonStates();

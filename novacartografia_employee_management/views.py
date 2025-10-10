@@ -12,6 +12,7 @@ from .forms import EmployeeCSVImportForm, EmployeeForm, EmployeeNeededForm, GetE
 from .models import Employee, GetEmployeeLocked, Project, ProjectMovementLine, EmployeeNeeded, EmployeeVacation
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Case, When, Value, CharField, Q, IntegerField, Count, Q, BooleanField, FloatField, F, Min
 from django.db.models.functions import Cast
 from django.core.paginator import Paginator
@@ -881,6 +882,16 @@ def kanban_board(request):
         # Determinar si tiene vacaciones próximas (empiezan en los próximos 7 días)
         upcoming_vacation=Case(
             When(
+            vacations_from__gt=today + timedelta(days=7),
+            vacations_from__lte=today + timedelta(days=30),
+            then=Value(True)
+            ),
+            default=Value(False),
+            output_field=BooleanField(),
+        ),
+        # Determinar si tiene vacaciones próximas en los próximos 8 días (para la sección separada)
+        near_upcoming_vacation=Case(
+            When(
                 vacations_from__gt=today,
                 vacations_from__lte=today + timedelta(days=7),
                 then=Value(True)
@@ -977,6 +988,169 @@ def kanban_board(request):
     })
 
 @login_required
+def meeting_view(request):
+    """Vista de reunión para gestionar empleados por proyecto específico"""
+    today = timezone.now().date()
+    
+    # Parámetros de filtro
+    department = request.GET.get('department', 'external')  # 'external' (obras) o 'project' (proyectos)
+    project_id = request.GET.get('project_id')
+    employee_type = request.GET.get('employee_type', 'all')  # 'all', 'topografo', 'auxiliar', 'proyectos', 'piloto'
+    employee_search = request.GET.get('employee_search', '')
+    
+    # Obtener proyectos filtrados por departamento
+    projects_queryset = Project.objects.annotate(
+        has_needs=Case(
+            When(employeeneeded__fulfilled=False, then=Value(1)),
+            default=Value(0),
+            output_field=IntegerField(),
+        ),
+        earliest_start_date=Min('employeeneeded__start_date'),
+        manager_order=Case(
+            When(manager__isnull=True, then=Value('ZZZZZZ')),
+            default='manager',
+            output_field=CharField(),
+        )
+    ).distinct()
+    
+    if department == 'external':
+        projects_queryset = projects_queryset.filter(type__iexact='external')
+    else:
+        projects_queryset = projects_queryset.filter(type__iexact='project')
+    
+    projects_queryset = projects_queryset.order_by('-has_needs', 'earliest_start_date', 'manager_order')
+    
+    # Seleccionar el primer proyecto si no se especifica uno
+    if not project_id and projects_queryset.exists():
+        project_id = str(projects_queryset.first().id)
+    
+    selected_project = None
+    project_employees = Employee.objects.none()
+    
+    if project_id:
+        try:
+            selected_project = get_object_or_404(Project, pk=project_id)
+            
+            # Empleados del proyecto seleccionado con anotaciones
+            project_employees = Employee.objects.filter(
+                project_id=selected_project,
+                active=True
+            ).annotate(
+                on_vacation=Case(
+                    When(
+                        vacations_from__lte=today,
+                        vacations_to__gte=today,
+                        then=Value(True)
+                    ),
+                    default=Value(False),
+                    output_field=BooleanField(),
+                ),
+                upcoming_vacation=Case(
+                    When(
+                        vacations_from__gt=today,
+                        vacations_from__lte=today + timedelta(days=7),
+                        then=Value(True)
+                    ),
+                    default=Value(False),
+                    output_field=BooleanField(),
+                ),
+                is_ending_soon=Case(
+                    When(
+                        end_date__isnull=False,
+                        end_date__lte=today + timedelta(days=7),
+                        end_date__gte=today,
+                        then=Value(True)
+                    ),
+                    default=Value(False),
+                    output_field=BooleanField(),
+                ),
+            ).order_by('name')
+        except Project.DoesNotExist:
+            project_id = None
+    
+    # Empleados disponibles (no asignados a ningún proyecto)
+    available_employees = Employee.objects.filter(
+        active=True,
+    ).annotate(
+        on_vacation=Case(
+            When(
+                vacations_from__lte=today,
+                vacations_to__gte=today,
+                then=Value(True)
+            ),
+            default=Value(False),
+            output_field=BooleanField(),
+        ),
+        upcoming_vacation=Case(
+            When(
+                vacations_from__gt=today,
+                vacations_from__lte=today + timedelta(days=7),
+                then=Value(True)
+            ),
+            default=Value(False),
+            output_field=BooleanField(),
+        ),
+    )
+    
+    # Filtrar empleados disponibles por tipo
+    if employee_type != 'all':
+        if employee_type == 'topografo':
+            available_employees = available_employees.filter(
+                Q(job__icontains='Topógrafo') | Q(job__icontains='TOPÓGRAFO')
+            )
+        elif employee_type == 'auxiliar':
+            available_employees = available_employees.filter(
+                Q(job__icontains='Auxiliar') | Q(job__icontains='auxiliar')
+            )
+        elif employee_type == 'proyectos':
+            available_employees = available_employees.filter(
+                Q(job__icontains='Proyectos') | Q(job__icontains='Proyecto')
+            )
+        elif employee_type == 'piloto':
+            available_employees = available_employees.filter(
+                Q(job__icontains='Piloto') | Q(job__icontains='piloto')
+            )
+    
+    # Búsqueda de empleados
+    if employee_search:
+        available_employees = available_employees.filter(
+            Q(name__icontains=employee_search) |
+            Q(job__icontains=employee_search) |
+            Q(city__icontains=employee_search)
+        )
+    
+    available_employees = available_employees.order_by('name')
+    
+    # Obtener necesidades y reservas del proyecto
+    needs = EmployeeNeeded.objects.filter(fulfilled=False)
+    locks = GetEmployeeLocked.objects.filter(fulfilled=False)
+    
+    if selected_project:
+        project_needs = needs.filter(project_id=selected_project)
+        project_locks = locks.filter(next_project=selected_project)
+    else:
+        project_needs = EmployeeNeeded.objects.none()
+        project_locks = GetEmployeeLocked.objects.none()
+    
+    context = {
+        'projects': projects_queryset,
+        'selected_project': selected_project,
+        'project_employees': project_employees,
+        'available_employees': available_employees,
+        'needs': project_needs,
+        'locks': project_locks,
+        'department': department,
+        'employee_type': employee_type,
+        'employee_search': employee_search,
+        'today': today,
+        'can_edit': can_edit(request.user),
+    }
+    
+    return render(request, 'novacartografia_employee_management/meeting_view.html', context)
+
+@require_http_methods(["POST"])
+@csrf_exempt
+@login_required
 def update_employee_project(request):
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Only POST method allowed'})
@@ -986,30 +1160,42 @@ def update_employee_project(request):
         employee_id = data.get('employee_id')
         project_id = data.get('project_id')
         
+        print(f"DEBUG: Received data - employee_id: {employee_id}, project_id: {project_id}")
+        
         if not employee_id:
             return JsonResponse({'success': False, 'error': 'Employee ID is required'})
         
         employee = get_object_or_404(Employee, id=employee_id)
+        print(f"DEBUG: Found employee - {employee.name}")
         
         if project_id:
             project = get_object_or_404(Project, id=project_id)
+            print(f"DEBUG: Found project - {project.name}")
             employee.project_id = project
             employee.start_date = timezone.now().date()
             employee.end_date = None  # Clear end_date when assigning to a new project
         else:
+            print("DEBUG: Unassigning employee from project")
             employee.project_id = None
         
         # Al guardar el empleado, el signal track_project_change se activará automáticamente
         # y creará el registro de movimiento si es necesario
         employee.save()
+        print(f"DEBUG: Employee saved successfully")
         
         return JsonResponse({'success': True})
         
+    except json.JSONDecodeError as e:
+        print(f"DEBUG: JSON decode error - {e}")
+        return JsonResponse({'success': False, 'error': 'Invalid JSON data'})
     except Employee.DoesNotExist:
+        print(f"DEBUG: Employee not found - {employee_id}")
         return JsonResponse({'success': False, 'error': 'Employee not found'})
     except Project.DoesNotExist:
+        print(f"DEBUG: Project not found - {project_id}")
         return JsonResponse({'success': False, 'error': 'Project not found'})
     except Exception as e:
+        print(f"DEBUG: General error - {e}")
         return JsonResponse({'success': False, 'error': str(e)})
 
 @login_required
@@ -1116,6 +1302,9 @@ def employee_needed_create_from_project(request, project_id):
     else:
         # Inicializar el formulario con el proyecto preseleccionado
         form = EmployeeNeededForm(initial={'project_id': project})
+        # Asegurar que el campo project_id tenga el valor correcto seleccionado
+        form.fields['project_id'].initial = project
+        form.fields['project_id'].queryset = Project.objects.all()
     
     return render(request, 'novacartografia_employee_management/employee_needed_form.html', {
         'form': form,
@@ -1194,15 +1383,18 @@ def unassign_employee_from_project(request, employee_id):
 @login_required
 @require_edit_permission
 def get_employee_locked_create(request, project_id=None):
-    # Si se proporciona un ID de proyecto, pre-seleccionamos ese proyecto
+    # Si se proporciona un ID de proyecto en la URL o como parámetro GET
+    project_id_from_get = request.GET.get('project_id')
+    project_id = project_id or project_id_from_get
+    
     initial_data = {}
+    project = None
     
     if project_id:
         try:
             project = Project.objects.get(pk=project_id)
             initial_data = {'next_project': project}
         except Project.DoesNotExist:
-            # Si el proyecto no existe, simplemente no lo preseleccionamos
             messages.warning(request, f'Project with ID {project_id} not found. Please select a project.')
     
     if request.method == 'POST':
@@ -1210,13 +1402,18 @@ def get_employee_locked_create(request, project_id=None):
         if form.is_valid():
             future_assignment = form.save()
             messages.success(request, f'Future assignment created for {future_assignment.employee.name}. The employee is now locked.')
-            return redirect('project_detail', pk=future_assignment.next_project.id)
+            return redirect('kanban_board')
     else:
         form = GetEmployeeLockedForm(initial=initial_data)
     
+    title = 'Create Future Assignment'
+    if project:
+        title = f'Create Future Assignment for {project.name}'
+    
     return render(request, 'novacartografia_employee_management/future_assignment_form.html', {
         'form': form,
-        'title': 'Create Future Assignment',
+        'title': title,
+        'project': project
     })
 
 @login_required
@@ -1988,7 +2185,6 @@ def kanban_board_data(request):
         
         # Empleados con anotaciones
         employees = Employee.objects.filter(
-            project_id__isnull=True,
             active=True
         ).annotate(
             on_vacation=Case(
@@ -1997,6 +2193,11 @@ def kanban_board_data(request):
                 output_field=BooleanField(),
             ),
             upcoming_vacation=Case(
+                When(vacations_from__gt=today, vacations_from__lte=today + timedelta(days=7), then=Value(True)),
+                default=Value(False),
+                output_field=BooleanField(),
+            ),
+            near_upcoming_vacation=Case(
                 When(vacations_from__gt=today, vacations_from__lte=today + timedelta(days=7), then=Value(True)),
                 default=Value(False),
                 output_field=BooleanField(),

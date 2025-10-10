@@ -30,6 +30,7 @@ urlpatterns = [
     path('movements/', views.movement_list, name='movement_list'),
     path('kanban/', views.kanban_board, name='kanban_board'),
     path('kanban/data/', views.kanban_board_data, name='kanban_board_data'),
+    path('meeting/', views.meeting_view, name='meeting_view'),
     path('api/update-employee-project/', views.update_employee_project, name='update_employee_project'),
     
     # Página de prueba de colores Tailwind

@@ -45,34 +45,45 @@ Kanban Board
 
       <!-- Statistics -->
       {% if stats.employees_ending_soon > 0 or stats.employees_on_vacation > 0 %}
-      <div class="stats-panel">
+      <div class="stats-panel w-full max-w-2xl">
         {% if stats.employees_ending_soon > 0 %}
-        <div class="alert alert-warning text-sm">
+        <div class="alert alert-warning text-sm text-red-500">
           <i class="fas fa-exclamation-triangle"></i>
-          <span id="stat-ending-soon">{{ stats.employees_ending_soon }}</span> empleado terminando en la obra:
+          <span id="stat-ending-soon"></span> Fin Obra/Contrato:
           {% for employee in employees %}
-          {% if employee.end_date > today %}
-            <span class="inline-block bg-violet-100 text-violet-800 text-xs px-2 py-1 rounded-full mr-1 mb-1">{{ employee.name }}</span>
+          {% if employee.end_date > today  or employee.end_contract %}
+        <span class="inline-block  {% if employee.end_contract %} bg-red-100 text-red-800 {% else %} bg-violet-100 text-violet-800 {% endif %} text-xs px-2 py-1 rounded-full mr-1 mb-1">{{ employee.name }}</span>
           {% endif %}
           {% endfor %}
         </div>
         {% endif %}
 
         
-        <div class="alert alert-warning text-sm">
-          <i class="fas fa-exclamation-triangle"></i>
-          <span id="stat-ending-contract">{{ stats.employees_with_end_contract }}</span> Empleados terminando contrato:
+        <div class="alert alert-info text-sm">
+          <i class="fas fa-umbrella-beach text-green-600"></i>
+          <span id="stat-upcoming-vacations">{{ employee.upcoming_vacations.count }}</span> Vacaciones próximos 30 días:
           {% for employee in employees %}
-          {% if employee.end_contract %}
-            <span class="inline-block bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full mr-1 mb-1">{{ employee.name }}</span>
+          {% if employee.upcoming_vacation %}
+          
+        <span class="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full mr-1 mb-1">{{ employee.name }} </span>
           {% endif %}
           {% endfor %}
         </div>
 
-        {% if stats.employees_on_vacation > 0 %}
         <div class="alert alert-info text-sm">
-          <i class="fas fa-umbrella-beach"></i>
-          <span id="stat-on-vacation">{{ stats.employees_on_vacation }}</span> Empleados de vacaciones:
+          <i class="fas fa-umbrella-beach text-blue-600"></i>
+          <span id="stat-upcoming-vacations"></span> Vacaciones próxios 8 días:
+          {% for employee in employees %}
+          {% if employee.near_upcoming_vacation %}
+            <span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full mr-1 mb-1">{{ employee.name }} </span>
+          {% endif %}
+          {% endfor %}
+        </div>
+
+        
+        <div class="alert alert-info text-sm">
+          <i class="fas fa-umbrella-beach text-orange-600"></i>
+          <span id="stat-on-vacation"></span> Empleados de vacaciones:
           {% for employee in employees %}
           {% if employee.on_vacation %}
             <span class="inline-block bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full mr-1 mb-1">{{ employee.name }}</span>
@@ -81,7 +92,7 @@ Kanban Board
         </div>
         {% endif %}
       </div>
-      {% endif %}
+      
     </div>
   </div>
 
@@ -288,12 +299,12 @@ Kanban Board
                              title="Asignar empleados">
                             <i class="fas fa-user-plus text-lg"></i>
                           </a>
-                          <a href="{% url 'employee_needed_create' %}?project={{ project.id }}" 
+                          <a href="{% url 'employee_needed_create' %}?project_id={{ project.id }}" 
                              class="text-orange-600 hover:text-orange-800 p-1 rounded hover:bg-orange-100 flex-1 text-center" 
                              title="Crear necesidad de empleado">
                             <i class="fas fa-user-clock text-lg"></i>
                           </a>
-                          <a href="{% url 'get_employee_locked_create' %}?project={{ project.id }}" 
+                          <a href="{% url 'get_employee_locked_create' %}?project_id={{ project.id }}" 
                              class="text-indigo-600 hover:text-indigo-800 p-1 rounded hover:bg-indigo-100 flex-1 text-center" 
                              title="Reservar empleado">
                             <i class="fas fa-lock text-lg"></i>
@@ -452,8 +463,12 @@ Kanban Board
                   <div class="text-orange-500" title="De vacaciones">
                     <i class="fas fa-umbrella-beach text-xl"></i>
                   </div>
-                  {% elif employee.upcoming_vacation %}
+                  {% elif employee.near_upcoming_vacation %}
                   <div class="text-blue-500" title="Vacaciones próximas">
+                    <i class="fas fa-umbrella-beach text-2xl"></i>
+                  </div>
+                  {% elif employee.upcoming_vacation %}
+                  <div class="text-green-500" title="Vacaciones próximas">
                     <i class="fas fa-umbrella-beach text-2xl"></i>
                   </div>
                   {% elif employee.end_contract %}
@@ -558,12 +573,12 @@ Kanban Board
                              title="Asignar empleados">
                             <i class="fas fa-user-plus text-lg"></i>
                           </a>
-                          <a href="{% url 'employee_needed_create' %}?project={{ project.id }}" 
+                          <a href="{% url 'employee_needed_create' %}?project_id={{ project.id }}" 
                              class="text-orange-600 hover:text-orange-800 p-1 rounded hover:bg-orange-100 flex-1 text-center" 
                              title="Crear necesidad de empleado">
                             <i class="fas fa-user-clock text-lg"></i>
                           </a>
-                          <a href="{% url 'get_employee_locked_create' %}?project={{ project.id }}" 
+                          <a href="{% url 'get_employee_locked_create' %}?project_id={{ project.id }}" 
                              class="text-indigo-600 hover:text-indigo-800 p-1 rounded hover:bg-indigo-100 flex-1 text-center" 
                              title="Reservar empleado">
                             <i class="fas fa-lock text-lg"></i>

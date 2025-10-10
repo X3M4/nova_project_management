@@ -1156,3 +1156,115 @@ html body .kanban-container .kanban-column {
     max-height: calc(98vh - 140px) !important;
   }
 }
+
+/* ==========================================================================
+   MEETING VIEW STYLES
+   ========================================================================== */
+
+.meeting-container {
+  display: flex;
+  height: calc(100vh - 120px);
+  background-color: #f8fafc;
+}
+
+.project-selector {
+  width: 300px;
+  border-right: 1px solid #e5e7eb;
+  background-color: white;
+  overflow-y: auto;
+}
+
+.project-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f3f4f6;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.project-item:hover {
+  background-color: #f9fafb;
+}
+
+.project-item.selected {
+  background-color: #eff6ff;
+  border-right: 3px solid #3b82f6;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.project-details {
+  flex: 1;
+  overflow-y: auto;
+  background-color: white;
+}
+
+.employee-sidebar {
+  width: 320px;
+  border-left: 1px solid #e5e7eb;
+  background-color: white;
+  overflow-y: auto;
+}
+
+/* Employee cards with vacation styling */
+.employee-card {
+  padding: 12px;
+  margin: 8px 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.employee-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+/* Vacation status overrides background colors */
+.employee-card.on-vacation {
+  background-color: #fef3c7 !important; /* yellow-100 */
+  border-color: #f59e0b;
+  opacity: 0.8;
+}
+
+.employee-card.upcoming-vacation {
+  background-color: #fef2f2 !important; /* red-50 */
+  border-color: #fca5a5;
+}
+
+/* Vacation icons */
+.vacation-icon {
+  font-size: 12px;
+}
+
+.vacation-icon.current {
+  color: #f59e0b; /* yellow-500 */
+}
+
+.vacation-icon.upcoming {
+  color: #ef4444; /* red-500 */
+}
+
+/* Skill badges */
+.skill-badge {
+  font-size: 10px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  color: white;
+  font-weight: 600;
+  margin: 1px;
+}
+
+.skill-badge.python { background-color: #3776ab; }
+.skill-badge.qgis { background-color: #589632; }
+.skill-badge.lidar { background-color: #8b5cf6; }
+.skill-badge.geofisica { background-color: #f59e0b; }
+.skill-badge.fotogrametria { background-color: #06b6d4; }
+.skill-badge.batimetria { background-color: #0891b2; }
+.skill-badge.redes { background-color: #dc2626; }
+.skill-badge.drones { background-color: #7c3aed; }
+.skill-badge.gpr { background-color: #059669; }
+.skill-badge.arqueologia { background-color: #92400e; }

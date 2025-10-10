@@ -1,0 +1,559 @@
+{% extends 'base.html' %}
+{% load employee_filters %}
+
+{% block title %}
+Vista de Reunión - {{ selected_project.name|default:"Seleccionar Proyecto" }}
+{% endblock %}
+
+{% block extra_css %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/kanban.css' %}" />
+<style>
+.meeting-container {
+    display: flex;
+    height: calc(100vh - 150px);
+    gap: 1rem;
+}
+
+.project-selector {
+    min-width: 300px;
+    max-width: 300px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    overflow-y: auto;
+}
+
+.main-content {
+    flex: 1;
+    display: flex;
+    gap: 1rem;
+}
+
+.project-details {
+    flex: 2;
+    border-radius: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    overflow-y: auto;
+}
+
+.employee-sidebar {
+    min-width: 350px;
+    max-width: 350px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    overflow-y: auto;
+}
+
+.project-item {
+    padding: 12px;
+    border-bottom: 1px solid #e5e7eb;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.project-item:hover {
+    background-color: #f3f4f6;
+}
+
+.project-item.selected {
+    background-color: #dbeafe;
+    border-left: 4px solid #3b82f6;
+}
+
+.employee-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 8px;
+    margin-bottom: 8px;
+    transition: all 0.2s;
+}
+
+.employee-card:hover {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.employee-card.on-vacation {
+    background-color: #fef3c7;
+    border-color: #f59e0b;
+}
+
+.employee-card.upcoming-vacation {
+    background-color: #dbeafe;
+    border-color: #3b82f6;
+}
+
+.vacation-icon {
+    font-size: 14px;
+    margin-left: 4px;
+}
+
+.vacation-icon.current {
+    color: #f59e0b;
+}
+
+.vacation-icon.upcoming {
+    color: #3b82f6;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="p-4">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-4">
+        <div class="flex items-center gap-4">
+            <h1 class="text-2xl font-bold text-gray-800">Vista de Reunión</h1>
+            <div class="flex gap-2">
+                <a href="{% url 'kanban_board' %}" 
+                   class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded flex items-center text-sm">
+                    <i class="fas fa-columns mr-2"></i> Kanban Board
+                </a>
+                <a href="{% url 'project_list' %}" 
+                   class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded flex items-center text-sm">
+                    <i class="fas fa-th-list mr-2"></i> Project List
+                </a>
+            </div>
+        </div>
+        
+        <!-- Department Filter -->
+        <div class="flex gap-2">
+            <a href="?department=external&{% if request.GET.project_id %}project_id={{ request.GET.project_id }}&{% endif %}{% if request.GET.employee_type %}employee_type={{ request.GET.employee_type }}&{% endif %}{% if request.GET.employee_search %}employee_search={{ request.GET.employee_search }}{% endif %}"
+               class="px-4 py-2 rounded {% if department == 'external' %}bg-blue-500 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
+                Obras
+            </a>
+            <a href="?department=project&{% if request.GET.project_id %}project_id={{ request.GET.project_id }}&{% endif %}{% if request.GET.employee_type %}employee_type={{ request.GET.employee_type }}&{% endif %}{% if request.GET.employee_search %}employee_search={{ request.GET.employee_search }}{% endif %}"
+               class="px-4 py-2 rounded {% if department == 'project' %}bg-blue-500 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
+                Proyectos
+            </a>
+        </div>
+    </div>
+
+    <div class="meeting-container">
+        <!-- Project Selector -->
+        <div class="project-selector">
+            <div class="p-4 border-b">
+                <h3 class="font-semibold text-gray-800">
+                    {% if department == 'external' %}Obras{% else %}Proyectos{% endif %}
+                </h3>
+            </div>
+            <div class="p-2">
+                {% for project in projects %}
+                <div class="project-item {% if selected_project and project.id == selected_project.id %}selected{% endif %}"
+                     onclick="selectProject({{ project.id }})">
+                    <div class="font-medium text-sm">{{ project.name|truncatechars:30 }}</div>
+                    <div class="text-xs text-gray-500">{{ project.manager|default:"Sin manager" }}</div>
+                    {% if project.has_needs %}
+                    <div class="text-xs text-orange-600 mt-1">
+                        <i class="fas fa-exclamation-circle"></i> Necesita empleados
+                    </div>
+                    {% endif %}
+                </div>
+                {% empty %}
+                <div class="p-4 text-gray-500 text-center">
+                    No hay proyectos disponibles
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- Project Details -->
+             {% if selected_project %}
+            <div class="project-details {% if selected_project.type|lower == 'external' %}border-violet-400{% else %}border-lime-400{% endif %}">
+                
+                <div class="p-6 border-4">
+                    <div class="border-b">
+                        <h2 class="text-xl font-bold text-gray-800">{{ selected_project.name }}</h2>
+                        <div class="text-sm text-gray-600 mt-2">
+                            <p><strong>Manager:</strong> {{ selected_project.manager|default:"Sin asignar" }}</p>
+                            <p><strong>Descripción:</strong> {{ selected_project.description|default:"Sin descripción" }}</p>
+                            {% if selected_project.start_date %}
+                            <p><strong>Fecha inicio:</strong> {{ selected_project.start_date }}</p>
+                            {% endif %}
+                            {% if selected_project.end_date %}
+                            <p><strong>Fecha fin:</strong> {{ selected_project.end_date }}</p>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Project Actions -->
+                        {% if can_edit %}
+                        <div class="flex gap-4 mt-4 pt-4 border-t align-middle">
+                            <a href="{% url 'employee_needed_create' %}?project_id={{ selected_project.id }}" 
+                               class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded text-sm flex items-center">
+                                <i class="fas fa-user-plus mr-2"></i>
+                                Solicitar Empleado
+                            </a>
+                            <a href="{% url 'get_employee_locked_create_from_project' selected_project.id %}" 
+                               class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-sm flex items-center">
+                                <i class="fas fa-lock mr-2"></i>
+                                Reservar Empleado
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Project Employees -->
+                    <div class="mb-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-semibold text-gray-800">
+                                Empleados Asignados ({{ project_employees.count }})
+                            </h3>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {% for employee in project_employees %}
+                            <div class="employee-card border border-gray-300 rounded-md shadow-sm mb-2 cursor-move p-3{% if 'topógrafo' in employee.job|lower %} bg-green-300{% elif 'auxiliar' in employee.job|lower %} bg-yellow-200{% elif 'proyecto' in employee.job|lower %} bg-orange-300{% elif 'piloto' in employee.job|lower %} bg-blue-300{% else %} bg-white{% endif %}" 
+                                 data-employee-id="{{ employee.id }}" draggable="true">
+                                <div class="flex justify-between items-start">
+                                    <div class="flex-1">
+                                        <h4 class="employee-name font-medium">{{ employee.name }}</h4>
+                                        <p class="employee-job text-sm text-gray-600">{{ employee.job }}</p>
+                                        {% if employee.city %}
+                                        <p class="text-xs text-gray-500 mt-1">
+                                            <i class="fas fa-map-marker-alt mr-1"></i>{{ employee.city }}
+                                        </p>
+                                        {% endif %}
+                                    </div>
+                                    <div class="flex flex-col items-end gap-1">
+                                        {% if can_edit %}
+                                        <button onclick="unassignEmployee({{ employee.id }})" 
+                                                class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs">
+                                            <i class="fas fa-minus mr-1"></i>
+                                        </button>
+                                        {% endif %}
+                                        <a href="{% url 'employee_update' employee.id %}" class="text-blue-600 hover:text-blue-800">
+                                            <i class="fas fa-external-link-alt text-xs"></i>
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <!-- Employee skills indicators -->
+                                <div class="flex justify-between mt-2 text-xs">
+                                    <div class="{% if employee.driver_license %}text-green-600{% else %}text-red-500{% endif %}">
+                                        <i class="fas fa-id-card"></i>
+                                    </div>
+                                    <div class="{% if employee.twenty_hours %}text-green-600{% else %}text-red-500{% endif %}">
+                                        <span>20h</span>
+                                    </div>
+                                    <div class="{% if employee.sixty_hours %}text-green-600{% else %}text-red-500{% endif %}">
+                                        <span>60h</span>
+                                    </div>
+                                    <div class="{% if employee.confine %}text-green-600{% else %}text-red-500{% endif %}">
+                                        <i class="fas fa-square-person-confined"></i>
+                                    </div>
+                                    <div class="{% if employee.height %}text-green-600{% else %}text-red-500{% endif %}">
+                                        <i class="fas fa-person-falling"></i>
+                                    </div>
+
+                                    {% if employee.on_vacation %}
+                                    <div class="text-orange-500" title="De vacaciones">
+                                        <i class="fas fa-umbrella-beach text-2xl"></i>
+                                    </div>
+                                    {% elif employee.upcoming_vacation %}
+                                    <div class="text-blue-500" title="Vacaciones próximas">
+                                        <i class="fas fa-umbrella-beach text-2xl"></i>
+                                    </div>
+                                    {% elif employee.end_contract %}
+                                    <div class="text-indigo-500" title="Contrato termina">
+                                        <i class="fas fa-skull-crossbones text-xl"></i>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% empty %}
+                            <div class="col-span-full text-gray-500 text-center py-8">
+                                No hay empleados asignados a este proyecto
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Project Needs -->
+                    {% if needs %}
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Necesidades Pendientes</h3>
+                        <div class="space-y-2">
+                            {% for need in needs %}
+                            <div class="bg-red-300 border border-orange-200 rounded p-3">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <div class="font-medium text-sm">{{ need.job_title }}</div>
+                                        <span class="text-xl text-gray-500">{{ need.quantity }} {{ need.get_type_display }}. </span>
+                                        <span class="text-xl text-gray-500">{{ need.description }}</span>
+                                        <div class="text-xl text-gray-600">
+                                            Desde: {{ need.start_date }} - Hasta: {{ need.end_date|default:"Indefinido" }}
+                                        </div>
+                                        {% if need.notes %}
+                                        <div class="text-xs text-gray-500 mt-1">{{ need.notes }}</div>
+                                        {% endif %}
+                                    </div>
+                                    {% if can_edit %}
+                                    <a href="{% url 'employee_needed_update' need.pk %}" 
+                                       class="text-blue-500 hover:text-blue-700 text-xs">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Project Locks -->
+                    {% if locks %}
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Reservas Futuras</h3>
+                        <div class="space-y-2">
+                            {% for lock in locks %}
+                            <div class="bg-blue-50 border border-blue-200 rounded p-3">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <div class="font-medium text-sm">{{ lock.employee.name }}</div>
+                                        <div class="text-xs text-gray-600">
+                                            {{ lock.employee.job }} - {{ lock.employee.city }}
+                                        </div>
+                                        <div class="text-xs text-gray-500">
+                                            Disponible desde: {{ lock.available_date }}
+                                        </div>
+                                        {% if lock.notes %}
+                                        <div class="text-xs text-gray-500 mt-1">{{ lock.notes }}</div>
+                                        {% endif %}
+                                    </div>
+                                    {% if can_edit %}
+                                    <a href="{% url 'get_employee_locked_update' lock.pk %}" 
+                                       class="text-blue-500 hover:text-blue-700 text-xs">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="p-6 text-center text-gray-500">
+                    <i class="fas fa-arrow-left text-4xl mb-4 text-gray-300"></i>
+                    <p>Selecciona un proyecto para ver los detalles</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Employee Sidebar -->
+            <div class="employee-sidebar">
+                <div class="p-4 border-b">
+                    <h3 class="font-semibold text-gray-800 mb-4">Empleados Disponibles</h3>
+                    
+                    <!-- Employee Type Filter -->
+                    <div class="mb-4">
+                        <select id="employee-type-filter" onchange="filterEmployeeType()" 
+                                class="w-full p-2 border border-gray-300 rounded text-sm">
+                            <option value="all"{% if employee_type == 'all' %} selected{% endif %}>Todos</option>
+                            <option value="topografo"{% if employee_type == 'topografo' %} selected{% endif %}>Topógrafos</option>
+                            <option value="auxiliar"{% if employee_type == 'auxiliar' %} selected{% endif %}>Auxiliares</option>
+                            <option value="proyectos"{% if employee_type == 'proyectos' %} selected{% endif %}>Proyectos</option>
+                            <option value="piloto"{% if employee_type == 'piloto' %} selected{% endif %}>Pilotos</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Employee Search -->
+                    <div class="relative">
+                        <input type="text" id="employee-search" value="{{ employee_search }}" 
+                               oninput="searchEmployees()" 
+                               class="w-full pl-8 pr-4 py-2 border border-gray-300 rounded text-sm" 
+                               placeholder="Buscar empleados...">
+                        <i class="fas fa-search absolute left-2 top-2.5 text-gray-400 text-sm"></i>
+                    </div>
+                </div>
+                
+                <div class="p-2">
+                    {% for employee in available_employees %}
+                    <div class="employee-card border border-gray-300 rounded-md shadow-sm mb-2 cursor-move p-3{% if 'topógrafo' in employee.job|lower %} bg-green-300{% elif 'auxiliar' in employee.job|lower %} bg-yellow-200{% elif 'proyecto' in employee.job|lower %} bg-orange-300{% elif 'piloto' in employee.job|lower %} bg-blue-300{% else %} bg-white{% endif %}" 
+                         data-employee-id="{{ employee.id }}" draggable="true">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <h4 class="employee-name font-medium">{{ employee.name }}</h4>
+                                <p class="employee-job text-sm text-gray-600">{{ employee.job }}</p>
+                                {% if employee.city %}
+                                <p class="text-xs text-gray-500 mt-1">
+                                    <i class="fas fa-map-marker-alt mr-1"></i>{{ employee.city }}
+                                </p>
+                                {% endif %}
+                            </div>
+                            <div class="flex flex-col items-end gap-1">
+                                {% if can_edit and selected_project %}
+                                <button onclick="assignEmployee({{ employee.id }}, {{ selected_project.id }})" 
+                                        class="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs"
+                                        {% if employee.on_vacation %}disabled title="Empleado en vacaciones"{% endif %}>
+                                    <i class="fas fa-plus mr-1"></i>
+                                </button>
+                                {% endif %}
+                                <a href="{% url 'employee_update' employee.id %}" class="text-blue-600 hover:text-blue-800">
+                                    <i class="fas fa-external-link-alt text-xs"></i>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Employee skills indicators -->
+                        <div class="flex justify-between mt-2 text-xs">
+                            <div class="{% if employee.driver_license %}text-green-600{% else %}text-red-500{% endif %}">
+                                <i class="fas fa-id-card"></i>
+                            </div>
+                            <div class="{% if employee.twenty_hours %}text-green-600{% else %}text-red-500{% endif %}">
+                                <span>20h</span>
+                            </div>
+                            <div class="{% if employee.sixty_hours %}text-green-600{% else %}text-red-500{% endif %}">
+                                <span>60h</span>
+                            </div>
+                            <div class="{% if employee.confine %}text-green-600{% else %}text-red-500{% endif %}">
+                                <i class="fas fa-square-person-confined"></i>
+                            </div>
+                            <div class="{% if employee.height %}text-green-600{% else %}text-red-500{% endif %}">
+                                <i class="fas fa-person-falling"></i>
+                            </div>
+
+                            {% if employee.on_vacation %}
+                            <div class="text-orange-500" title="De vacaciones">
+                                <i class="fas fa-umbrella-beach text-2xl"></i>
+                            </div>
+                            {% elif employee.upcoming_vacation %}
+                            <div class="text-blue-500" title="Vacaciones próximas">
+                                <i class="fas fa-umbrella-beach text-2xl"></i>
+                            </div>
+                            {% elif employee.end_contract %}
+                            <div class="text-indigo-500" title="Contrato termina">
+                                <i class="fas fa-skull-crossbones text-xl"></i>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="p-4 text-gray-500 text-center">
+                        No hay empleados disponibles
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function selectProject(projectId) {
+    const url = new URL(window.location);
+    url.searchParams.set('project_id', projectId);
+    window.location.href = url.toString();
+}
+
+function filterEmployeeType() {
+    const select = document.getElementById('employee-type-filter');
+    const url = new URL(window.location);
+    url.searchParams.set('employee_type', select.value);
+    window.location.href = url.toString();
+}
+
+function searchEmployees() {
+    const input = document.getElementById('employee-search');
+    const url = new URL(window.location);
+    if (input.value.trim()) {
+        url.searchParams.set('employee_search', input.value);
+    } else {
+        url.searchParams.delete('employee_search');
+    }
+    window.location.href = url.toString();
+}
+
+function assignEmployee(employeeId, projectId) {
+    console.log('DEBUG: assignEmployee called with', {employeeId, projectId});
+    
+    if (confirm('¿Estás seguro de asignar este empleado al proyecto?')) {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+        console.log('DEBUG: CSRF token found:', !!csrfToken);
+        
+        fetch('/api/update-employee-project/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken ? csrfToken.value : '',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                employee_id: employeeId,
+                project_id: projectId
+            })
+        })
+        .then(response => {
+            console.log('DEBUG: Response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('DEBUG: Response data:', data);
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error al asignar empleado: ' + (data.error || 'Error desconocido'));
+            }
+        })
+        .catch(error => {
+            console.error('DEBUG: Fetch error:', error);
+            alert('Error al asignar empleado: ' + error.message);
+        });
+    }
+}
+
+function unassignEmployee(employeeId) {
+    console.log('DEBUG: unassignEmployee called with', {employeeId});
+    
+    if (confirm('¿Estás seguro de desasignar este empleado del proyecto?')) {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+        console.log('DEBUG: CSRF token found:', !!csrfToken);
+        
+        fetch('/api/update-employee-project/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken ? csrfToken.value : '',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                employee_id: employeeId,
+                project_id: null
+            })
+        })
+        .then(response => {
+            console.log('DEBUG: Response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('DEBUG: Response data:', data);
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error al desasignar empleado: ' + (data.error || 'Error desconocido'));
+            }
+        })
+        .catch(error => {
+            console.error('DEBUG: Fetch error:', error);
+            alert('Error al desasignar empleado: ' + error.message);
+        });
+    }
+}
+
+// Búsqueda en tiempo real con debounce
+let searchTimeout;
+const originalSearchEmployees = searchEmployees;
+searchEmployees = function() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(originalSearchEmployees, 500);
+};
+</script>
+
+{% csrf_token %}
+{% endblock %}
