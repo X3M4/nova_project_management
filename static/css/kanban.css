@@ -89,6 +89,95 @@
   top: var(--kanban-spacing-lg);
   align-self: flex-start;
   max-height: calc(100vh - 8rem);
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Forzar scrollbar siempre visible en la sidebar - ULTRA ESPECÍFICO */
+.kanban-sidebar .kanban-column,
+#unassigned-column,
+div[id="unassigned-column"] {
+  /* Forzar scrollbar visible en Firefox */
+  scrollbar-width: thick !important;
+  scrollbar-color: #374151 #e5e7eb !important;
+  
+  /* Forzar scrollbar visible en todos los navegadores */
+  overflow-y: scroll !important;
+  overflow-x: hidden !important;
+  
+  /* Añadir altura mínima para forzar scroll */
+  min-height: 400px !important;
+  max-height: calc(100vh - 300px) !important;
+}
+
+/* Estilos específicos para diferentes navegadores - MÁS AGRESIVOS */
+.kanban-sidebar .kanban-column::-webkit-scrollbar,
+#unassigned-column::-webkit-scrollbar,
+div[id="unassigned-column"]::-webkit-scrollbar {
+  width: 16px !important;
+  height: 16px !important;
+  background-color: #e5e7eb !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.kanban-sidebar .kanban-column::-webkit-scrollbar-track,
+#unassigned-column::-webkit-scrollbar-track,
+div[id="unassigned-column"]::-webkit-scrollbar-track {
+  background: #f3f4f6 !important;
+  border-radius: 8px !important;
+  border: 2px solid #d1d5db !important;
+  box-shadow: inset 0 0 5px rgba(0,0,0,0.2) !important;
+}
+
+.kanban-sidebar .kanban-column::-webkit-scrollbar-thumb,
+#unassigned-column::-webkit-scrollbar-thumb,
+div[id="unassigned-column"]::-webkit-scrollbar-thumb {
+  background: #374151 !important;
+  border-radius: 8px !important;
+  border: 2px solid #f3f4f6 !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3) !important;
+  transition: all 0.2s ease !important;
+  min-height: 40px !important;
+}
+
+.kanban-sidebar .kanban-column::-webkit-scrollbar-thumb:hover,
+#unassigned-column::-webkit-scrollbar-thumb:hover,
+div[id="unassigned-column"]::-webkit-scrollbar-thumb:hover {
+  background: #1f2937 !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4) !important;
+  border-color: #e5e7eb !important;
+}
+
+.kanban-sidebar .kanban-column::-webkit-scrollbar-thumb:active,
+#unassigned-column::-webkit-scrollbar-thumb:active,
+div[id="unassigned-column"]::-webkit-scrollbar-thumb:active {
+  background: #111827 !important;
+}
+
+/* Indicador visual simple de que hay scroll disponible */
+.kanban-sidebar .kanban-column {
+  position: relative;
+  /* Añadir un borde sutil para indicar área scrolleable */
+  border-right: 3px solid #e5e7eb !important;
+}
+
+/* Mensaje indicador cuando hay contenido scrolleable */
+.kanban-sidebar::after {
+  content: 'Scroll para ver más empleados ↕';
+  position: absolute;
+  bottom: 10px;
+  right: 5px;
+  background: rgba(55, 65, 81, 0.9);
+  color: white;
+  font-size: 10px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  z-index: 10;
+  pointer-events: none;
+  font-weight: 600;
+  text-shadow: none;
 }
 
 .kanban-main {
@@ -635,8 +724,7 @@
 }
 
 /* Regla ultra-específica para pantallas 4K */
-@screen and (min-width: 3840px), 
-@media (min-device-width: 3840px) {
+@media screen and (min-width: 3840px) {
   * .kanban-board {
     flex-direction: row !important;
   }

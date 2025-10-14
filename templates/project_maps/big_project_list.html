@@ -180,6 +180,9 @@
                     <a href="{% url 'big_project_edit' project.pk %}" class="btn btn-sm btn-primary">
                         <i class="fas fa-edit mr-1"></i>Editar
                     </a>
+                    <a href="{% url 'big_project_delete' project.pk %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-trash mr-1"></i>Eliminar
+                    </a>
                 </div>
             </div>
         {% empty %}

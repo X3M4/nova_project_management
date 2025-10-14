@@ -100,121 +100,101 @@ Kanban Board
   <div class="kanban-board">
     <!-- Sidebar with unassigned employees -->
     <div class="kanban-sidebar">
-      <div class="p-4">
-        <h3 class="text-lg font-bold text-gray-700 mb-4 text-center">EL PUCHERO</h3>
-        <div class="bg-white shadow rounded-lg overflow-hidden">
-          <div class="bg-gray-100 px-3 py-2 border-b border-gray-200">
-            <div class="flex justify-between items-center">
-              <h4 class="text-sm font-medium text-gray-800">Disponibles</h4>
-              <span class="bg-gray-200 text-xs font-medium rounded-full px-2 py-1 text-gray-800">({{ employees|count_unassigned }})</span>
-            </div>
-          </div>
-          <div class="kanban-column" id="unassigned-column" data-project-id="null">
-            {% for employee in employees %}
-            {% if not employee.project_id and employee.active %}
-            <div class="employee-card 
-                      {% if employee.locked == False %}
-                      {% if 'Topógrafo' in employee.job or 'TOPÓGRAFO' in employee.job %}
-                        
-                          bg-green-300
-
-                      {% elif 'Auxiliar' in employee.job or 'auxiliar' in employee.job %}
-                        
-                          bg-yellow-200
-
-                      {% elif 'Proyectos' in employee.job or 'Proyecto' in employee.job %}
-                        
-                          bg-orange-300
-
-                      {% elif 'Piloto' in employee.job or 'piloto' in employee.job %}
-                        
-                          bg-blue-300
-
-                      {% else %}
-                        
-                          bg-green-100 hover:bg-green-200
-
-                      {% endif %}
-                    {% else %}
-                      
-                        bg-gray-200
-
-                    {% endif %}
-                border border-gray-300 rounded-md shadow-sm mb-2 cursor-move" data-employee-id="{{ employee.id }}"
-              draggable="true">
-              <div class="flex justify-between items-start">
-                <div class="flex-1">
-                  <h4 class="employee-name">{{ employee.name }}</h4>
-                  <p class="employee-job">{{ employee.job }}</p>
-                  {% if employee.city %}
-                  <p class="text-xs text-gray-500 mt-1">
-                    <i class="fas fa-map-marker-alt mr-1"></i>{{ employee.city }}
-                  </p>
-                  {% endif %}
-                </div>
-                <div class="flex flex-col items-end">
-                  <a href="{% url 'employee_update' employee.id %}" class="text-blue-600 hover:text-blue-800"><i
-                      class="fas fa-external-link-alt text-xs"></i></a>
-                </div>
-              </div>
-
-              <!-- Employee skills indicators -->
-              <div class="flex justify-between mt-2 text-xs">
-                <div class="{% if employee.driver_license %}
-                          text-green-600
-                        {% else %}
-                          text-red-500
-                        {% endif %}">
-                  <i class="fas fa-id-card"></i>
-                </div>
-                <div class="{% if employee.twenty_hours %}
-                          text-green-600
-                        {% else %}
-                          text-red-500
-                        {% endif %}">
-                  <span>20h</span>
-                </div>
-                <div class="{% if employee.sixty_hours %}
-                          text-green-600
-                        {% else %}
-                          text-red-500
-                        {% endif %}">
-                  <span>60h</span>
-                </div>
-                <div class="{% if employee.confine %}
-                          text-green-600
-                        {% else %}
-                          text-red-500
-                        {% endif %}">
-                  <i class="fas fa-square-person-confined"></i>
-                </div>
-                <div class="{% if employee.height %}
-                          text-green-600
-                        {% else %}
-                          text-red-500
-                        {% endif %}">
-                  <i class="fas fa-person-falling"></i>
-                </div>
-
-                {% if employee.on_vacation %}
-                <div class="text-orange-500" title="De vacaciones">
-                  <i class="fas fa-umbrella-beach text-2xl"></i>
-                </div>
-                {% elif employee.upcoming_vacation %}
-                <div class="text-blue-500" title="Vacaciones próximas">
-                    <i class="fas fa-umbrella-beach text-2xl"></i>
-                </div>
-                {% elif employee.end_contract %}
-                <div class="text-indigo-500" title="Contrato termina">
-                    <i class="fas fa-skull-crossbones text-xl"></i>
-                </div>
-                {% endif %}
-              </div>
-            </div>
+      <div class="p-4 h-full flex flex-col max-h-[calc(100vh-2rem)]">
+      <h3 class="text-lg font-bold text-gray-700 mb-4 text-center flex-shrink-0">EL PUCHERO</h3>
+      <div class="bg-white shadow rounded-lg overflow-hidden flex-1 flex flex-col min-h-0">
+        <div class="bg-gray-100 px-3 py-2 border-b border-gray-200 flex-shrink-0">
+        <div class="flex justify-between items-center">
+          <h4 class="text-sm font-medium text-gray-800">Disponibles</h4>
+          <span class="bg-gray-200 text-xs font-medium rounded-full px-2 py-1 text-gray-800">({{ employees|count_unassigned }})</span>
+        </div>
+        </div>
+        <div class="kanban-column flex-1 overflow-y-scroll overflow-x-hidden p-2 min-h-0" 
+             id="unassigned-column" 
+             data-project-id="null" 
+             style="
+               scrollbar-width: thick !important; 
+               scrollbar-color: #374151 #e5e7eb !important;
+               min-height: 400px !important;
+               max-height: calc(100vh - 300px) !important;
+             ">
+        {% for employee in employees %}
+        {% if not employee.project_id and employee.active %}
+        <div class="employee-card{% if employee.locked == False %}{% if 'topógrafo' in employee.job|lower %} bg-green-300{% elif 'auxiliar' in employee.job|lower %} bg-yellow-200{% elif 'proyecto' in employee.job|lower %} bg-orange-300{% elif 'piloto' in employee.job|lower %} bg-blue-300{% else %} bg-white{% endif %}{% else %} bg-gray-200{% endif %} border border-gray-300 rounded-md shadow-sm mb-2 cursor-move p-3" 
+             data-employee-id="{{ employee.id }}" draggable="true">
+          <div class="flex justify-between items-start">
+          <div class="flex-1">
+            <h4 class="employee-name">{{ employee.name }}</h4>
+            <p class="employee-job">{{ employee.job }}</p>
+            {% if employee.city %}
+            <p class="text-xs text-gray-500 mt-1">
+            <i class="fas fa-map-marker-alt mr-1"></i>{{ employee.city }}
+            </p>
             {% endif %}
-            {% endfor %}
+          </div>
+          <div class="flex flex-col items-end">
+            <a href="{% url 'employee_update' employee.id %}" class="text-blue-600 hover:text-blue-800"><i
+              class="fas fa-external-link-alt text-xs"></i></a>
+          </div>
+          </div>
+
+          <!-- Employee skills indicators -->
+          <div class="flex justify-between mt-2 text-xs">
+          <div class="{% if employee.driver_license %}
+                text-green-600
+              {% else %}
+                text-red-500
+              {% endif %}">
+            <i class="fas fa-id-card"></i>
+          </div>
+          <div class="{% if employee.twenty_hours %}
+                text-green-600
+              {% else %}
+                text-red-500
+              {% endif %}">
+            <span>20h</span>
+          </div>
+          <div class="{% if employee.sixty_hours %}
+                text-green-600
+              {% else %}
+                text-red-500
+              {% endif %}">
+            <span>60h</span>
+          </div>
+          <div class="{% if employee.confine %}
+                text-green-600
+              {% else %}
+                text-red-500
+              {% endif %}">
+            <i class="fas fa-square-person-confined"></i>
+          </div>
+          <div class="{% if employee.height %}
+                text-green-600
+              {% else %}
+                text-red-500
+              {% endif %}">
+            <i class="fas fa-person-falling"></i>
+          </div>
+
+          {% if employee.on_vacation %}
+          <div class="text-orange-500" title="De vacaciones">
+            <i class="fas fa-umbrella-beach text-2xl"></i>
+          </div>
+          {% elif employee.near_upcoming_vacation %}
+          <div class="text-blue-500" title="Vacaciones próximas">
+            <i class="fas fa-umbrella-beach text-2xl"></i>
+          </div>
+          {% elif employee.end_contract %}
+          <div class="text-indigo-500" title="Contrato termina">
+            <i class="fas fa-skull-crossbones text-xl"></i>
+          </div>
+          {% endif %}
           </div>
         </div>
+        {% endif %}
+        {% endfor %}
+        </div>
+      </div>
       </div>
     </div>
 
@@ -829,6 +809,48 @@ Kanban Board
 
   .stats-panel {
     @apply flex flex-col gap-2;
+  }
+
+  /* SCROLLBAR FORZADA PARA SIDEBAR */
+  #unassigned-column,
+  .kanban-sidebar .kanban-column {
+    scrollbar-width: thick !important;
+    scrollbar-color: #374151 #e5e7eb !important;
+    overflow-y: scroll !important;
+    overflow-x: hidden !important;
+    min-height: 500px !important;
+    max-height: calc(100vh - 250px) !important;
+  }
+
+  #unassigned-column::-webkit-scrollbar,
+  .kanban-sidebar .kanban-column::-webkit-scrollbar {
+    width: 18px !important;
+    background-color: #e5e7eb !important;
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  #unassigned-column::-webkit-scrollbar-track,
+  .kanban-sidebar .kanban-column::-webkit-scrollbar-track {
+    background: #f3f4f6 !important;
+    border-radius: 9px !important;
+    border: 3px solid #d1d5db !important;
+    box-shadow: inset 0 0 6px rgba(0,0,0,0.3) !important;
+  }
+
+  #unassigned-column::-webkit-scrollbar-thumb,
+  .kanban-sidebar .kanban-column::-webkit-scrollbar-thumb {
+    background: #374151 !important;
+    border-radius: 9px !important;
+    border: 3px solid #f3f4f6 !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4) !important;
+    min-height: 50px !important;
+  }
+
+  #unassigned-column::-webkit-scrollbar-thumb:hover,
+  .kanban-sidebar .kanban-column::-webkit-scrollbar-thumb:hover {
+    background: #1f2937 !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.5) !important;
   }
 
   /* Asegurar que el kanban sea responsive */
