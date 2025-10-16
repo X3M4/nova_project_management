@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Delete Future Assignment
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow-md">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-red-600">Delete Future Assignment</h1>
+    </div>
+
+    <div class="bg-red-50 border border-red-200 rounded p-4 mb-6">
+        <div class="flex items-center">
+            <i class="fas fa-exclamation-triangle text-red-500 mr-3"></i>
+            <div>
+                <h3 class="text-lg font-semibold text-red-800">Are you sure?</h3>
+                <p class="text-red-700">
+                    This will delete the future assignment for 
+                    <strong>{{ future_assignment.employee.name }}</strong> 
+                    to project <strong>{{ future_assignment.next_project.name }}</strong>.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-gray-50 p-4 rounded mb-6">
+        <h4 class="font-semibold text-gray-800 mb-2">Assignment Details:</h4>
+        <p><span class="text-gray-600">Employee:</span> {{ future_assignment.employee.name }}</p>
+        <p><span class="text-gray-600">Future Project:</span> {{ future_assignment.next_project.name }}</p>
+        <p><span class="text-gray-600">Start Date:</span> {{ future_assignment.start_date|default:"Not specified" }}</p>
+        <p><span class="text-gray-600">End Date:</span> {{ future_assignment.end_date|default:"Not specified" }}</p>
+        <p><span class="text-gray-600">Assignment Created:</span> {{ future_assignment.created_at|date:"M d, Y" }}</p>
+        {% if future_assignment.notes %}
+        <p><span class="text-gray-600">Notes:</span> {{ future_assignment.notes }}</p>
+        {% endif %}
+    </div>
+
+    <div class="flex justify-end space-x-3">
+        <a href="{% url 'get_employee_locked_list' %}" 
+           class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">
+            Cancel
+        </a>
+        <form method="post" class="inline">
+            {% csrf_token %}
+            <button type="submit" 
+                    class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
+                    onclick="return confirm('Are you absolutely sure you want to delete this future assignment?')">
+                <i class="fas fa-trash mr-2"></i>
+                Delete Assignment
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -22,15 +22,25 @@
         
         <form method="post" class="space-y-4">
             {% csrf_token %}
+            {% if referer_url %}
+            <input type="hidden" name="referer_url" value="{{ referer_url }}">
+            {% endif %}
             <div class="flex space-x-4">
                 <button type="submit" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out">
                     <i class="fas fa-trash mr-2"></i>
                     Delete
                 </button>
-                <a href="{% url 'employee_needed_list' %}" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium py-2 px-4 rounded-md text-center transition duration-150 ease-in-out">
+                {% if referer_url %}
+                <a href="{{ referer_url }}" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium py-2 px-4 rounded-md text-center transition duration-150 ease-in-out">
                     <i class="fas fa-times mr-2"></i>
                     Cancel
                 </a>
+                {% else %}
+                <a href="{% url 'kanban_board' %}" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium py-2 px-4 rounded-md text-center transition duration-150 ease-in-out">
+                    <i class="fas fa-times mr-2"></i>
+                    Cancel
+                </a>
+                {% endif %}
             </div>
         </form>
     </div>

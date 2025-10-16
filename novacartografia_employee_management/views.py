@@ -494,7 +494,7 @@ def export_employees_csv(request):
     
     employees = Employee.objects.all()
     for employee in employees:
-        writer.writerow([employee.name, employee.job, employee.project_id.name if employee.project_id else '', 
+        writer.writerow([employee.name, employee.job, employee.project_id.id if employee.project_id else '', 
                         employee.street if employee.street else '',
                         employee.city if employee.city else '', 
                         employee.state if employee.state else '', 
@@ -754,8 +754,20 @@ def project_delete(request, pk):
         project_name = project.name
         project.delete()
         messages.success(request, f'Employee {project_name} deleted successfully.')
-        return redirect('employee_list')
-    return render(request, 'novacartografia_employee_management/project_confirm_delete.html', {'employee': project})
+        
+        # Redirigir a la pantalla anterior si está disponible, sino al employee_list
+        referer_from_form = request.POST.get('referer_url', '')
+        referer_from_header = request.META.get('HTTP_REFERER', '')
+        
+        if referer_from_form:
+            return redirect(referer_from_form)
+        elif referer_from_header:
+            return redirect(referer_from_header)
+        else:
+            return redirect('employee_list') # Fallback seguro
+    
+    referer_url = request.META.get('HTTP_REFERER', '')
+    return render(request, 'novacartografia_employee_management/project_confirm_delete.html', {'employee': project, 'referer_url': referer_url})
 
 @login_required
 def movement_list(request):
@@ -921,6 +933,17 @@ def kanban_board(request):
             default=Value(False),
             output_field=BooleanField(),
         ),
+        # **NUEVO: Determinar si el contrato termina pronto**
+        is_contract_ending_soon=Case(
+            When(
+                end_contract_date__isnull=False,
+                end_contract_date__lte=today + timedelta(days=30),
+                end_contract_date__gte=today,
+                then=Value(True)
+            ),
+            default=Value(False),
+            output_field=BooleanField(),
+        ),
         # **NUEVO: Días restantes hasta end_date**
         days_remaining=Case(
             When(
@@ -982,6 +1005,16 @@ def kanban_board(request):
         ).count(),
         'unassigned_employees': Employee.objects.filter(
             project_id__isnull=True,
+            active=True
+        ).count(),
+        'employees_ending_contract': Employee.objects.filter(
+            end_contract=True,
+            active=True
+        ).count(),
+        'employees_contract_ending_soon': Employee.objects.filter(
+            end_contract_date__isnull=False,
+            end_contract_date__lte=today + timedelta(days=30),
+            end_contract_date__gte=today,
             active=True
         ).count(),
     }
@@ -1260,8 +1293,17 @@ def employee_needed_create(request):
         if form.is_valid():
             employee_needed = form.save()
             messages.success(request, f'Request for {employee_needed.quantity} {employee_needed.type} created successfully.')
-            # Cambiar esta línea para redirigir a kanban_board en lugar de employee_needed_list
-            return redirect('kanban_board')
+            
+            # Redirigir a la pantalla anterior si está disponible, sino al kanban_board
+            referer_from_form = request.POST.get('referer_url', '')
+            referer_from_header = request.META.get('HTTP_REFERER', '')
+            
+            if referer_from_form:
+                return redirect(referer_from_form)
+            elif referer_from_header:
+                return redirect(referer_from_header)
+            else:
+                return redirect('kanban_board')
     else:
         form = EmployeeNeededForm(initial=initial_data)
     
@@ -1269,12 +1311,16 @@ def employee_needed_create(request):
     if project:
         title = f'Create Employee Request for {project.name}'
     
+    # Obtener la URL de referencia para redirigir después
+    referer = request.META.get('HTTP_REFERER', '')
+    
     return render(request, 'novacartografia_employee_management/employee_needed_form.html', {
         'form': form,
         'title': title,
         'button_text': 'Create Request',
         'is_new': True,
-        'project': project
+        'project': project,
+        'referer_url': referer
     })
 
 @login_required
@@ -1287,10 +1333,22 @@ def employee_needed_update(request, pk):
         if form.is_valid():
             form.save()
             messages.success(request, f'Employee request updated successfully.')
-            # Asegurar que también redirija a kanban_board
-            return redirect('kanban_board')
+            
+            # Redirigir a la pantalla anterior si está disponible, sino al kanban_board
+            referer_from_form = request.POST.get('referer_url', '')
+            referer_from_header = request.META.get('HTTP_REFERER', '')
+            
+            if referer_from_form:
+                return redirect(referer_from_form)
+            elif referer_from_header:
+                return redirect(referer_from_header)
+            else:
+                return redirect('kanban_board')
     else:
         form = EmployeeNeededForm(instance=employee_needed)
+    
+    # Obtener la URL de referencia para redirigir después
+    referer = request.META.get('HTTP_REFERER', '')
     
     return render(request, 'novacartografia_employee_management/employee_needed_form.html', {
         'form': form,
@@ -1298,7 +1356,8 @@ def employee_needed_update(request, pk):
         'title': 'Update Employee Request',
         'button_text': 'Save Changes',
         'is_new': False,
-        'project': employee_needed.project_id  # Pasar el proyecto para consistencia
+        'project': employee_needed.project_id,  # Pasar el proyecto para consistencia
+        'referer_url': referer
     })
     
 @login_required
@@ -1310,8 +1369,25 @@ def employee_needed_delete(request, pk):
         employee_needed_name = employee_needed
         employee_needed.delete()
         messages.success(request, f'Employee needed {employee_needed_name} deleted successfully.')
-        return redirect('kanban_board')
-    return render(request, 'novacartografia_employee_management/employee_needed_confirm_delete.html', {'employee_needed': employee_needed})
+        
+        # Redirigir a la pantalla anterior si está disponible, sino al kanban_board
+        referer_from_form = request.POST.get('referer_url', '')
+        referer_from_header = request.META.get('HTTP_REFERER', '')
+        
+        if referer_from_form:
+            return redirect(referer_from_form)
+        elif referer_from_header:
+            return redirect(referer_from_header)
+        else:
+            return redirect('kanban_board')
+    
+    # Obtener la URL de referencia para pasarla al template
+    referer = request.META.get('HTTP_REFERER', '')
+    
+    return render(request, 'novacartografia_employee_management/employee_needed_confirm_delete.html', {
+        'employee_needed': employee_needed,
+        'referer_url': referer
+    })
 
 @login_required
 def employee_needed_fulfill(request, pk):
@@ -1335,7 +1411,17 @@ def employee_needed_create_from_project(request, project_id):
         if form.is_valid():
             employee_needed = form.save()
             messages.success(request, f'Request for {employee_needed.quantity} {employee_needed.type} created successfully.')
-            return redirect('kanban_board')
+            
+            # Redirigir a la pantalla anterior si está disponible, sino al kanban_board
+            referer_from_form = request.POST.get('referer_url', '')
+            referer_from_header = request.META.get('HTTP_REFERER', '')
+            
+            if referer_from_form:
+                return redirect(referer_from_form)
+            elif referer_from_header:
+                return redirect(referer_from_header)
+            else:
+                return redirect('kanban_board')
     else:
         # Inicializar el formulario con el proyecto preseleccionado
         form = EmployeeNeededForm(initial={'project_id': project})
@@ -1343,12 +1429,16 @@ def employee_needed_create_from_project(request, project_id):
         form.fields['project_id'].initial = project
         form.fields['project_id'].queryset = Project.objects.all()
     
+    # Obtener la URL de referencia para redirigir después
+    referer = request.META.get('HTTP_REFERER', '')
+    
     return render(request, 'novacartografia_employee_management/employee_needed_form.html', {
         'form': form,
         'title': f'Create Employee Request for {project.name}',
         'button_text': 'Create Request',
         'is_new': True,
-        'project': project
+        'project': project,
+        'referer_url': referer
     })
 
 @login_required
@@ -1439,7 +1529,17 @@ def get_employee_locked_create(request, project_id=None):
         if form.is_valid():
             future_assignment = form.save()
             messages.success(request, f'Future assignment created for {future_assignment.employee.name}. The employee is now locked.')
-            return redirect('kanban_board')
+            
+            # Intentar usar la URL de referencia del formulario, luego del header, sino kanban_board
+            referer_from_form = request.POST.get('referer_url', '')
+            referer_from_header = request.META.get('HTTP_REFERER', '')
+            
+            if referer_from_form:
+                return redirect(referer_from_form)
+            elif referer_from_header:
+                return redirect(referer_from_header)
+            else:
+                return redirect('kanban_board')
     else:
         form = GetEmployeeLockedForm(initial=initial_data)
     
@@ -1447,10 +1547,14 @@ def get_employee_locked_create(request, project_id=None):
     if project:
         title = f'Create Future Assignment for {project.name}'
     
+    # Obtener la URL de referencia para redirigir después
+    referer = request.META.get('HTTP_REFERER', '')
+    
     return render(request, 'novacartografia_employee_management/future_assignment_form.html', {
         'form': form,
         'title': title,
-        'project': project
+        'project': project,
+        'referer_url': referer
     })
 
 @login_required
@@ -1499,6 +1603,44 @@ def get_employee_locked_list(request):
     return render(request, 'novacartografia_employee_management/future_assignment_list.html', {
         'future_assignments': future_assignments,
     })
+    
+@csrf_exempt
+@login_required
+@require_edit_permission
+def get_employee_locked_delete(request, pk):
+    future_assignment = get_object_or_404(GetEmployeeLocked, pk=pk)
+    
+    try:
+        employee = get_object_or_404(Employee, pk=future_assignment.employee.id)
+        employee.locked = False  # Desbloquear al empleado
+        employee.save()
+        assignment_name = f"{future_assignment.employee.name} → {future_assignment.next_project.name}"
+        future_assignment.delete()
+        
+        # Si es una petición AJAX (JSON), devolver JSON
+        if request.method == 'POST' and (request.headers.get('Content-Type') == 'application/json' or request.headers.get('Accept') == 'application/json'):
+            return JsonResponse({
+                'success': True,
+                'message': f'Future assignment {assignment_name} deleted successfully.'
+            })
+        else:
+            # Para GET o POST normal, redirigir con mensaje
+            messages.success(request, f'Future assignment {assignment_name} deleted successfully.')
+            referer = request.META.get('HTTP_REFERER', '')
+            if referer:
+                return redirect(referer)
+            else:
+                return redirect('get_employee_locked_list')
+        
+    except Exception as e:
+        if request.method == 'POST' and (request.headers.get('Content-Type') == 'application/json' or request.headers.get('Accept') == 'application/json'):
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            })
+        else:
+            messages.error(request, f'Error deleting future assignment: {str(e)}')
+            return redirect('get_employee_locked_list')
 
 
 @login_required

@@ -26,6 +26,9 @@
         <div class="px-4 py-5 sm:p-6">
             <form method="post">
                 {% csrf_token %}
+                {% if referer_url %}
+                <input type="hidden" name="referer_url" value="{{ referer_url }}">
+                {% endif %}
                 
                 {% for field in form %}
                     <div class="mb-4">

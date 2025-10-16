@@ -51,6 +51,10 @@
                   <a href="{% url 'get_employee_locked_fulfill' assignment.id %}" class="text-green-600 hover:text-green-800" title="Fulfill">
                     <i class="fas fa-check-circle"></i>
                   </a>
+                  <button onclick="deleteFutureAssignment({{ assignment.id }}, '{{ assignment.employee.name }}', '{{ assignment.next_project.name }}')" 
+                          class="text-red-600 hover:text-red-800" title="Delete">
+                    <i class="fas fa-trash"></i>
+                  </button>
                 </div>
               </td>
             </tr>
@@ -67,4 +71,35 @@
     </div>
   {% endif %}
 </div>
+
+<script>
+function deleteFutureAssignment(assignmentId, employeeName, projectName) {
+    if (confirm(`¿Estás seguro de que quieres eliminar la reserva de ${employeeName} para ${projectName}?`)) {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        fetch(`/future-assignments/${assignmentId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Recargar la página para actualizar la lista
+                location.reload();
+            } else {
+                alert('Error al eliminar la reserva: ' + (data.error || 'Error desconocido'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al eliminar la reserva: ' + error.message);
+        });
+    }
+}
+</script>
+
+{% csrf_token %}
 {% endblock %}

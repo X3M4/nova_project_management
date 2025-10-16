@@ -105,6 +105,16 @@ Vista de Reunión - {{ selected_project.name|default:"Seleccionar Proyecto" }}
         <div class="flex items-center gap-4">
             <h1 class="text-2xl font-bold text-gray-800">Vista de Reunión</h1>
             <div class="flex gap-2">
+                <a href="?department=external&{% if request.GET.project_id %}project_id={{ request.GET.project_id }}&{% endif %}{% if request.GET.employee_type %}employee_type={{ request.GET.employee_type }}&{% endif %}{% if request.GET.employee_search %}employee_search={{ request.GET.employee_search }}{% endif %}"
+                class="px-4 py-2 rounded {% if department == 'external' %}bg-blue-500 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
+                    Obras
+                </a>
+                <a href="?department=project&{% if request.GET.project_id %}project_id={{ request.GET.project_id }}&{% endif %}{% if request.GET.employee_type %}employee_type={{ request.GET.employee_type }}&{% endif %}{% if request.GET.employee_search %}employee_search={{ request.GET.employee_search }}{% endif %}"
+                class="px-4 py-2 rounded {% if department == 'project' %}bg-blue-500 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
+                    Proyectos
+                </a>
+            </div>
+            <div class="flex gap-2">
                 <a href="{% url 'kanban_board' %}" 
                    class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded flex items-center text-sm">
                     <i class="fas fa-columns mr-2"></i> Kanban Board
@@ -114,19 +124,11 @@ Vista de Reunión - {{ selected_project.name|default:"Seleccionar Proyecto" }}
                     <i class="fas fa-th-list mr-2"></i> Project List
                 </a>
             </div>
+            
         </div>
         
         <!-- Department Filter -->
-        <div class="flex gap-2">
-            <a href="?department=external&{% if request.GET.project_id %}project_id={{ request.GET.project_id }}&{% endif %}{% if request.GET.employee_type %}employee_type={{ request.GET.employee_type }}&{% endif %}{% if request.GET.employee_search %}employee_search={{ request.GET.employee_search }}{% endif %}"
-               class="px-4 py-2 rounded {% if department == 'external' %}bg-blue-500 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
-                Obras
-            </a>
-            <a href="?department=project&{% if request.GET.project_id %}project_id={{ request.GET.project_id }}&{% endif %}{% if request.GET.employee_type %}employee_type={{ request.GET.employee_type }}&{% endif %}{% if request.GET.employee_search %}employee_search={{ request.GET.employee_search }}{% endif %}"
-               class="px-4 py-2 rounded {% if department == 'project' %}bg-blue-500 text-white{% else %}bg-gray-200 text-gray-700 hover:bg-gray-300{% endif %}">
-                Proyectos
-            </a>
-        </div>
+        
 
         
     </div>
@@ -218,6 +220,12 @@ Vista de Reunión - {{ selected_project.name|default:"Seleccionar Proyecto" }}
                                 <i class="fas fa-lock mr-2"></i>
                                 Reservar Empleado
                             </a>
+                            <a href="{% url 'project_delete' selected_project.id %}" 
+                               class="bg-red-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-sm flex items-center">
+                                <i class="fas fa-lock mr-2"></i>
+                                Eliminar proyecto
+                            </a>
+
                         </div>
                         {% endif %}
                     </div>
@@ -320,8 +328,12 @@ Vista de Reunión - {{ selected_project.name|default:"Seleccionar Proyecto" }}
                                     </div>
                                     {% if can_edit %}
                                     <a href="{% url 'employee_needed_update' need.pk %}" 
-                                       class="text-blue-500 hover:text-blue-700 text-xs">
+                                       class="text-red-500 hover:text-red-700 text-xs">
                                         <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'employee_needed_delete' need.pk %}" 
+                                       class="text-red-500 hover:text-red-700 text-xs">
+                                        <i class="fas fa-trash"></i>
                                     </a>
                                     {% endif %}
                                 </div>
@@ -354,10 +366,16 @@ Vista de Reunión - {{ selected_project.name|default:"Seleccionar Proyecto" }}
                                         <div class="text-xs text-gray-500 mt-1">Reservado hasta: {{ lock.end_date|default:"Indefinido" }}</div>
                                     </div>
                                     {% if can_edit %}
-                                    <a href="{% url 'get_employee_locked_update' lock.pk %}" 
-                                       class="text-blue-500 hover:text-blue-700 text-xs">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
+                                    <div class="flex space-x-2">
+                                        <a href="{% url 'get_employee_locked_update' lock.pk %}" 
+                                           class="text-blue-500 hover:text-blue-700 text-xs">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button onclick="deleteFutureAssignment({{ lock.pk }}, '{{ lock.employee.name }}', '{{ lock.next_project.name }}')" 
+                                                class="text-red-500 hover:text-red-700 text-xs">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
                                     {% endif %}
                                 </div>
                             </div>
@@ -576,6 +594,33 @@ function unassignEmployee(employeeId) {
         .catch(error => {
             console.error('DEBUG: Fetch error:', error);
             alert('Error al desasignar empleado: ' + error.message);
+        });
+    }
+}
+
+function deleteFutureAssignment(assignmentId, employeeName, projectName) {
+    if (confirm(`¿Estás seguro de que quieres eliminar la reserva de ${employeeName} para ${projectName}?`)) {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        fetch(`/future-assignments/${assignmentId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Recargar la página para actualizar la lista
+                location.reload();
+            } else {
+                alert('Error al eliminar la reserva: ' + (data.error || 'Error desconocido'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al eliminar la reserva: ' + error.message);
         });
     }
 }

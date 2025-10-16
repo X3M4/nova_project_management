@@ -44,45 +44,53 @@ Kanban Board
       </div>
 
       <!-- Statistics -->
-      {% if stats.employees_ending_soon > 0 or stats.employees_on_vacation > 0 %}
+      {% if stats.employees_ending_soon > 0 or stats.employees_on_vacation > 0 or stats.employees_ending_contract > 0 or stats.employees_contract_ending_soon > 0 %}
       <div class="stats-panel w-full max-w-2xl">
         {% if stats.employees_ending_soon > 0 %}
-        <div class="alert alert-warning text-sm text-red-500">
+        <div class="alert alert-warning text-sm text-red-500 mb-2">
           <i class="fas fa-exclamation-triangle"></i>
-          <span id="stat-ending-soon"></span> Fin Obra/Contrato:
+          <span>{{ stats.employees_ending_soon }}</span> Empleados con fin de obra próximo (7 días):
           {% for employee in employees %}
-          {% if employee.end_date > today  or employee.end_contract %}
-            <span class="inline-block bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full mr-1 mb-1">{{ employee.name }} 
-              {% if employee.end_date > today %}
-                - Fin Obra: {{ employee.end_date|date:'d/m/Y' }}
-              {% endif %}
-              {% if employee.end_contract %}
-                - Fin Contrato: {{ employee.end_contract_date|date:'d/m/Y' }}
-              {% endif %}
-            </span>
-          {% endif %}
+            {% if employee.is_ending_soon %}
+              <span class="inline-block bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full mr-1 mb-1">
+                {{ employee.name }}
+                {% if employee.end_date %}
+                  - {{ employee.end_date|date:'d/m/Y' }}
+                {% endif %}
+              </span>
+            {% endif %}
           {% endfor %}
         </div>
         {% endif %}
 
-        
-        <div class="alert alert-info text-sm">
-          <i class="fas fa-umbrella-beach text-green-600"></i>
-          <span id="stat-upcoming-vacations">{{ employee.upcoming_vacations.count }}</span> Vacaciones próximos 30 días:
+        {% if stats.employees_ending_contract > 0 %}
+        <div class="alert alert-warning text-sm text-orange-600 mb-2">
+          <i class="fas fa-skull-crossbones"></i>
+          <span>{{ stats.employees_ending_contract }}</span> Empleados con fin de contrato marcado:
           {% for employee in employees %}
-          {% if employee.upcoming_vacation %}
-          
-        <span class="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full mr-1 mb-1">{{ employee.name }} </span>
-          {% endif %}
+            {% if employee.end_contract %}
+              <span class="inline-block bg-orange-100 text-purple-800 text-xs px-2 py-1 rounded-full mr-1 mb-1">
+                {{ employee.name }}
+                {% if employee.end_contract_date %}
+                  - {{ employee.end_contract_date|date:'d/m/Y' }}
+                {% endif %}
+              </span>
+            {% endif %}
           {% endfor %}
         </div>
+        {% endif %}
+
 
         <div class="alert alert-info text-sm">
           <i class="fas fa-umbrella-beach text-blue-600"></i>
           <span id="stat-upcoming-vacations"></span> Vacaciones próxios 8 días:
           {% for employee in employees %}
           {% if employee.near_upcoming_vacation %}
-            <span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full mr-1 mb-1">{{ employee.name }} </span>
+            <span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full mr-1 mb-1">{{ employee.name }} 
+              {% if employee.vacations_to %}
+                - {{ employee.vacations_to|date:'d/m/Y' }}
+              {% endif %}
+            </span>
           {% endif %}
           {% endfor %}
         </div>
@@ -93,7 +101,11 @@ Kanban Board
           <span id="stat-on-vacation"></span> Empleados de vacaciones:
           {% for employee in employees %}
           {% if employee.on_vacation %}
-            <span class="inline-block bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full mr-1 mb-1">{{ employee.name }}</span>
+            <span class="inline-block bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full mr-1 mb-1">{{ employee.name }}
+              {% if employee.vacations_to %}
+                - {{ employee.vacations_to|date:'d/m/Y' }}
+              {% endif %}
+            </span>
           {% endif %}
           {% endfor %}
         </div>
@@ -357,6 +369,12 @@ Kanban Board
                               <div class="flex space-x-2 ml-2">
                                 <a href="{% url 'get_employee_locked_update' lock.id %}" class="text-white hover:text-gray-600" title="Edit request"><i class="fas fa-edit text-base"></i></a>
                                 <a href="{% url 'get_employee_locked_fulfill' lock.id %}" class="text-lime-300 hover:text-green-800" title="Mark as fulfilled"><i class="fas fa-check-circle text-base"></i></a>
+                                <a href="{% url 'get_employee_locked_delete' lock.id %}" 
+                                  class="text-amber-400 hover:text-orange-700" 
+                                  title="Delete lock"
+                                  onclick="return confirm('¿Estás seguro de que quieres eliminar esta reserva?')">
+                                  <i class="fas fa-trash text-base"></i>
+                                </a>
                               </div>
                             {% endif %}
                           </div>
@@ -639,6 +657,12 @@ Kanban Board
                               <div class="flex space-x-2 ml-2">
                                 <a href="{% url 'get_employee_locked_update' lock.id %}" class="text-white hover:text-gray-600" title="Edit request"><i class="fas fa-edit text-base"></i></a>
                                 <a href="{% url 'get_employee_locked_fulfill' lock.id %}" class="text-lime-300 hover:text-green-800" title="Mark as fulfilled"><i class="fas fa-check-circle text-base"></i></a>
+                                <a href="{% url 'get_employee_locked_delete' lock.id %}" 
+                                  class="text-amber-400 hover:text-orange-700" 
+                                  title="Delete lock"
+                                  onclick="return confirm('¿Estás seguro de que quieres eliminar esta reserva?')">
+                                  <i class="fas fa-trash text-base"></i>
+                                </a>
                               </div>
                             {% endif %}
                           </div>

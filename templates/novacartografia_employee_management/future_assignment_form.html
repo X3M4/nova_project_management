@@ -11,6 +11,11 @@
   <form method="post" class="space-y-4">
     {% csrf_token %}
     
+    <!-- Campo oculto para la URL de referencia -->
+    {% if referer_url %}
+    <input type="hidden" name="referer_url" value="{{ referer_url }}">
+    {% endif %}
+    
     {% for field in form %}
     <div class="mb-4">
       <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">

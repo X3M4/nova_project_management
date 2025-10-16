@@ -50,6 +50,7 @@ urlpatterns = [
     path('future-assignments/create/<int:project_id>/', views.get_employee_locked_create, name='get_employee_locked_create_from_project'),
     path('future-assignments/<int:pk>/update/', views.get_employee_locked_update, name='get_employee_locked_update'),
     path('future-assignments/<int:pk>/fulfill/', views.get_employee_locked_fulfill, name='get_employee_locked_fulfill'),
+    path('future-assignments/<int:pk>/delete/', views.get_employee_locked_delete, name='get_employee_locked_delete'),
     
     # Rutas para vacaciones de empleados
     path('employee-vacations/', views.employee_vacation_list, name='employee_vacation_list'),
