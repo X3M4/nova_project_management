@@ -52,7 +52,14 @@ Kanban Board
           <span id="stat-ending-soon"></span> Fin Obra/Contrato:
           {% for employee in employees %}
           {% if employee.end_date > today  or employee.end_contract %}
-        <span class="inline-block  {% if employee.end_contract %} bg-red-100 text-red-800 {% else %} bg-violet-100 text-violet-800 {% endif %} text-xs px-2 py-1 rounded-full mr-1 mb-1">{{ employee.name }}</span>
+            <span class="inline-block bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full mr-1 mb-1">{{ employee.name }} 
+              {% if employee.end_date > today %}
+                - Fin Obra: {{ employee.end_date|date:'d/m/Y' }}
+              {% endif %}
+              {% if employee.end_contract %}
+                - Fin Contrato: {{ employee.end_contract_date|date:'d/m/Y' }}
+              {% endif %}
+            </span>
           {% endif %}
           {% endfor %}
         </div>
@@ -187,6 +194,7 @@ Kanban Board
           {% elif employee.end_contract %}
           <div class="text-indigo-500" title="Contrato termina">
             <i class="fas fa-skull-crossbones text-xl"></i>
+            <p class="text-sm text-gray-600">{{ employee.end_contract_date|date:'d/m/Y' }}</p>
           </div>
           {% endif %}
           </div>
@@ -256,6 +264,12 @@ Kanban Board
                       {{ project.manager }}
                     </div>
                     {% endif %}
+                    {% if project.description %}
+                    <div class="text-xs font-medium mt-1 bg-violet-100">
+                        <i class="fas fa-comment mr-1 text-violet-500"></i>
+                      {{ project.description }}
+                    </div>
+                    {% endif %}
                   </div>
                 </div>
                 <div class="flex flex-col items-end">
@@ -296,7 +310,10 @@ Kanban Board
                             <i class="fas fa-trash text-lg"></i>
                           </a>
                         </div>
+                        
             </div>
+            
+
 
             <!-- Employees in this project -->
             <div class="kanban-column bg-violet-100" id="project-{{ project.id }}-column" data-project-id="{{ project.id }}">
@@ -335,6 +352,7 @@ Kanban Board
                           </div>
                           <div>
                             <p class="text-sm text-gray-100 text-white">{{ lock.start_date }}</p>
+                            <p class="text-sm text-gray-100 text-white">{{ lock.end_date }}</p>
                             {% if lock.id %}
                               <div class="flex space-x-2 ml-2">
                                 <a href="{% url 'get_employee_locked_update' lock.id %}" class="text-white hover:text-gray-600" title="Edit request"><i class="fas fa-edit text-base"></i></a>
@@ -454,6 +472,7 @@ Kanban Board
                   {% elif employee.end_contract %}
                 <div class="text-indigo-500" title="Contrato termina">
                     <i class="fas fa-skull-crossbones text-xl"></i>
+                    <p class="text-sm text-violet-600">{{ employee.end_contract_date|date:'d/m/Y' }}</p>
                 </div>
                   {% endif %}
 
@@ -530,6 +549,13 @@ Kanban Board
                       {{ project.manager }}
                     </div>
                     {% endif %}
+                    {% if project.description %}
+                    <div class="text-xs font-medium mt-1 bg-lime-100">
+                        <i class="fas fa-comment mr-1 text-lime-500"></i>
+                      {{ project.description }}
+                    </div>
+                    {% endif %}
+                    
                   </div>
                 </div>
                 <div class="flex flex-col items-end">
@@ -608,6 +634,7 @@ Kanban Board
                           </div>
                           <div>
                             <p class="text-sm text-gray-100 text-white">{{ lock.start_date }}</p>
+                            <p class="text-sm text-gray-100 text-white">{{ lock.end_date }}</p>
                             {% if lock.id %}
                               <div class="flex space-x-2 ml-2">
                                 <a href="{% url 'get_employee_locked_update' lock.id %}" class="text-white hover:text-gray-600" title="Edit request"><i class="fas fa-edit text-base"></i></a>
@@ -722,6 +749,7 @@ Kanban Board
                   {% elif employee.end_contract %}
                 <div class="text-indigo-500" title="Contrato termina">
                     <i class="fas fa-skull-crossbones text-xl"></i>
+                    <p class="text-sm text-violet-600">{{ employee.end_contract_date|date:'d/m/Y' }}</p>
                 </div>
                   {% endif %}
                 </div>

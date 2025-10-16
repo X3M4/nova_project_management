@@ -21,6 +21,17 @@ import operator
 from datetime import datetime, date, timedelta
 import re
 import locale
+import unicodedata
+
+def normalize_text(text):
+    """Normaliza texto removiendo acentos y convirtiendo a minúsculas para búsquedas"""
+    if not text:
+        return ''
+    # Normalizar unicode y remover acentos
+    normalized = unicodedata.normalize('NFD', text.lower())
+    # Filtrar caracteres de combinación (acentos)
+    without_accents = ''.join(c for c in normalized if unicodedata.category(c) != 'Mn')
+    return without_accents
 
 # Función auxiliar para verificar permisos de escritura
 def can_edit(user):
@@ -997,6 +1008,7 @@ def meeting_view(request):
     project_id = request.GET.get('project_id')
     employee_type = request.GET.get('employee_type', 'all')  # 'all', 'topografo', 'auxiliar', 'proyectos', 'piloto'
     employee_search = request.GET.get('employee_search', '')
+    search = request.GET.get('search', '')  # Búsqueda general de proyectos
     
     # Obtener proyectos filtrados por departamento
     projects_queryset = Project.objects.annotate(
@@ -1018,7 +1030,15 @@ def meeting_view(request):
     else:
         projects_queryset = projects_queryset.filter(type__iexact='project')
     
-    projects_queryset = projects_queryset.order_by('-has_needs', 'earliest_start_date', 'manager_order')
+    # Filtrar proyectos por búsqueda
+    if search:
+        projects_queryset = projects_queryset.filter(
+            Q(name__icontains=search) |
+            Q(manager__icontains=search) |
+            Q(description__icontains=search)
+        )
+    
+    projects_queryset = projects_queryset.order_by('-has_needs','name', 'earliest_start_date', 'manager_order')
     
     # Seleccionar el primer proyecto si no se especifica uno
     if not project_id and projects_queryset.exists():
@@ -1113,11 +1133,28 @@ def meeting_view(request):
     
     # Búsqueda de empleados
     if employee_search:
-        available_employees = available_employees.filter(
-            Q(name__icontains=employee_search) |
-            Q(job__icontains=employee_search) |
-            Q(city__icontains=employee_search)
-        )
+        # Normalizar el término de búsqueda
+        normalized_search = normalize_text(employee_search)
+        
+        # Obtener todos los empleados disponibles y filtrar en Python para manejar acentos
+        all_available = list(available_employees)
+        filtered_employees = []
+        
+        for employee in all_available:
+            # Normalizar los campos del empleado
+            normalized_name = normalize_text(employee.name or '')
+            normalized_job = normalize_text(employee.job or '')
+            normalized_city = normalize_text(employee.city or '')
+            
+            # Verificar si el término de búsqueda está en alguno de los campos normalizados
+            if (normalized_search in normalized_name or 
+                normalized_search in normalized_job or 
+                normalized_search in normalized_city):
+                filtered_employees.append(employee)
+        
+        # Convertir de vuelta a QuerySet manteniendo solo los IDs filtrados
+        filtered_ids = [emp.id for emp in filtered_employees]
+        available_employees = available_employees.filter(id__in=filtered_ids)
     
     available_employees = available_employees.order_by('name')
     

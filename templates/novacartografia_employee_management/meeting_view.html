@@ -127,6 +127,8 @@ Vista de Reunión - {{ selected_project.name|default:"Seleccionar Proyecto" }}
                 Proyectos
             </a>
         </div>
+
+        
     </div>
 
     <div class="meeting-container">
@@ -137,6 +139,33 @@ Vista de Reunión - {{ selected_project.name|default:"Seleccionar Proyecto" }}
                     {% if department == 'external' %}Obras{% else %}Proyectos{% endif %}
                 </h3>
             </div>
+        <div class="flex-1 max-w-md mx-6">
+            <form method="GET" class="relative" id="search-form">
+                <!-- Preserve current filters -->
+                {% if request.GET.department %}
+                <input type="hidden" name="department" value="{{ request.GET.department }}">
+                {% endif %}
+                {% if request.GET.employee_type %}
+                <input type="hidden" name="employee_type" value="{{ request.GET.employee_type }}">
+                {% endif %}
+                {% if request.GET.employee_search %}
+                <input type="hidden" name="employee_search" value="{{ request.GET.employee_search }}">
+                {% endif %}
+                
+                <input type="text" name="search" value="{{ request.GET.search }}" id="search-input"
+                    class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Buscar proyectos, managers, empleados..." />
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i class="fas fa-search text-gray-400"></i>
+                </div>
+                {% if request.GET.search %}
+                <a href="{% url 'meeting_view' %}?{% if request.GET.department %}department={{ request.GET.department }}&{% endif %}{% if request.GET.employee_type %}employee_type={{ request.GET.employee_type }}&{% endif %}{% if request.GET.employee_search %}employee_search={{ request.GET.employee_search }}{% endif %}" 
+                   class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                    <i class="fas fa-times text-gray-400 hover:text-gray-600"></i>
+                </a>
+                {% endif %}
+            </form>
+        </div>
             <div class="p-2">
                 {% for project in projects %}
                 <div class="project-item {% if selected_project and project.id == selected_project.id %}selected{% endif %}"
@@ -257,6 +286,7 @@ Vista de Reunión - {{ selected_project.name|default:"Seleccionar Proyecto" }}
                                     {% elif employee.end_contract %}
                                     <div class="text-indigo-500" title="Contrato termina">
                                         <i class="fas fa-skull-crossbones text-xl"></i>
+                                        <p class="text-sm text-violet-600">{{ employee.end_contract_date|date:'d/m/Y' }}</p>
                                     </div>
                                     {% endif %}
                                 </div>
@@ -307,6 +337,7 @@ Vista de Reunión - {{ selected_project.name|default:"Seleccionar Proyecto" }}
                         <h3 class="text-lg font-semibold text-gray-800 mb-4">Reservas Futuras</h3>
                         <div class="space-y-2">
                             {% for lock in locks %}
+                            {% if not lock.end_date or lock.end_date >= today %}
                             <div class="bg-blue-50 border border-blue-200 rounded p-3">
                                 <div class="flex justify-between items-start">
                                     <div>
@@ -320,6 +351,7 @@ Vista de Reunión - {{ selected_project.name|default:"Seleccionar Proyecto" }}
                                         {% if lock.notes %}
                                         <div class="text-xs text-gray-500 mt-1">{{ lock.notes }}</div>
                                         {% endif %}
+                                        <div class="text-xs text-gray-500 mt-1">Reservado hasta: {{ lock.end_date|default:"Indefinido" }}</div>
                                     </div>
                                     {% if can_edit %}
                                     <a href="{% url 'get_employee_locked_update' lock.pk %}" 
@@ -329,6 +361,7 @@ Vista de Reunión - {{ selected_project.name|default:"Seleccionar Proyecto" }}
                                     {% endif %}
                                 </div>
                             </div>
+                            {% endif %}
                             {% endfor %}
                         </div>
                     </div>
@@ -426,6 +459,7 @@ Vista de Reunión - {{ selected_project.name|default:"Seleccionar Proyecto" }}
                             {% elif employee.end_contract %}
                             <div class="text-indigo-500" title="Contrato termina">
                                 <i class="fas fa-skull-crossbones text-xl"></i>
+                                <p class="text-sm text-violet-600">{{ employee.end_contract_date|date:'d/m/Y' }}</p>
                             </div>
                             {% endif %}
                         </div>

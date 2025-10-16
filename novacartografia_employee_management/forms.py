@@ -23,7 +23,7 @@ class EmployeeForm(forms.ModelForm):
             'confine', 'height' , 'mining', 'railway_carriage', 'railway_mounting', 
             'building', 'office_work', 'scanner', 'leveling', 
             'static', 'drag', 'locked', 'active', 'start_date', 'end_date', 'vacations_from', 'vacations_to',
-            'leave_from', 'leave_to', 'end_contract'
+            'leave_from', 'leave_to', 'end_contract', 'end_contract_date'
         ]
         
         
@@ -58,6 +58,7 @@ class EmployeeForm(forms.ModelForm):
             'leave_from': 'Leave From',
             'leave_to': 'Leave To',
             'end_contract': 'End of Contract',
+            'end_contract_date': 'Contract End Date',
         }
         widgets = {
             'name': forms.TextInput(attrs={'placeholder': 'Enter employee name'}),
@@ -90,6 +91,7 @@ class EmployeeForm(forms.ModelForm):
             'leave_from': forms.DateInput(attrs={'type': 'date', 'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50'}),
             'leave_to': forms.DateInput(attrs={'type': 'date', 'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50'}),
             'end_contract': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
+            'end_contract_date': forms.DateInput(attrs={'type': 'date', 'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50'}),
         }
     
     def clean(self):

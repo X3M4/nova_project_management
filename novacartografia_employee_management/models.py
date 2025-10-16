@@ -142,6 +142,7 @@ class Employee(models.Model):
     leave_to = models.DateField(blank=True, null=True)
     
     end_contract = models.BooleanField(default=False, help_text="Indicates if the employee's contract is ending soon")
+    end_contract_date = models.DateField(blank=True, null=True, help_text="Date when the employee's contract is ending")
     
     def is_on_vacation_today(self):
         """Check if employee is on vacation today"""
