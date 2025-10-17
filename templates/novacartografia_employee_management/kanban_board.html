@@ -620,7 +620,7 @@ Kanban Board
             <div class="kanban-column bg-lime-100" id="project-{{ project.id }}-column" data-project-id="{{ project.id }}">
               {% for need in needs %}
                     {% if need.project_id == project %}
-                      <div class="need-card p-2 bg-red-300 border border-gray-300 rounded-md shadow-sm mb-2">
+                      <div class="need-card p-2 {% if need.partial_fulfillment %} bg-amber-400 {% else %} bg-red-300 border border-gray-300 rounded-md shadow-sm mb-2 {% endif %}">
                         <div class="flex justify-between items-start">
                           <div class="flex-1">
                             <h4 class="text-sm font-medium text-gray-900">{{ need.get_type_display }}</h4>

@@ -285,7 +285,7 @@ class ProjectForm(forms.ModelForm):
 class EmployeeNeededForm(forms.ModelForm):
     class Meta:
         model = EmployeeNeeded
-        fields = ['project_id', 'type', 'quantity', 'start_date', 'description']
+        fields = ['project_id', 'type', 'quantity', 'start_date', 'description', 'partial_fulfillment']
         widgets = {
             'project_id': forms.Select(attrs={'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50'}),
             'type': forms.Select(attrs={'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50'}),
