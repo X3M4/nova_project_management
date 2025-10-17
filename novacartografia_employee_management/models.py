@@ -214,6 +214,7 @@ class EmployeeNeeded(models.Model):
     quantity = models.PositiveIntegerField()
     start_date = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
+    partial_fulfillment = models.BooleanField(default=False)
     fulfilled = models.BooleanField(default=False)
     description = models.TextField(blank=True, null=True)
     

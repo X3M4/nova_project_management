@@ -292,6 +292,7 @@ class EmployeeNeededForm(forms.ModelForm):
             'quantity': forms.NumberInput(attrs={'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50'}),
             'start_date': forms.DateInput(attrs={'type': 'date', 'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50'}),
             'description': forms.Textarea(attrs={'rows': 3, 'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring focus:ring-lime-500 focus:ring-opacity-50'}),
+            'partial_fulfillment': forms.CheckboxInput(attrs={'class': 'form-checkbox h-5 w-5 text-blue-600'}),
         }
         labels = {
             'project_id': 'Proyecto',
@@ -299,6 +300,7 @@ class EmployeeNeededForm(forms.ModelForm):
             'quantity': 'Número de Empleados Necesarios',
             'start_date': 'Fecha de Inicio',
             'description': 'Descripción',
+            'partial_fulfillment': 'Cumplimiento Parcial',
         }
         help_texts = {
             'project_id': 'Selecciona el proyecto para el cual necesitas empleados',
@@ -306,6 +308,7 @@ class EmployeeNeededForm(forms.ModelForm):
             'quantity': 'Introduce el número de empleados necesarios',
             'start_date': 'Selecciona la fecha cuando necesitas que estos empleados comiencen',
             'description': 'Proporciona una descripción detallada de la solicitud de empleado',
+            'partial_fulfillment': 'Solucionado parcialmente',
         }
         
         # El método clean debería estar aquí, fuera de la clase Meta
